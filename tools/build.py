@@ -25,13 +25,18 @@ HEAD = """<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LOGGIA — {title}</title>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="preload" href="font/Pretendard-subset.woff2" as="font" type="font/woff2" crossorigin>
 <script>
 /* 화면이 그려지기 전에 밝기를 정한다. 늦게 정하면 한 번 번쩍인다. */
 (function(){{try{{document.documentElement.dataset.theme=localStorage.getItem('loggia.theme')||'auto'}}catch(e){{}}}})();
 </script>
-<style>{css}</style>
+<style>
+/* 글꼴은 이 저장소 안에 있다. 남의 자리에 기대지 않는다.
+   한글 상용 2350자에 라틴과 기호와 지금 판에 쓰인 글자를 더해 잘라 두었다. 445KB.
+   못 받으면 기기에 있는 글꼴로 내려간다. */
+@font-face{{font-family:'Pretendard Variable';font-weight:45 920;font-style:normal;
+font-display:swap;src:url('font/Pretendard-subset.woff2') format('woff2')}}
+{css}</style>
 </head>
 <body>
 <div class="wrap">

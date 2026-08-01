@@ -44,10 +44,11 @@ const shell = `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Loggia</title>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="preload" href="font/Pretendard-subset.woff2" as="font" type="font/woff2" crossorigin>
 <meta name="robots" content="noindex, nofollow">
 <style>
+@font-face{font-family:'Pretendard Variable';font-weight:45 920;font-style:normal;
+font-display:swap;src:url('font/Pretendard-subset.woff2') format('woff2')}
 :root {
   --paper: hsl(40 12% 97%); --surface: hsl(40 20% 99.5%);
   --ink: hsl(28 10% 12%); --ink-2: hsl(28 6% 34%); --ink-3: hsl(28 5% 52%);
