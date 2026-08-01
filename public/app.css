@@ -371,6 +371,10 @@ border-radius:99px;padding:7px 15px;display:inline-flex;align-items:baseline;gap
 .filters button b{font-size:12px;font-weight:700;color:var(--ink-3)}
 .filters button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 .filters button[aria-pressed=true] b{color:var(--paper);opacity:.6}
+/* 마디 안에 선 거르개. 재료 장의 개념이 그렇다.
+   여덟 픽셀만 두면 단추 줄과 아래 상자가 한 덩이로 붙어 보인다.
+   위로는 마디 머리와 가깝게, 아래로는 넉넉히 벌린다. */
+.group>.filters{margin:12px 0 22px}
 .group[hidden]{display:none}
 
 /* 답을 기다리는 중 */

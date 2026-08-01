@@ -595,15 +595,19 @@ function buildMaterials() {
       + historyRows(e, true) + '</div></section>';
   }).join(''), 'thinkers'));
 
-  // 개념
+  // 개념. 열쇠말이 많으므로 눌러서 내려가는 대신 눌러서 걸러 낸다.
+  // 자리표로 뛰면 눈이 판을 잃는다. 거르면 자리가 그대로 있고 남는 것만 바뀐다.
+  //
+  // 거르개의 열쇠말은 개념 이름이 아니라 번호다. 이름에 띄어쓰기가 있으면
+  // (「일기적 실천」) 띄어쓰기로 가르는 견줌이 무너진다.
   var co = ranked(byConcept, cOrder);
-  var cbody = ['<div class="watch">' + co.map(function (c) {
-    return '<a class="link web" href="#c-' + esc(c) + '">' + esc(c)
-         + ' <b>' + byConcept[c].length + '</b></a>';
-  }).join('') + '</div>'];
-  co.forEach(function (cid) {
+  var cbody = [filtersHtml(
+    [['*', '전체', co.length]].concat(co.map(function (c, i) {
+      return ['c' + i, c, byConcept[c].length];
+    })), '개념으로 골라 보기')];
+  co.forEach(function (cid, i) {
     var e = byConcept[cid];
-    cbody.push('<section class="venue-block" id="c-' + esc(cid) + '">\n'
+    cbody.push('<section class="venue-block" id="c-' + esc(cid) + '" data-tags="c' + i + '">\n'
       + '<div class="venue-head"><h3>' + esc(cid) + '</h3><span class="sub">'
       + e.length + '편</span></div>\n'
       + '<div class="history">' + historyRows(e, true) + '</div></section>');
@@ -883,39 +887,50 @@ function bindSections(root, page) {
   });
 }
 
-/* 거르개. 누른 단추의 열쇠말을 가진 상자만 남긴다. */
+/* 거르개. 누른 단추의 열쇠말을 가진 상자만 남긴다.
+
+   거르개는 두 자리에 설 수 있다. 마디 밖에 서면 판의 마디 전부를 고르고,
+   마디 안에 서면 제가 든 마디 안만 고른다. 재료 장의 개념 거르개가 뒤엣것이다.
+   그러지 않으면 개념 하나를 고를 때 이론가와 읽기 마디까지 통째로 사라진다. */
 function bindFilters(root) {
-  var bar = root.querySelector('.filters');
-  if (!bar) return;
-  var groups = [].slice.call(root.querySelectorAll('.group'));
-  groups.forEach(function (g) {
-    var c = g.querySelector('.c');
-    if (c) c.dataset.all = c.textContent;
-  });
-  bar.addEventListener('click', function (e) {
-    var b = e.target.closest('button');
-    if (!b) return;
-    var k = b.dataset.filter;
-    bar.querySelectorAll('button').forEach(function (x) {
-      x.setAttribute('aria-pressed', x === b);
-    });
+  root.querySelectorAll('.filters').forEach(function (bar) {
+    var own = bar.closest('details.group');
+    var groups = own ? [own] : [].slice.call(root.querySelectorAll('.group'));
     groups.forEach(function (g) {
-      var seen = 0;
-      g.querySelectorAll('[data-tags]').forEach(function (el) {
-        var on = k === '*' || (' ' + el.dataset.tags + ' ').indexOf(' ' + k + ' ') >= 0;
-        el.hidden = !on;
-        if (on) seen++;
-      });
-      g.hidden = seen === 0;
-      // 거른 것이 접힌 마디 안에 있으면 안 보인다. 열어 준다.
-      // 다만 이 열기는 기억하지 않는다. 손으로 접어 둔 뜻을 지우면 안 된다.
-      if (k !== '*' && seen && g.tagName === 'DETAILS' && !g.open) {
-        g.dataset.auto = '1'; g.open = true;
-      } else if (k === '*' && g.dataset.auto) {
-        g.dataset.auto = ''; g.open = false;
-      }
       var c = g.querySelector('.c');
-      if (c) c.textContent = k === '*' ? c.dataset.all : seen;
+      if (c) c.dataset.all = c.textContent;
+    });
+    bar.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      var k = b.dataset.filter;
+      bar.querySelectorAll('button').forEach(function (x) {
+        x.setAttribute('aria-pressed', x === b);
+      });
+      groups.forEach(function (g) {
+        // 거를 것이 하나도 없는 마디는 건드리지 않는다. 낼 곳의 「길목」과
+        // 「새겨 둘 것」이 그렇다. 건드리면 단추를 한 번 누른 뒤로 그 둘이
+        // 사라지고 「전체」로 돌아와도 오지 않는다.
+        var taggable = g.querySelectorAll('[data-tags]');
+        if (!taggable.length) return;
+        var seen = 0;
+        taggable.forEach(function (el) {
+          var on = k === '*' || (' ' + el.dataset.tags + ' ').indexOf(' ' + k + ' ') >= 0;
+          el.hidden = !on;
+          if (on) seen++;
+        });
+        // 제 거르개가 든 마디는 감추지 않는다. 감추면 거르개도 함께 사라진다.
+        if (g !== own) g.hidden = seen === 0;
+        // 거른 것이 접힌 마디 안에 있으면 안 보인다. 열어 준다.
+        // 다만 이 열기는 기억하지 않는다. 손으로 접어 둔 뜻을 지우면 안 된다.
+        if (k !== '*' && seen && g !== own && g.tagName === 'DETAILS' && !g.open) {
+          g.dataset.auto = '1'; g.open = true;
+        } else if (k === '*' && g.dataset.auto) {
+          g.dataset.auto = ''; g.open = false;
+        }
+        var c = g.querySelector('.c');
+        if (c) c.textContent = k === '*' ? c.dataset.all : seen;
+      });
     });
   });
 }
