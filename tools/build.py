@@ -302,6 +302,22 @@ font-size:16.5px;line-height:1.62}
 /* 글줄 안에 박히는 알약은 글자 가운데에 맞춘다 */
 .dec .what .on{vertical-align:middle}
 
+/* 해치운 것을 데이터로 옮기는 다리. 눌린 것이 있을 때만 뜬다 */
+.carry{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:9;
+display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;
+background:var(--ink);color:var(--paper);padding:12px 18px;border-radius:99px;
+box-shadow:0 8px 28px rgba(0,0,0,.22);max-width:calc(100vw - 32px)}
+.carry[hidden]{display:none}
+.carry .cap{font-size:13.5px;font-weight:700}
+.carry .cap b{font-weight:800}
+.carry button{appearance:none;border:0;cursor:pointer;font-family:var(--font);
+font-size:13px;font-weight:800;border-radius:99px;padding:7px 15px}
+.carry .copy{background:var(--paper);color:var(--ink)}
+.carry .clear{background:transparent;color:var(--paper);opacity:.66;padding:7px 8px}
+.carry .clear:hover{opacity:1}
+.carry .hint{font-size:12px;opacity:.6}
+@media(max-width:560px){.carry .hint{display:none}}
+
 /* 지난 서른 날에 한 일. 판을 열면 먼저 눈에 든다 */
 .tally{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin:22px 0 0;
 font-size:14px;color:var(--ink-2)}
@@ -599,6 +615,11 @@ def build_index(D, venue_index, nven, narc):
         if d.get('touched'):
             done.append({'d': d['touched'], 'k': '손댔다', 't': it['title']})
     done = [x for x in done if len(x['d']) == 10]
+    out.append('<div class="carry" id="carry" hidden>'
+               '<span class="cap">해치운 걸음 <b class="n">0</b></span>'
+               '<button type="button" class="copy">옮겨 적기</button>'
+               '<button type="button" class="clear">지우기</button>'
+               '<span class="hint">베낀 것을 채팅에 붙이면 판이 따라옵니다</span></div>')
     out.append('<div class="tally" id="tally"></div>'
                '<script>const DONE = ' + json.dumps(done, ensure_ascii=False) + ';</script>')
 
@@ -790,16 +811,71 @@ BOARD_JS = """<script>
       : '';
   }
 
-  // 해치운 표시. 이 기기에만 남는다. 데이터를 건드리지 않는다
-  document.querySelectorAll('input[data-done]').forEach(function (b) {
+  // 해치운 표시. 이 기기에만 남는다. 데이터를 건드리지 않는다.
+  //
+  // 이 판은 서버가 없다. 네모를 누른 것이 저장소로 곧장 갈 길이 없다.
+  // 가려면 쓰기 열쇠를 페이지 안에 넣어야 하는데, 그러면 암호를 아는 사람이
+  // 저장소를 고칠 수 있게 된다. 판을 잠근 뜻이 없어진다.
+  //
+  // 그래서 다리를 놓는다. 누른 것을 한 덩이 글로 베껴 채팅에 붙이면
+  // 다음 갱신이 그것을 읽어 데이터에서 걸음을 빼고 손댄 날을 오늘로 고친다.
+  var boxes = document.querySelectorAll('input[data-done]');
+  var bar = document.getElementById('carry');
+  function label(b) {
+    var el = document.querySelector('label[for="' + b.id + '"]');
+    return el ? el.textContent.trim() : b.dataset.done;
+  }
+  function title(b) {
+    var art = b.closest('.entry');
+    var t = art && art.querySelector('.title-line .t');
+    return t ? t.textContent.trim() : '';
+  }
+  function refresh() {
+    if (!bar) return;
+    var on = [].filter.call(boxes, function (b) { return b.checked; });
+    bar.hidden = on.length === 0;
+    var n = bar.querySelector('.n');
+    if (n) n.textContent = on.length;
+    bar.dataset.text = '로지아 갱신. 아래를 해치웠다.\\n'
+      + on.map(function (b) { return '- ' + title(b) + ' · ' + label(b); }).join('\\n');
+  }
+  boxes.forEach(function (b) {
     var key = 'loggia.done.' + b.dataset.done;
     try { b.checked = localStorage.getItem(key) === '1'; } catch (e) {}
     b.closest('.step, li').dataset.done = b.checked ? '1' : '';
     b.addEventListener('change', function () {
       try { localStorage.setItem(key, b.checked ? '1' : '0'); } catch (e) {}
       b.closest('.step, li').dataset.done = b.checked ? '1' : '';
+      refresh();
     });
   });
+  if (bar) {
+    bar.querySelector('.copy').addEventListener('click', function () {
+      var t = bar.dataset.text;
+      var done = function () {
+        var el = bar.querySelector('.copy');
+        var was = el.textContent; el.textContent = '베꼈습니다';
+        setTimeout(function () { el.textContent = was; }, 1600);
+      };
+      if (navigator.clipboard) { navigator.clipboard.writeText(t).then(done, done); }
+      else {
+        var ta = document.createElement('textarea');
+        ta.value = t; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta); done();
+      }
+    });
+    bar.querySelector('.clear').addEventListener('click', function () {
+      boxes.forEach(function (b) {
+        if (!b.checked) return;
+        b.checked = false;
+        try { localStorage.setItem('loggia.done.' + b.dataset.done, '0'); } catch (e) {}
+        b.closest('.step, li').dataset.done = '';
+      });
+      refresh();
+    });
+    refresh();
+  }
 })();
 </script>"""
 
