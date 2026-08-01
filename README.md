@@ -54,7 +54,9 @@ AES-256-GCM 으로 감싼다. 암호에서 열쇠를 뽑을 때 PBKDF2 를 육�
 curl -sO https://raw.githubusercontent.com/eeruwang/loggia/main/tools/fetch.sh
 bash fetch.sh "<암호>"                 # /tmp/lg 에 도구와 풀린 데이터가 놓인다
 cd /tmp/lg
-# loggia-data.json 을 고친다
+LEDGER_TOKEN="<장부 열쇠>" python3 tools/ledger-apply.py -w   # 판에서 하신 것을 옮긴다
+python3 tools/lg.py show glasgow                              # 지금 상태를 본다
+python3 tools/lg.py step-done glasgow "추천인" -w             # 고친다
 python3 tools/build.py loggia-data.json site/
 LEDGER_TOKEN="<장부 열쇠>" DIGEST_KEY="<편지 열쇠>" \
   bash tools/publish.sh site/ "<암호>" "<토큰>" "<커밋 말>"
@@ -67,8 +69,11 @@ LEDGER_TOKEN="<장부 열쇠>" DIGEST_KEY="<편지 열쇠>" \
 `LEDGER_TOKEN` 은 잠기는 데이터 안에 들어간다. 빠뜨리면 판에서 체크와 할 일
 추가가 사라진다.
 
-고칠 곳은 데이터 하나뿐이다. 화면을 고칠 일이면 `public/app.js` 와 `public/app.css`
-둘이고, 껍데기 다섯 장은 거의 손댈 일이 없다.
+고칠 곳은 데이터 하나뿐이다. 손으로 열지 않고 `lg.py` 로 한 자리씩 집어 고친다.
+그 둘은 아무것도 안 붙이면 무엇이 바뀔지 보여만 주고 멈춘다. 넣으려면 `-w`.
+
+화면을 고칠 일이면 `public/app.js` 와 `public/app.css` 둘이고,
+껍데기 다섯 장은 거의 손댈 일이 없다.
 
 내용이 그대로면 `publish.sh` 는 아무것도 올리지 않는다.
 암호문은 잠글 때마다 달라 보이므로 알맹이의 지문을 `.stamp` 에 남겨 견준다.
@@ -82,6 +87,8 @@ LEDGER_TOKEN="<장부 열쇠>" DIGEST_KEY="<편지 열쇠>" \
 
 ```
 fetch.sh        저장소를 받아 데이터를 풀어 놓는다. 갱신의 첫 걸음
+lg.py           데이터의 한 자리만 집어서 보고 고친다. 갱신의 손
+ledger-apply.py 판에서 손으로 한 것을 데이터로 옮긴다
 build.py        아침 편지 꾸러미와 스냅샷을 낸다. 판은 그리지 않는다
 publish.sh      데이터를 잠가 올린다
 
