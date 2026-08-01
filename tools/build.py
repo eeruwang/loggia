@@ -302,6 +302,13 @@ font-size:16.5px;line-height:1.62}
 /* 글줄 안에 박히는 알약은 글자 가운데에 맞춘다 */
 .dec .what .on{vertical-align:middle}
 
+/* 바로 가는 길. 장이 길 때 맨 위에 둔다 */
+.jump{display:flex;flex-wrap:wrap;gap:7px;margin:18px 0 0}
+.jump a{font-size:13.5px;font-weight:700;color:var(--ink-2);text-decoration:none;
+background:var(--sunk);padding:7px 14px;border-radius:99px}
+.jump a:hover{background:var(--rule);color:var(--ink)}
+.jump a.hot{background:var(--ink);color:var(--paper)}
+
 /* 거르개. 마디 위에 한 줄 */
 .filters{display:flex;flex-wrap:wrap;gap:7px;margin:24px 0 8px}
 .filters button{appearance:none;cursor:pointer;font-family:var(--font);font-size:13.5px;
@@ -650,13 +657,14 @@ def all_items(D):
         yield it, True
 
 
-def fold(title, count, body):
+def fold(title, count, body, anchor=None):
     """접어 두는 마디. 읽을 것이지 오늘 할 일이 아니라면 접는다.
 
     펼쳐 둔 것이 많으면 무엇부터 볼지가 흐려진다.
     """
     n = f'<span class="c">{count}</span>' if count else ''
-    return (f'<details class="fold"><summary><h2>{esc(title)}</h2>{n}'
+    a = f' id="{esc(anchor)}"' if anchor else ''
+    return (f'<details class="fold"{a}><summary><h2>{esc(title)}</h2>{n}'
             f'<span class="arrow">\u25b8</span></summary>{body}</details>')
 
 
@@ -668,14 +676,22 @@ def secbox(title, count, body, key=None, open_=True):
     """
     n = f'<span class="c">{count}</span>' if count is not None else ''
     k = f' data-k="{esc(key or title)}"' if key or title else ''
-    return (f'<details class="group"{k}{" open" if open_ else ""}>'
+    a = f' id="{esc(key)}"' if key else ''
+    return (f'<details class="group"{k}{a}{" open" if open_ else ""}>'
             f'<summary class="sec"><h2>{esc(title)}</h2>{n}'
             f'<span class="arrow">\u25b8</span></summary>{body}</details>')
 
 
 SEC_JS = """<script>
 // 마디의 펼침과 접힘을 이 기기에 남긴다.
+// 자리표로 뛰어든 마디는 접혀 있어도 열어 준다. 아니면 머리만 보인다.
 (function () {
+  function openHash() {
+    var el = location.hash && document.querySelector(location.hash);
+    if (el && el.tagName === 'DETAILS' && !el.open) { el.open = true; el.scrollIntoView(); }
+  }
+  addEventListener('hashchange', openHash);
+  setTimeout(openHash, 0);
   var page = location.pathname.split('/').pop() || 'index.html';
   document.querySelectorAll('details.group[data-k]').forEach(function (d) {
     var key = 'loggia.sec.' + page + '.' + d.dataset.k;
@@ -803,6 +819,12 @@ def build_materials(D, nven, narc):
                        h0='', hc='', h1='', h2='', h3=' here', nven=nven, narc=narc)]
     out.append('<p class="lede">무엇으로 지었나. 항목에 적어 둔 열쇠말을 뒤집어 모은 것이다. '
                '읽기는 파일이 아니라 읽기 묶음을 가리킨다. 글은 드롭박스에 있다.</p>')
+    # 이 장은 길다. 맨 위에 바로 가는 길을 낸다
+    out.append('<div class="jump">'
+               '<a href="#thinkers">이론가</a><a href="#concepts">개념</a>'
+               '<a href="#readings">읽기</a>'
+               '<a href="#reuse" class="hot">다시 쓸 것 · CV와 지원서</a>'
+               '<a href="#people">사람</a></div>')
 
     # 이론가. 많이 받치는 순서
     order = sorted(by_thinker.items(), key=lambda kv: (-len(kv[1]), kv[0]))
@@ -812,7 +834,7 @@ def build_materials(D, nven, narc):
         body.append(f"""<section class="venue-block" id="t-{esc(tid)}">
 <div class="venue-head"><h3>{esc(t['name'])}</h3><span class="sub">{esc(t.get('sub',''))}</span></div>
 <div class="history"><div class="cap">받치고 있는 글 · {len(entries)}편</div>{rows(entries)}</div></section>""")
-    out.append(secbox('이론가', len(order), ''.join(body)))
+    out.append(secbox('이론가', len(order), ''.join(body), key='thinkers'))
 
     # 개념
     corder = sorted(by_concept.items(), key=lambda kv: (-len(kv[1]), kv[0]))
@@ -822,7 +844,7 @@ def build_materials(D, nven, narc):
         body.append(f"""<section class="venue-block" id="c-{esc(cid)}">
 <div class="venue-head"><h3>{esc(cid)}</h3><span class="sub">{len(entries)}편</span></div>
 <div class="history">{rows(entries)}</div></section>""")
-    out.append(secbox('개념', len(corder), ''.join(body)))
+    out.append(secbox('개념', len(corder), ''.join(body), key='concepts'))
 
     # 읽기. 아직 어디에도 안 쓴 묶음도 함께 보인다
     body = []
@@ -836,7 +858,7 @@ def build_materials(D, nven, narc):
         body.append(f"""<section class="venue-block" id="r-{esc(rid)}">
 <div class="venue-head"><h3>{name}</h3><span class="sub">{esc(r.get('sub',''))}</span></div>
 {inner}</section>""")
-    out.append(secbox('읽기', len(readings), ''.join(body)))
+    out.append(secbox('읽기', len(readings), ''.join(body), key='readings'))
 
     if D.get('reuse'):
         rs = ''.join(
@@ -848,7 +870,7 @@ def build_materials(D, nven, narc):
                if r.get('url') else '')
             + '</div>'
             for r in D['reuse'])
-        out.append(fold('다시 쓸 것', len(D['reuse']),
+        out.append(fold('다시 쓸 것', len(D['reuse']), anchor='reuse', body=
                         '<p class="lede">한 번 쓴 글의 어느 대목이 다음 어디로 가는가. '
                         '지원서를 열 때 여기부터 본다.</p>'
                         + f'<div class="reuses">{rs}</div>'))
@@ -861,7 +883,7 @@ def build_materials(D, nven, narc):
                f'<span class="last">{esc(pp.get("마지막", ""))}</span>')
             + f'<p class="n">{esc(pp.get("메모", ""))}</p></div>'
             for pp in D['people'])
-        out.append(fold('사람', len(D['people']),
+        out.append(fold('사람', len(D['people']), anchor='people', body=
                         '<p class="lede">누구에게 무엇을 언제 부탁했나. '
                         '같은 사람에게 자주 갈 수는 없다.</p>'
                         + f'<div class="whos">{ps}</div>'))
