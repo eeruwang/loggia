@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# publish.sh — 네 장과 데이터를 한꺼번에 잠가 올린다
+# publish.sh — 다섯 장과 데이터를 한꺼번에 잠가 올린다
 #
 #   bash publish.sh <site 폴더> <암호> <토큰> [<커밋 말>] [<데이터 파일>]
 #
@@ -71,23 +71,28 @@ if [ -f "$WORK/repo/.stamp" ] && [ "$(cat "$WORK/repo/.stamp")" = "$STAMP" ]; th
 fi
 echo "$STAMP" > "$WORK/repo/.stamp"
 
-for f in index calendar journals materials archive; do
-  if [ -f "$SITE/$f.html" ]; then
-    node "$HERE/lock.js" "$SITE/$f.html" "$WORK/repo/$f.html" "$PASS" "$SALT"
-  fi
-done
-
 # ── 클라우드플레어가 내주는 자리 ────────────────────────────────────────────
 # 워커의 assets 는 public/ 하나만 본다. 저장소 뿌리를 통째로 내주면 도구와
 # 데이터까지 딸려 나가므로, 내줄 것만 여기 모은다.
-#
-# 뿌리의 .html 은 아직 지우지 않는다. 깃허브 페이지가 그것을 보고 있다.
-# 클라우드플레어 쪽이 확인되면 위 고리에서 뿌리로 잠그는 줄을 지우면 된다.
 mkdir -p "$WORK/repo/public"
 for f in index calendar journals materials archive; do
-  [ -f "$WORK/repo/$f.html" ] && cp "$WORK/repo/$f.html" "$WORK/repo/public/$f.html"
+  if [ -f "$SITE/$f.html" ]; then
+    node "$HERE/lock.js" "$SITE/$f.html" "$WORK/repo/public/$f.html" "$PASS" "$SALT"
+  fi
 done
-[ -d "$WORK/repo/font" ] && { rm -rf "$WORK/repo/public/font"; cp -r "$WORK/repo/font" "$WORK/repo/public/font"; }
+
+# 글꼴은 public/ 이 제자리다. 옛 자리에 남아 있으면 옮긴다.
+if [ -d "$WORK/repo/font" ] && [ ! -d "$WORK/repo/public/font" ]; then
+  cp -r "$WORK/repo/font" "$WORK/repo/public/font"
+fi
+
+# 깃허브 페이지 시절의 자취를 치운다. 2026년 8월 1일에 클라우드플레어로 옮겼다.
+# 두 자리에 같은 판이 있으면 언젠가 한쪽이 낡는다. 그것이 이 판을 한 번 갈라놓았다.
+rm -rf "$WORK/repo/font"
+rm -f "$WORK/repo/CNAME" "$WORK/repo/.nojekyll"
+for f in index calendar journals materials archive; do
+  rm -f "$WORK/repo/$f.html"
+done
 
 # 글꼴은 한 번 받으면 바뀌지 않는다. 판은 갱신될 때마다 달라진다.
 # 이 파일은 내주지 않고 규칙으로만 읽힌다.
@@ -141,6 +146,6 @@ git config user.name "Il Sun Moon"
 git add -A
 git commit -q -m "$MSG"
 git push -q origin HEAD 2>&1 | sed "s/${TOKEN}/<token>/g" || true
-echo "올렸습니다  →  https://loggia.moonilsun.com/  (옮기는 동안 https://eeruwang.github.io/loggia/ 도 삽니다)"
+echo "올렸습니다  →  https://loggia.moonilsun.com/"
 
 rm -rf "$WORK"
