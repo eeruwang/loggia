@@ -30,8 +30,13 @@ MX, SPF, DKIM, DMARC 넉 줄이 자동으로 들어간다.
 
 ### 2. 받을 주소를 확인한다
 
-**Email Service → Destination addresses** 에 `eeruwang@gmail.com` 을 넣고
+**Email Service → Destination addresses** 에 `moon@ilsunmoon.com` 을 넣고
 메일로 온 확인 단추를 누른다.
+
+> 보내는 곳과 받는 곳이 같은 주소다. 편지함에서 보기에는 깔끔하나, 도메인의
+> MX 가 클라우드플레어 이메일 라우팅을 거치면 나갔다가 다시 들어오는 길이 된다.
+> 스팸 판정이 걸리거나 되돌이가 생기면 `MAIL_FROM` 만 `loggia@ilsunmoon.com`
+> 같은 다른 주소로 바꾸면 된다. 한 줄이다.
 
 확인된 주소로 보내는 편지는 **어느 요금제에서나 값이 없고 하루 한도에도 들지 않는다.**
 아침 편지가 공짜인 이유가 이것이다.
