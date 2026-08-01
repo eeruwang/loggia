@@ -302,6 +302,40 @@ font-size:16.5px;line-height:1.62}
 /* 글줄 안에 박히는 알약은 글자 가운데에 맞춘다 */
 .dec .what .on{vertical-align:middle}
 
+/* 지난 서른 날에 한 일. 판을 열면 먼저 눈에 든다 */
+.tally{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin:22px 0 0;
+font-size:14px;color:var(--ink-2)}
+.tally:empty{display:none}
+.tally .cap{font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--ink-3);margin-right:6px}
+.tally b{font-weight:800;color:var(--ink)}
+.tally .dot{color:var(--rule-2);margin:0 2px}
+
+/* 마지막으로 손댄 날 */
+.touch{font-size:12.5px;font-weight:600;color:var(--ink-3)}
+.touch[data-cold]{color:var(--soon);font-weight:700}
+.touch[data-stalled]{color:var(--now);font-weight:800}
+.touch.none{font-style:normal;opacity:.7}
+
+/* 다음 걸음. 첫 걸음은 크게, 나머지는 차례로 */
+.step{display:flex;align-items:baseline;gap:11px;margin:14px 0 0}
+.step .todo{margin:0;cursor:pointer}
+.rest{list-style:none;margin:10px 0 0;padding:0}
+.rest li{display:flex;align-items:baseline;gap:11px;padding:5px 0;font-size:15px;color:var(--ink-2)}
+.rest li label{cursor:pointer}
+input[data-done]{appearance:none;flex:none;width:1.05em;height:1.05em;margin:0;
+border:2px solid var(--rule-2);border-radius:5px;background:var(--surface);cursor:pointer;
+align-self:baseline;transform:translateY(0.12em)}
+.step.first input[data-done]{width:1.15em;height:1.15em;border-color:var(--tone,var(--ink-3))}
+input[data-done]:hover{border-color:var(--ink-3)}
+input[data-done]:checked{background:var(--tone,var(--ink-3));border-color:var(--tone,var(--ink-3))}
+input[data-done]:checked::after{content:'';display:block;width:100%;height:100%;
+background:var(--surface);clip-path:polygon(16% 52%,38% 74%,84% 26%,92% 36%,38% 90%,8% 60%)}
+[data-done="1"] .todo,[data-done="1"] label{text-decoration:line-through;color:var(--ink-3);
+text-decoration-thickness:2px}
+[data-done="1"] .todo::before{opacity:.35}
+.cost{font-size:12px;font-weight:800;color:var(--ink-2);background:var(--sunk);
+padding:3px 10px;border-radius:99px;white-space:nowrap;align-self:center;margin-left:auto}
+
 /* 바로 가는 길. 장이 길 때 맨 위에 둔다 */
 .jump{display:flex;flex-wrap:wrap;gap:7px;margin:18px 0 0}
 .jump a{font-size:13.5px;font-weight:700;color:var(--ink-2);text-decoration:none;
@@ -488,20 +522,54 @@ def when_col(item):
     return '<div class="when-col"><span class="dday none">—</span></div>'
 
 
+def steps_of(item):
+    """다음 걸음들. 한 줄만 적어도 되고 차례로 여럿을 적어도 된다."""
+    st = item.get('steps')
+    if st:
+        return list(st)
+    return [item['next']] if item.get('next') else []
+
+
+def steps_html(item, D):
+    """첫 걸음은 크게, 나머지는 작게 차례로.
+
+    네모를 누르면 줄이 그어진다. 그 표시는 이 기기에만 남는다.
+    데이터를 건드리지 않으므로 갱신하면 사라진다. 오늘의 매듭일 뿐이다.
+    """
+    ss = steps_of(item)
+    if not ss:
+        return '<p class="todo none">지금 할 일 없음</p>'
+    eff = D.get('efforts', {}).get(item.get('품'))
+    cost = f'<span class="cost">{esc(eff["label"])}</span>' if eff else ''
+    k = esc(item['id'])
+    out = [f'<div class="step first"><input type="checkbox" id="s-{k}-0" data-done="{k}.0">'
+           f'<label for="s-{k}-0" class="todo">{esc(ss[0])}</label>{cost}</div>']
+    if len(ss) > 1:
+        rest = ''.join(
+            f'<li><input type="checkbox" id="s-{k}-{i}" data-done="{k}.{i}">'
+            f'<label for="s-{k}-{i}">{esc(x)}</label></li>'
+            for i, x in enumerate(ss[1:], 1))
+        out.append(f'<ol class="rest">{rest}</ol>')
+    return ''.join(out)
+
+
 def entry_html(item, D, venue_index):
     st = D['statuses'].get(item.get('status'), {'label': item.get('status', ''), 'tone': 'live'})
     v = venue_index.get(item.get('venue'))
     venue = f'<a class="venue" href="journals.html#{esc(item["venue"])}">{esc(v["name"])}</a>' if v else ''
-    nxt = item.get('next')
-    todo = (f'<p class="todo">{esc(nxt)}</p>' if nxt
-            else '<p class="todo none">지금 할 일 없음</p>')
     note = f'<p class="note">{esc(item["note"])}</p>' if item.get('note') else ''
+    # 마지막으로 손댄 날. 오래 멎어 있으면 눈에 띄게 한다.
+    # 마감만 보면 마감 없는 갈래가 조용히 가라앉는다.
+    t = item.get('dates', {}).get('touched')
+    touch = (f'<span class="touch" data-touched="{esc(t)}"></span>' if t
+             else '<span class="touch none">손댄 날 모름</span>')
+    tags = ' '.join(x for x in (item.get('status', ''), item.get('품', '')) if x)
     # 결마다 빛깔을 준다. 왼쪽 띠 하나로 무슨 종류인지 눈이 먼저 안다
-    return f"""<article class="entry t-{esc(st.get('tone', 'live'))}" data-tags="{esc(item.get('status',''))}">{when_col(item)}
+    return f"""<article class="entry t-{esc(st.get('tone', 'live'))}" data-tags="{esc(tags)}">{when_col(item)}
 <div class="body"><div class="title-line"><h3 class="t">{esc(item['title'])}</h3>
 <span class="state">{esc(st['label'])}</span></div>
-<div class="meta">{venue}<span class="k">{esc(item.get('kind',''))}</span></div>
-{todo}{note}{links_html(item)}</div></article>"""
+<div class="meta">{venue}<span class="k">{esc(item.get('kind',''))}</span>{touch}</div>
+{steps_html(item, D)}{note}{links_html(item)}</div></article>"""
 
 
 def pick_focus(D):
@@ -509,7 +577,7 @@ def pick_focus(D):
     for s in D['sections']:
         for it in s['items']:
             dl = it.get('dates', {}).get('deadline')
-            if dl and it.get('next') and (best is None or dl < best['dates']['deadline']):
+            if dl and steps_of(it) and (best is None or dl < best['dates']['deadline']):
                 best = it
     return best
 
@@ -519,6 +587,21 @@ def build_index(D, venue_index, nven, narc):
     out = [HEAD.format(title=esc(D['meta']['title']), css=CSS,
                        updated=D['meta']['updated'].replace('-', '.'),
                        h0=' here', hc='', h1='', h2='', h3='', nven=nven, narc=narc)]
+    # 지난 서른 날. 한 일이 눈에 보여야 한다.
+    # 학계와 ADHD가 겹치면 자기가 한 일을 늘 실제보다 적게 본다.
+    done = []
+    for it, arc in all_items(D):
+        d = it.get('dates', {})
+        if d.get('sent'):
+            done.append({'d': d['sent'], 'k': '냈다', 't': it['title']})
+        if d.get('decided'):
+            done.append({'d': d['decided'], 'k': '끝났다', 't': it['title']})
+        if d.get('touched'):
+            done.append({'d': d['touched'], 'k': '손댔다', 't': it['title']})
+    done = [x for x in done if len(x['d']) == 10]
+    out.append('<div class="tally" id="tally"></div>'
+               '<script>const DONE = ' + json.dumps(done, ensure_ascii=False) + ';</script>')
+
     f = pick_focus(D)
     if f:
         v = venue_index.get(f.get('venue'))
@@ -526,7 +609,7 @@ def build_index(D, venue_index, nven, narc):
         out.append(f"""<section class="focus"><div class="cap">지금 이것부터</div>
 <div class="line"><span class="dday" data-deadline="{iso}">D-</span>
 <span class="who">{esc(f['title'])}{' · ' + esc(v['name']) if v else ''}</span></div>
-<p class="todo">{esc(f['next'])}</p>
+<p class="todo">{esc(steps_of(f)[0])}</p>
 <div class="when">마감 {iso[5:7].lstrip('0')}월 {iso[8:].lstrip('0')}일</div></section>""")
     # 답을 기다리는 것은 달력의 응답 시계가 맡는다. 여기서 또 보이면 두 번 읽게 된다
     shown = [x for x in D['sections'] if x['id'] != 'waiting']
@@ -538,9 +621,17 @@ def build_index(D, venue_index, nven, narc):
             seen[it.get('status')] = seen.get(it.get('status'), 0) + 1
     order = [k for k in D['statuses'] if k in seen]
     total = sum(seen.values())
+    # 품. 지금 이십 분밖에 없을 때 무엇을 할 수 있는지 고르는 자리
+    pum = {}
+    for x in shown:
+        for it in x['items']:
+            if it.get('품'):
+                pum[it['품']] = pum.get(it['품'], 0) + 1
+    porder = [k for k in D.get('efforts', {}) if k in pum]
     out.append(filters_html([('*', '전체', total)]
-                            + [(k, D['statuses'][k]['label'], seen[k]) for k in order],
-                            '상태로 골라 보기'))
+                            + [(k, D['statuses'][k]['label'], seen[k]) for k in order]
+                            + [(k, D['efforts'][k]['label'], pum[k]) for k in porder],
+                            '상태와 품으로 골라 보기'))
 
     for x in shown:
         body = ''.join(entry_html(it, D, venue_index) for it in
@@ -557,6 +648,7 @@ def build_index(D, venue_index, nven, narc):
             + f'</p><p class="why">{esc(d.get("why", ""))}</p></div></div>'
             for d in sorted(D['decisions'], key=lambda x: x['date'], reverse=True))
         out.append(fold('정한 것', len(D['decisions']), f'<div class="decs">{ds}</div>'))
+    out.append(BOARD_JS)
     out.append(FILTER_JS)
     out.append(SEC_JS)
     c = D.get('compass')
@@ -666,6 +758,50 @@ def fold(title, count, body, anchor=None):
     a = f' id="{esc(anchor)}"' if anchor else ''
     return (f'<details class="fold"{a}><summary><h2>{esc(title)}</h2>{n}'
             f'<span class="arrow">\u25b8</span></summary>{body}</details>')
+
+
+BOARD_JS = """<script>
+(function () {
+  var today = new Date(); today.setHours(0,0,0,0);
+  function days(iso) {
+    var p = iso.split('-');
+    return Math.round((today - new Date(+p[0], +p[1]-1, +p[2])) / 86400000);
+  }
+
+  // 마지막으로 손댄 날. 오래 멎어 있으면 눈에 띄게 한다
+  document.querySelectorAll('.touch[data-touched]').forEach(function (el) {
+    var n = days(el.dataset.touched);
+    if (n <= 7) { el.textContent = n <= 0 ? '오늘 손댐' : n + '일 전에 손댐'; }
+    else if (n <= 20) { el.textContent = n + '일째 안 움직임'; el.dataset.cold = '1'; }
+    else { el.textContent = n + '일째 멎어 있음'; el.dataset.stalled = '1'; }
+  });
+
+  // 지난 서른 날에 한 일
+  var box = document.getElementById('tally');
+  if (box && typeof DONE !== 'undefined') {
+    var n = { '냈다': 0, '끝났다': 0, '손댔다': 0 };
+    DONE.forEach(function (x) { if (days(x.d) <= 30 && days(x.d) >= 0) n[x.k]++; });
+    var bits = [];
+    if (n['냈다']) bits.push('낸 것 <b>' + n['냈다'] + '</b>');
+    if (n['끝났다']) bits.push('끝난 것 <b>' + n['끝났다'] + '</b>');
+    if (n['손댔다']) bits.push('손댄 갈래 <b>' + n['손댔다'] + '</b>');
+    box.innerHTML = bits.length
+      ? '<span class="cap">지난 서른 날</span>' + bits.join('<span class="dot">·</span>')
+      : '';
+  }
+
+  // 해치운 표시. 이 기기에만 남는다. 데이터를 건드리지 않는다
+  document.querySelectorAll('input[data-done]').forEach(function (b) {
+    var key = 'loggia.done.' + b.dataset.done;
+    try { b.checked = localStorage.getItem(key) === '1'; } catch (e) {}
+    b.closest('.step, li').dataset.done = b.checked ? '1' : '';
+    b.addEventListener('change', function () {
+      try { localStorage.setItem(key, b.checked ? '1' : '0'); } catch (e) {}
+      b.closest('.step, li').dataset.done = b.checked ? '1' : '';
+    });
+  });
+})();
+</script>"""
 
 
 def secbox(title, count, body, key=None, open_=True):
