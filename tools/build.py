@@ -180,6 +180,17 @@ border-radius:14px}
 
 /* 마디의 머리 */
 .sec{display:flex;align-items:baseline;gap:12px;margin:52px 0 16px;padding-bottom:0;border:0}
+/* 마디 머리를 누르면 접힌다. 지금 안 보고 싶은 것을 치워 둘 수 있다.
+   접고 편 상태는 이 기기에 남는다. */
+details.group>summary.sec{cursor:pointer;list-style:none;padding:6px 0;border-radius:8px}
+details.group>summary.sec::-webkit-details-marker{display:none}
+details.group>summary.sec:hover h2{color:var(--ink-2)}
+details.group>summary.sec .arrow{font-size:12px;color:var(--ink-3);transition:transform .14s;
+margin-left:10px;align-self:center}
+details.group[open]>summary.sec .arrow{transform:rotate(90deg)}
+details.group>summary.sec .c{margin-left:auto}
+details.group:not([open]){margin-bottom:10px}
+details.group:not([open])>summary.sec{margin-bottom:0}
 .sec h2{font-size:22px;font-weight:800;letter-spacing:-.015em;margin:0}
 .sec .c{margin-left:auto;font-size:13px;font-weight:700;color:var(--ink-3);
 background:var(--sunk);padding:3px 11px;border-radius:99px}
@@ -278,6 +289,18 @@ padding:3px 9px;border-radius:99px;white-space:nowrap}
 background:var(--sunk);padding:12px 14px;border-radius:9px}
 .gist .who{display:block;margin-top:6px;font-size:12.5px;color:var(--ink-3);font-weight:600}
 .lede{font-size:15.5px;color:var(--ink-2);margin:0 0 6px}
+
+/* 알약은 기준선이 아니라 가운데를 맞춘다.
+   기준선에 맞추면 알약의 상자가 제 글자의 밑선에 걸려 아래로 내려앉는다.
+   곁의 글자보다 작은 글씨일수록 그 어긋남이 눈에 띈다. */
+.title-line .state, .mark, .who-row .role, .rep .guess,
+.venue-head .mark, .clock .v{align-self:center}
+/* 이름 아래 출처가 한 줄 더 붙는 자리다. 알약은 두 줄의 가운데가 아니라
+   첫 줄에 맞아야 한다. 그래서 첫 줄만 한 높이의 상자를 만들고 그 안에서 가운데를 잡는다. */
+.reuse .to{align-self:flex-start;align-items:center;min-height:26.7px;min-height:1lh;
+font-size:16.5px;line-height:1.62}
+/* 글줄 안에 박히는 알약은 글자 가운데에 맞춘다 */
+.dec .what .on{vertical-align:middle}
 
 /* 거르개. 마디 위에 한 줄 */
 .filters{display:flex;flex-wrap:wrap;gap:7px;margin:24px 0 8px}
@@ -513,11 +536,9 @@ def build_index(D, venue_index, nven, narc):
                             '상태로 골라 보기'))
 
     for x in shown:
-        out.append(f'<section class="group"><div class="sec"><h2>{esc(x["label"])}</h2>'
-                   f'<span class="c">{len(x["items"])}</span></div>')
-        for it in sorted(x['items'], key=lambda i: i.get('dates', {}).get('deadline') or '9999'):
-            out.append(entry_html(it, D, venue_index))
-        out.append('</section>')
+        body = ''.join(entry_html(it, D, venue_index) for it in
+                       sorted(x['items'], key=lambda i: i.get('dates', {}).get('deadline') or '9999'))
+        out.append(secbox(x['label'], len(x['items']), body, key=x['id']))
     if D.get('decisions'):
         by = {}
         for it, _ in all_items(D):
@@ -530,6 +551,7 @@ def build_index(D, venue_index, nven, narc):
             for d in sorted(D['decisions'], key=lambda x: x['date'], reverse=True))
         out.append(fold('정한 것', len(D['decisions']), f'<div class="decs">{ds}</div>'))
     out.append(FILTER_JS)
+    out.append(SEC_JS)
     c = D.get('compass')
     if c:
         lines = ''.join(f'<p>{esc(l)}</p>' for l in c['lines'])
@@ -557,8 +579,7 @@ def build_journals(D, venue_index, items_by_venue, nven, narc):
                             '색인과 마감으로 골라 보기'))
 
     for g in D['venueGroups']:
-        out.append(f'<section class="group"><div class="sec"><h2>{esc(g["name"])}</h2>'
-                   f'<span class="c">{len(g["venues"])}</span></div>')
+        body = []
         for v in g['venues']:
             name = (f'<a href="{esc(v["url"])}" target="_blank" rel="noopener">{esc(v["name"])}</a>'
                     if v.get('url') else esc(v['name']))
@@ -599,22 +620,22 @@ def build_journals(D, venue_index, items_by_venue, nven, narc):
                 hist = (f'<div class="history"><div class="cap">이 곳에 낸 것 · {len(rows)}건</div>'
                         + ''.join(rs) + '</div>')
             tagset = [t for _, t in index_tags(v, D)] + (['마감'] if v.get('deadline') else [])
-            out.append(f"""<section class="venue-block" id="{esc(v['id'])}" data-tags="{esc(' '.join(tagset))}">
+            body.append(f"""<section class="venue-block" id="{esc(v['id'])}" data-tags="{esc(' '.join(tagset))}">
 <div class="venue-head"><h3>{name}</h3><span class="sub">{esc(v.get('sub',''))} · {esc(v.get('type',''))}</span></div>
 {f'<div class="idx-row">{tags}</div>' if tags else ''}
 {f'<div class="venue-facts">{"".join(facts)}</div>' if facts else ''}
 {f'<p class="note">{esc(v["note"])}</p>' if v.get('note') else ''}
 {hist}</section>""")
-        out.append('</section>')
+        out.append(secbox(g['name'], len(g['venues']), ''.join(body)))
     out.append(FILTER_JS)
+    out.append(SEC_JS)
     if D.get('watch'):
-        out.append('<div class="sec"><h2>길목</h2><span class="c">%d</span></div>' % len(D['watch']))
         ws = ''.join(f'<a class="link web" href="{esc(w["url"])}" target="_blank" rel="noopener">{esc(w["name"])}</a>'
                      for w in D['watch'])
-        out.append(f'<div class="watch">{ws}</div>')
+        out.append(secbox('길목', len(D['watch']), f'<div class="watch">{ws}</div>'))
     if D.get('memo'):
-        out.append('<div class="sec"><h2>새겨 둘 것</h2></div><div class="memo">'
-                   + ''.join(f'<p>{esc(m)}</p>' for m in D['memo']) + '</div>')
+        out.append(secbox('새겨 둘 것', len(D['memo']),
+                       '<div class="memo">' + ''.join(f'<p>{esc(m)}</p>' for m in D['memo']) + '</div>'))
     out.append(FOOT.replace('{updated}', D['meta']['updated'].replace('-', '.')))
     return ''.join(out)
 
@@ -637,6 +658,35 @@ def fold(title, count, body):
     n = f'<span class="c">{count}</span>' if count else ''
     return (f'<details class="fold"><summary><h2>{esc(title)}</h2>{n}'
             f'<span class="arrow">\u25b8</span></summary>{body}</details>')
+
+
+def secbox(title, count, body, key=None, open_=True):
+    """마디 하나. 머리를 누르면 접힌다.
+
+    펼침과 접힘은 이 기기에 남는다. 지금 안 보고 싶은 마디를 접어 두면
+    다음에 열 때도 접혀 있다.
+    """
+    n = f'<span class="c">{count}</span>' if count is not None else ''
+    k = f' data-k="{esc(key or title)}"' if key or title else ''
+    return (f'<details class="group"{k}{" open" if open_ else ""}>'
+            f'<summary class="sec"><h2>{esc(title)}</h2>{n}'
+            f'<span class="arrow">\u25b8</span></summary>{body}</details>')
+
+
+SEC_JS = """<script>
+// 마디의 펼침과 접힘을 이 기기에 남긴다.
+(function () {
+  var page = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('details.group[data-k]').forEach(function (d) {
+    var key = 'loggia.sec.' + page + '.' + d.dataset.k;
+    try { var v = localStorage.getItem(key); if (v !== null) d.open = v === '1'; } catch (e) {}
+    d.addEventListener('toggle', function () {
+      if (d.dataset.auto) return;   // 거르개가 연 것은 기억하지 않는다
+      try { localStorage.setItem(key, d.open ? '1' : '0'); } catch (e) {}
+    });
+  });
+})();
+</script>"""
 
 
 def filters_html(buttons, label='골라 보기'):
@@ -680,6 +730,13 @@ FILTER_JS = """<script>
         if (on) seen++;
       });
       g.hidden = seen === 0;
+      // 거른 것이 접힌 마디 안에 있으면 안 보인다. 열어 준다.
+      // 다만 이 열기는 기억하지 않는다. 손으로 접어 둔 뜻을 지우면 안 된다.
+      if (k !== '*' && seen && g.tagName === 'DETAILS' && !g.open) {
+        g.dataset.auto = '1'; g.open = true;
+      } else if (k === '*' && g.dataset.auto) {
+        g.dataset.auto = ''; g.open = false;
+      }
       var c = g.querySelector('.c');
       if (c) c.textContent = k === '*' ? c.dataset.all : seen;
     });
@@ -749,35 +806,37 @@ def build_materials(D, nven, narc):
 
     # 이론가. 많이 받치는 순서
     order = sorted(by_thinker.items(), key=lambda kv: (-len(kv[1]), kv[0]))
-    out.append(f'<div class="sec"><h2>이론가</h2><span class="c">{len(order)}</span></div>')
+    body = []
     for tid, entries in order:
         t = thinkers.get(tid, {'name': tid})
-        out.append(f"""<section class="venue-block" id="t-{esc(tid)}">
+        body.append(f"""<section class="venue-block" id="t-{esc(tid)}">
 <div class="venue-head"><h3>{esc(t['name'])}</h3><span class="sub">{esc(t.get('sub',''))}</span></div>
 <div class="history"><div class="cap">받치고 있는 글 · {len(entries)}편</div>{rows(entries)}</div></section>""")
+    out.append(secbox('이론가', len(order), ''.join(body)))
 
     # 개념
     corder = sorted(by_concept.items(), key=lambda kv: (-len(kv[1]), kv[0]))
-    out.append(f'<div class="sec"><h2>개념</h2><span class="c">{len(corder)}</span></div>')
-    out.append('<div class="watch">' + ''.join(
-        f'<a class="link web" href="#c-{esc(c)}">{esc(c)} <b>{len(e)}</b></a>' for c, e in corder) + '</div>')
+    body = ['<div class="watch">' + ''.join(
+        f'<a class="link web" href="#c-{esc(c)}">{esc(c)} <b>{len(e)}</b></a>' for c, e in corder) + '</div>']
     for cid, entries in corder:
-        out.append(f"""<section class="venue-block" id="c-{esc(cid)}">
+        body.append(f"""<section class="venue-block" id="c-{esc(cid)}">
 <div class="venue-head"><h3>{esc(cid)}</h3><span class="sub">{len(entries)}편</span></div>
 <div class="history">{rows(entries)}</div></section>""")
+    out.append(secbox('개념', len(corder), ''.join(body)))
 
     # 읽기. 아직 어디에도 안 쓴 묶음도 함께 보인다
-    out.append(f'<div class="sec"><h2>읽기</h2><span class="c">{len(readings)}</span></div>')
+    body = []
     for rid, r in readings.items():
         entries = by_reading.get(rid, [])
         name = (f'<a href="{esc(r["url"])}" target="_blank" rel="noopener">{esc(r["name"])}</a>'
                 if r.get('url') else esc(r['name']))
-        body = (f'<div class="history"><div class="cap">여기서 흘러간 곳 · {len(entries)}편</div>{rows(entries)}</div>'
-                if entries else
-                '<p class="note">아직 어느 글에도 닿지 않았다. 덜 캔 광맥이거나, 다음 글의 씨앗이다.</p>')
-        out.append(f"""<section class="venue-block" id="r-{esc(rid)}">
+        inner = (f'<div class="history"><div class="cap">여기서 흘러간 곳 · {len(entries)}편</div>{rows(entries)}</div>'
+                 if entries else
+                 '<p class="note">아직 어느 글에도 닿지 않았다. 덜 캔 광맥이거나, 다음 글의 씨앗이다.</p>')
+        body.append(f"""<section class="venue-block" id="r-{esc(rid)}">
 <div class="venue-head"><h3>{name}</h3><span class="sub">{esc(r.get('sub',''))}</span></div>
-{body}</section>""")
+{inner}</section>""")
+    out.append(secbox('읽기', len(readings), ''.join(body)))
 
     if D.get('reuse'):
         rs = ''.join(
@@ -806,6 +865,7 @@ def build_materials(D, nven, narc):
                         '<p class="lede">누구에게 무엇을 언제 부탁했나. '
                         '같은 사람에게 자주 갈 수는 없다.</p>'
                         + f'<div class="whos">{ps}</div>'))
+    out.append(SEC_JS)
     out.append(FOOT.replace('{updated}', D['meta']['updated'].replace('-', '.')))
     return ''.join(out)
 
@@ -821,7 +881,7 @@ def build_archive(D, venue_index, nven, narc):
         y = (dd.get('decided') or dd.get('sent') or '')[:4] or '해 모름'
         years.setdefault(y, []).append(it)
     for y in sorted(years, reverse=True):
-        out.append(f'<div class="sec"><h2>{y}</h2><span class="c">{len(years[y])}</span></div>')
+        body = []
         for it in years[y]:
             st = D['statuses'].get(it.get('status'), {'label': it.get('status', ''), 'tone': 'done'})
             cls = {'live': 'live', 'stop': 'stop'}.get(st['tone'], '')
@@ -834,13 +894,15 @@ def build_archive(D, venue_index, nven, narc):
             rv = it.get('review')
             gist = (f'<p class="gist">{esc(rv["gist"])}<span class="who">{esc(rv.get("who",""))}</span></p>'
                     if rv else '')
-            out.append(f"""<section class="venue-block t-{esc(st.get('tone', 'done'))}">
+            body.append(f"""<section class="venue-block t-{esc(st.get('tone', 'done'))}">
 <div class="venue-head"><h3>{esc(it['title'])}</h3><span class="sub">{esc(it.get('kind',''))}</span>
 <span class="mark {cls}">{esc(st['label'])}</span></div>
 {f'<div class="venue-facts">{"".join(facts)}</div>' if facts else ''}
 {gist}
 {f'<p class="note">{esc(it["note"])}</p>' if it.get('note') else ''}
 {links_html(it)}</section>""")
+        out.append(secbox(str(y), len(years[y]), ''.join(body)))
+    out.append(SEC_JS)
     out.append(FOOT.replace('{updated}', D['meta']['updated'].replace('-', '.')))
     return ''.join(out)
 
@@ -886,8 +948,7 @@ def waiting_clock(D, venue_index):
                 f'<div class="clock-body">{body}</div></details>')
     if not rows:
         return ''
-    return ('<div class="sec"><h2>답을 기다리는 중</h2><span class="c">%d</span></div>' % len(rows)
-            + '<div class="clocks">' + ''.join(rows) + '</div>')
+    return secbox('답을 기다리는 중', len(rows), '<div class="clocks">' + ''.join(rows) + '</div>')
 
 
 def build_calendar(D, venue_index, nven, narc):
@@ -952,11 +1013,10 @@ def build_calendar(D, venue_index, nven, narc):
             + (f'<span class="n">{esc(r["note"])}</span>' if r.get('note') else '')
             + '</div>' for r in D['repeats'])
         out.append(fold('해마다 돌아오는 것', len(D['repeats']), f'<div class="reps">{rl}</div>'))
-    out.append("""<div class="sec"><h2>한 해</h2><span class="c">오늘 앞뒤 여섯 달</span></div>
-<div class="cal-legend"><span><b>굵은 날</b> 무엇인가 있는 날</span>
+    out.append(secbox('한 해', None, """<div class="cal-legend"><span><b>굵은 날</b> 무엇인가 있는 날</span>
 <span><b>붉은 밑줄</b> 이레 안 마감</span><span><b>주황 밑줄</b> 한 달 안 마감</span>
 <span><b>네모</b> 오늘</span></div>
-<div class="cal-grid" id="cal"></div>""")
+<div class="cal-grid" id="cal"></div>"""))
     out.append('<script>const EV = ' + json.dumps(uniq, ensure_ascii=False)
                + '; const REP = ' + json.dumps(reps, ensure_ascii=False) + ';</script>')
     out.append("""<script>
@@ -1035,6 +1095,7 @@ def build_calendar(D, venue_index, nven, narc):
   }
 })();
 </script>""")
+    out.append(SEC_JS)
     out.append(FOOT.replace('{updated}', D['meta']['updated'].replace('-', '.')))
     return ''.join(out)
 
