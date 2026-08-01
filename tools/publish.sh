@@ -141,6 +141,6 @@ git config user.name "Il Sun Moon"
 git add -A
 git commit -q -m "$MSG"
 git push -q origin HEAD 2>&1 | sed "s/${TOKEN}/<token>/g" || true
-echo "올렸습니다  →  https://eeruwang.github.io/loggia/"
+echo "올렸습니다  →  https://loggia.moonilsun.com/  (옮기는 동안 https://eeruwang.github.io/loggia/ 도 삽니다)"
 
 rm -rf "$WORK"

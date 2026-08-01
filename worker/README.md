@@ -88,7 +88,7 @@ Workers → 해당 워커 → **설정 → 변수 및 암호**. 종류를 **암�
 ### 4. 주소를 붙인다
 
 Workers → 해당 워커 → **설정 → 도메인 및 경로 → 사용자 지정 도메인** 에
-`loggia.ilsunmoon.com`. DNS 는 클라우드플레어가 스스로 적는다. 증명서도
+`loggia.moonilsun.com`. DNS 는 클라우드플레어가 스스로 적는다. 증명서도
 알아서 나온다. 깃허브 페이지에 붙일 때 필요하던 회색 구름이니 Enforce HTTPS 니
 하는 걸음이 여기서는 없다.
 
@@ -99,7 +99,7 @@ Workers → 해당 워커 → **설정 → 도메인 및 경로 → 사용자 �
 크론을 기다리지 않고 한 통 보내려면
 
 ```
-https://loggia.ilsunmoon.com/send?k=<PREVIEW_TOKEN>
+https://loggia.moonilsun.com/send?k=<PREVIEW_TOKEN>
 ```
 
 이 주소는 판의 알맹이를 어떤 경우에도 돌려주지 않는다.

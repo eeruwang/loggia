@@ -1383,7 +1383,7 @@ def digest_json(D, venue_index):
 
     return {
         'built': D['meta']['updated'],
-        'site': 'https://eeruwang.github.io/loggia/',
+        'site': D['meta'].get('site') or 'https://loggia.moonilsun.com/',
         'due': sorted(due, key=lambda x: x['due']),
         'doing': doing,
         'wait': wait,
