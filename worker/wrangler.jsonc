@@ -21,7 +21,7 @@
   "vars": {
     "DIGEST_URL": "https://raw.githubusercontent.com/eeruwang/loggia/main/digest.enc",
     "MAIL_TO": "moon@ilsunmoon.com",
-    "MAIL_FROM": "moon@ilsunmoon.com"
+    "MAIL_FROM": "moon@mail.ilsunmoon.com"
   },
 
   "observability": {
