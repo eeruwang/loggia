@@ -59,16 +59,20 @@ Workers → 해당 워커 → **설정 → 빌드**.
 ### 2. 메일 길을 연다
 
 **Email Service → Onboard Domain** 에 올릴 것은 뿌리가 아니라
-**`mail.moonilsun.com`** 이다. MX, SPF, DKIM, DMARC 넉 줄이 그 아랫가지에만
-들어간다. 보내는 도메인의 뿌리 MX 는 손대지 않는다. 그래야 지금 받고 있는
-편지가 그대로 산다.
+**`loggia.moonilsun.com`** 이다. 판을 내주는 그 이름 그대로다.
+MX, SPF, DKIM, DMARC 넉 줄이 그 아랫가지에만 들어간다.
+뿌리 `moonilsun.com` 의 MX 는 손대지 않는다.
+
+한 이름이 두 일을 겸해도 부딪치지 않는다. 판을 내주는 것은 A 와 AAAA 레코드고
+편지를 세우는 것은 MX 와 TXT 다. 종류가 다르므로 나란히 산다.
+사용자 지정 도메인과 Onboard Domain 은 어느 쪽을 먼저 해도 된다.
 
 **Email Service → Destination addresses** 에 `moon@ilsunmoon.com` 을 넣고
 확인 메일의 단추를 누른다.
 
 | | |
 | --- | --- |
-| 보낸다 | `moon@mail.moonilsun.com` · 아랫가지. 클라우드플레어가 서명한다 |
+| 보낸다 | `info@loggia.moonilsun.com` · 아랫가지. 클라우드플레어가 서명한다 |
 | 받는다 | `moon@ilsunmoon.com` · 뿌리. 쓰시던 편지함 그대로 |
 
 확인된 주소로 보내는 편지는 **어느 요금제에서나 값이 없고 하루 한도에도 들지
