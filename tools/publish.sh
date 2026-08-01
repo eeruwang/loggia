@@ -38,7 +38,7 @@ git clone --depth 1 -q "https://x-access-token:${TOKEN}@github.com/${REPO}.git" 
 
 # 잠글 때마다 소금과 초기값이 새로 나므로 암호문은 늘 달라 보인다.
 # 그래서 알맹이의 지문을 따로 남긴다. 지문이 같으면 올릴 것이 없다.
-STAMP="$( { for f in index calendar journals archive; do
+STAMP="$( { for f in index calendar journals materials archive; do
              [ -f "$SITE/$f.html" ] && cat "$SITE/$f.html"
            done
            [ -f "$DATA" ] && cat "$DATA"
@@ -49,7 +49,7 @@ if [ -f "$WORK/repo/.stamp" ] && [ "$(cat "$WORK/repo/.stamp")" = "$STAMP" ]; th
 fi
 echo "$STAMP" > "$WORK/repo/.stamp"
 
-for f in index calendar journals archive; do
+for f in index calendar journals materials archive; do
   if [ -f "$SITE/$f.html" ]; then
     node "$HERE/lock.js" "$SITE/$f.html" "$WORK/repo/$f.html" "$PASS" "$SALT"
   fi

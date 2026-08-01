@@ -43,6 +43,7 @@ HEAD = """<!DOCTYPE html>
   <a class="tab{h0}" href="index.html">현황판</a>
   <a class="tab{hc}" href="calendar.html">달력</a>
   <a class="tab{h1}" href="journals.html">낼 곳 <span class="n">{nven}</span></a>
+  <a class="tab{h3}" href="materials.html">재료</a>
   <a class="tab{h2}" href="archive.html">지난 일 <span class="n">{narc}</span></a>
 </nav>
 """
@@ -314,7 +315,7 @@ def pick_focus(D):
 def build_index(D, venue_index, nven, narc):
     out = [HEAD.format(title=esc(D['meta']['title']), css=CSS,
                        updated=D['meta']['updated'].replace('-', '.'),
-                       h0=' here', hc='', h1='', h2='', nven=nven, narc=narc)]
+                       h0=' here', hc='', h1='', h2='', h3='', nven=nven, narc=narc)]
     f = pick_focus(D)
     if f:
         v = venue_index.get(f.get('venue'))
@@ -339,7 +340,7 @@ def build_index(D, venue_index, nven, narc):
 # ── 낼 곳 ───────────────────────────────────────────────────────────────────
 def build_journals(D, venue_index, items_by_venue, nven, narc):
     out = [HEAD.format(title='낼 곳', css=CSS, updated=D['meta']['updated'].replace('-', '.'),
-                       h0='', hc='', h1=' here', h2='', nven=nven, narc=narc)]
+                       h0='', hc='', h1=' here', h2='', h3='', nven=nven, narc=narc)]
     for g in D['venueGroups']:
         out.append(f'<div class="sec"><h2>{esc(g["name"])}</h2><span class="c">{len(g["venues"])}</span></div>')
         for v in g['venues']:
@@ -396,10 +397,91 @@ def build_journals(D, venue_index, items_by_venue, nven, narc):
     return ''.join(out)
 
 
+# ── 재료 ───────────────────────────────────────────────────────────────────
+def all_items(D):
+    """진행 중, 기다리는 중, 지난 일을 한 줄로 잇는다."""
+    for s in D['sections']:
+        for it in s['items']:
+            yield it, False
+    for it in D.get('archive', []):
+        yield it, True
+
+
+def build_materials(D, nven, narc):
+    """무엇으로 지었나. 이론가와 개념과 읽기에서 거꾸로 글을 찾는다.
+
+    항목에 적은 열쇠말을 뒤집어 모은다. 손으로 두 번 적지 않는다.
+    """
+    thinkers = D.get('thinkers', {})
+    readings = D.get('readings', {})
+
+    by_thinker, by_concept, by_reading = {}, {}, {}
+    for it, arc in all_items(D):
+        u = it.get('uses', {})
+        for t in u.get('이론가', []):
+            by_thinker.setdefault(t, []).append((it, arc))
+        for c in u.get('개념', []):
+            by_concept.setdefault(c, []).append((it, arc))
+        for r in u.get('읽기', []):
+            by_reading.setdefault(r, []).append((it, arc))
+
+    def rows(entries):
+        rs = []
+        for it, arc in entries:
+            st = D['statuses'].get(it.get('status'), {'label': it.get('status', ''), 'tone': 'live'})
+            cls = {'live': 'live', 'wait': '', 'stop': 'stop', 'done': ''}.get(st['tone'], '')
+            u = it.get('uses', {})
+            cons = ' · '.join(u.get('개념', []))
+            rs.append(f'<div class="hrow"><span class="mark {cls}">{esc(st["label"])}</span>'
+                      f'<span class="t">{esc(it["title"])}</span>'
+                      f'<span class="d">{esc(cons)}</span></div>')
+        return ''.join(rs)
+
+    out = [HEAD.format(title='재료', css=CSS, updated=D['meta']['updated'].replace('-', '.'),
+                       h0='', hc='', h1='', h2='', h3=' here', nven=nven, narc=narc)]
+    out.append('<p class="lede">무엇으로 지었나. 항목에 적어 둔 열쇠말을 뒤집어 모은 것이다. '
+               '읽기는 파일이 아니라 읽기 묶음을 가리킨다. 글은 드롭박스에 있다.</p>')
+
+    # 이론가. 많이 받치는 순서
+    order = sorted(by_thinker.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+    out.append(f'<div class="sec"><h2>이론가</h2><span class="c">{len(order)}</span></div>')
+    for tid, entries in order:
+        t = thinkers.get(tid, {'name': tid})
+        out.append(f"""<section class="venue-block" id="t-{esc(tid)}">
+<div class="venue-head"><h3>{esc(t['name'])}</h3><span class="sub">{esc(t.get('sub',''))}</span></div>
+<div class="history"><div class="cap">받치고 있는 글 · {len(entries)}편</div>{rows(entries)}</div></section>""")
+
+    # 개념
+    corder = sorted(by_concept.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+    out.append(f'<div class="sec"><h2>개념</h2><span class="c">{len(corder)}</span></div>')
+    out.append('<div class="watch">' + ''.join(
+        f'<a class="link web" href="#c-{esc(c)}">{esc(c)} <b>{len(e)}</b></a>' for c, e in corder) + '</div>')
+    for cid, entries in corder:
+        out.append(f"""<section class="venue-block" id="c-{esc(cid)}">
+<div class="venue-head"><h3>{esc(cid)}</h3><span class="sub">{len(entries)}편</span></div>
+<div class="history">{rows(entries)}</div></section>""")
+
+    # 읽기. 아직 어디에도 안 쓴 묶음도 함께 보인다
+    out.append(f'<div class="sec"><h2>읽기</h2><span class="c">{len(readings)}</span></div>')
+    for rid, r in readings.items():
+        entries = by_reading.get(rid, [])
+        name = (f'<a href="{esc(r["url"])}" target="_blank" rel="noopener">{esc(r["name"])}</a>'
+                if r.get('url') else esc(r['name']))
+        body = (f'<div class="history"><div class="cap">여기서 흘러간 곳 · {len(entries)}편</div>{rows(entries)}</div>'
+                if entries else
+                '<p class="note">아직 어느 글에도 닿지 않았다. 덜 캔 광맥이거나, 다음 글의 씨앗이다.</p>')
+        out.append(f"""<section class="venue-block" id="r-{esc(rid)}">
+<div class="venue-head"><h3>{name}</h3><span class="sub">{esc(r.get('sub',''))}</span></div>
+{body}</section>""")
+
+    out.append(FOOT.replace('{updated}', D['meta']['updated'].replace('-', '.')))
+    return ''.join(out)
+
+
 # ── 지난 일 ─────────────────────────────────────────────────────────────────
 def build_archive(D, venue_index, nven, narc):
     out = [HEAD.format(title='지난 일', css=CSS, updated=D['meta']['updated'].replace('-', '.'),
-                       h0='', hc='', h1='', h2=' here', nven=nven, narc=narc)]
+                       h0='', hc='', h1='', h2=' here', h3='', nven=nven, narc=narc)]
     years = {}
     for it in D.get('archive', []):
         y = (it.get('dates', {}).get('decided') or '0000')[:4]
@@ -465,7 +547,7 @@ def build_calendar(D, venue_index, nven, narc):
             key_seen.add(k); uniq.append(e)
 
     out = [HEAD.format(title='달력', css=CSS, updated=D['meta']['updated'].replace('-', '.'),
-                       h0='', hc=' here', h1='', h2='', nven=nven, narc=narc)]
+                       h0='', hc=' here', h1='', h2='', h3='', nven=nven, narc=narc)]
     out.append("""<div class="sec"><h2>한 해</h2><span class="c">오늘 앞뒤 여섯 달</span></div>
 <div class="cal-legend"><span><b>굵은 날</b> 무엇인가 있는 날</span>
 <span><b>붉은 밑줄</b> 이레 안 마감</span><span><b>주황 밑줄</b> 한 달 안 마감</span>
@@ -619,6 +701,7 @@ def main():
         'index.html': build_index(D, venue_index, nven, narc),
         'journals.html': build_journals(D, venue_index, items_by_venue, nven, narc),
         'calendar.html': build_calendar(D, venue_index, nven, narc),
+        'materials.html': build_materials(D, nven, narc),
         'archive.html': build_archive(D, venue_index, nven, narc),
     }
     for name, html_text in pages.items():
