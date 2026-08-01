@@ -820,7 +820,7 @@ BOARD_JS = """<script>
   document.querySelectorAll('.touch[data-touched]').forEach(function (el) {
     var n = days(el.dataset.touched);
     if (n <= 7) { el.textContent = n <= 0 ? '오늘 작업' : n + '일 전 작업'; }
-    else if (n <= 20) { el.textContent = n + '일째 안 함'; el.dataset.cold = '1'; }
+    else if (n <= 20) { el.textContent = n + '일 전 작업'; el.dataset.cold = '1'; }
     else { el.textContent = n + '일째 멈춤'; el.dataset.stalled = '1'; }
   });
 
@@ -1288,7 +1288,7 @@ def waiting_clock(D, venue_index):
                 f'<div class="clock-body">{body}</div></details>')
     if not rows:
         return ''
-    return secbox('답 기다리는 일', len(rows), '<div class="clocks">' + ''.join(rows) + '</div>')
+    return secbox('보낸 것', len(rows), '<div class="clocks">' + ''.join(rows) + '</div>')
 
 
 def build_calendar(D, venue_index, nven, narc):
