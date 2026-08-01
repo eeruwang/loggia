@@ -39,4 +39,4 @@ const body = Buffer.concat([c.update(fs.readFileSync(src)), c.final()]);
 const blob = Buffer.concat([body, c.getAuthTag()]);
 
 fs.writeFileSync(dst, `loggiaR1.${iv.toString('base64')}.${blob.toString('base64')}`);
-console.log(`  ${dst}  ${Math.round(blob.length / 1024)}KB  (원본 키로 봉함)`);
+console.log(`  ${dst}  ${Math.round(blob.length / 1024)}KB  (원본 키로 암호화)`);

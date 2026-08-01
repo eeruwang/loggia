@@ -31,4 +31,4 @@ const blob = Buffer.concat([body, c.getAuthTag()]);
 
 fs.writeFileSync(outFile, ['loggia1', salt.toString('base64'), iv.toString('base64'),
                            blob.toString('base64')].join('.') + '\n');
-console.error(`잠갔습니다  ${inFile} (${plain.length}B) → ${outFile}`);
+console.error(`암호화했습니다  ${inFile} (${plain.length}B) → ${outFile}`);

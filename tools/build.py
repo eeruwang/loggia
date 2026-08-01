@@ -133,8 +133,8 @@ def snapshot_md(D, venue_index):
          '',
          f'갱신 {D["meta"]["updated"]} · {D["meta"].get("note", "")}',
          '',
-         '> 이것은 **눈으로 보는 사본**이다. 진짜 데이터는 저장소 `eeruwang/loggia` 의',
-         '> `public/data.enc` 안에 잠겨 있다. 여기를 고쳐도 보드는 바뀌지 않는다.',
+         '> 이것은 **눈으로 훑어보는 사본**이다. 진짜 데이터는 저장소 `eeruwang/loggia` 의',
+         '> `public/data.enc` 안에 암호화되어 있다. 여기를 고쳐도 보드는 바뀌지 않는다.',
          '> 고치려면 `tools/fetch.sh` 로 받아 `loggia-data.json` 을 손본다.',
          '']
     for s in D['sections']:
@@ -193,13 +193,13 @@ def main():
     md = snapshot_md(D, venue_index)
     with open(os.path.join(out_dir, '스냅샷.md'), 'w', encoding='utf-8') as f:
         f.write(md)
-    print(f'  스냅샷.md  {len(md.encode())//1024}KB  (드롭박스에 내려놓는 사본)')
+    print(f'  스냅샷.md  {len(md.encode())//1024}KB  (드롭박스에 넣어 둘 사본)')
 
     dg = json.dumps(digest_json(D, venue_index), ensure_ascii=False, separators=(',', ':'))
     with open(os.path.join(out_dir, 'digest.json'), 'w', encoding='utf-8') as f:
         f.write(dg)
     print(f'  digest.json  {len(dg.encode())//1024}KB  (아침 메일이 읽는 것)')
-    print('  다섯 페이지는 브라우저가 그린다. public/app.js 를 본다.')
+    print('  화면은 브라우저가 만든다. public/app.js 를 본다.')
 
 
 if __name__ == '__main__':
