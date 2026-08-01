@@ -61,7 +61,7 @@ STAMP="$( { for f in index calendar journals materials archive; do
            [ -f "$SITE/digest.json" ] && cat "$SITE/digest.json"
            tree_hash "$ROOT/tools"
            tree_hash "$ROOT/worker"
-           for f in wrangler.jsonc package.json tsconfig.json .gitignore; do
+           for f in wrangler.jsonc package.json package-lock.json tsconfig.json .gitignore; do
              [ -f "$ROOT/$f" ] && cat "$ROOT/$f"
            done
          } | sha256sum | cut -d' ' -f1 )"
@@ -121,7 +121,7 @@ fi
 # 도구와 워커를 저장소에 그대로 옮긴다.
 # fetch.sh 가 저장소에서 도구를 받아 쓰므로, 여기서 옮기지 않으면 저장소의
 # 도구가 낡은 채로 남는다. 판은 멀쩡한데 다음 사람이 옛 빌더를 받게 된다.
-for f in wrangler.jsonc package.json tsconfig.json .gitignore; do
+for f in wrangler.jsonc package.json package-lock.json tsconfig.json .gitignore; do
   [ -f "$ROOT/$f" ] && cp "$ROOT/$f" "$WORK/repo/$f"
 done
 
