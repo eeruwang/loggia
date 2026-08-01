@@ -239,6 +239,30 @@ body{padding:0 18px 90px}
 """
 
 # ── 조각들 ──────────────────────────────────────────────────────────────────
+def index_tags(venue, D):
+    """색인 딱지를 (모양, 글자) 짝으로 돌려준다.
+
+    데이터에는 열쇠말만 적는다.  "indexes": ["ahci", "scopus"]
+    앞에 빼기표를 붙이면 미등재를 뜻한다.  "-ahci"  →  A&HCI 미등재
+    옛 꼴인 [["strong", "A&HCI"]] 도 그대로 받는다.
+    """
+    kinds = D.get('indexKinds', {})
+    out = []
+    for x in venue.get('indexes', []):
+        if isinstance(x, str):
+            neg = x.startswith('-')
+            k = kinds.get(x.lstrip('-'))
+            if not k:
+                out.append(('none', x.lstrip('-')))
+            elif neg:
+                out.append(('none', k['label'] + ' 미등재'))
+            else:
+                out.append((k.get('tone', 'plain'), k['label']))
+        else:
+            out.append((x[0], x[1]))
+    return out
+
+
 def links_html(item):
     out = []
     for c in item.get('chats', []):
@@ -321,7 +345,7 @@ def build_journals(D, venue_index, items_by_venue, nven, narc):
         for v in g['venues']:
             name = (f'<a href="{esc(v["url"])}" target="_blank" rel="noopener">{esc(v["name"])}</a>'
                     if v.get('url') else esc(v['name']))
-            tags = ''.join(f'<span class="idx {k}">{esc(t)}</span>' for k, t in v.get('indexes', []))
+            tags = ''.join(f'<span class="idx {k}">{esc(t)}</span>' for k, t in index_tags(v, D))
             if v.get('flag'):
                 tags += f'<span class="flag">{esc(v["flag"])}</span>'
             facts = []

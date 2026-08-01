@@ -70,6 +70,7 @@ publish.sh   네 장을 한 소금으로 잠가 한 번에 올린다
 ```
 meta          제목과 갱신일과 한 줄 메모
 statuses      상태의 어휘. 자유롭게 적지 않고 여기서 고른다
+indexKinds    색인의 어휘. 마찬가지로 여기서 고른다
 sections[]    now(진행 중)와 waiting(결과 기다리는 중)
   items[]     id, title, venue, kind, status, dates, next, note, chats[], links[]
 compass       연구 지형도
@@ -85,6 +86,18 @@ memo[]        기억해 둘 것
 
 날짜는 `dates` 안에 `deadline`, `sent`, `decided` 셋이다.
 마감이 있으면 현황판에 D-가 뜨고 달력에 찍힌다.
+
+색인은 `indexKinds` 의 열쇠말로만 적는다.
+`ahci` `ssci` `scie` `esci` `scopus` `kci` `kcic` `erih` `doaj` `none` 열이다.
+앞에 빼기표를 붙이면 미등재를 뜻한다.
+
+```json
+"indexes": ["ahci", "scopus"]
+"indexes": ["scopus", "-ahci"]
+```
+
+색인 등급은 클래리베이트 MJL 에서만 확인한다. 출판사 페이지는 양방향으로 낡는다.
+대조를 마친 곳에는 `"clarivate": true` 를 붙여 어디까지 확인했는지 남긴다.
 
 ## 지키는 것
 
