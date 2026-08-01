@@ -13,7 +13,7 @@ build.py — loggia-data.json 하나에서 세 장을 빚는다.
 남은 날수와 급함의 빛깔은 브라우저가 열릴 때마다 오늘 기준으로 다시 셈한다.
 그래서 며칠 지나 열어도 D-day가 낡지 않는다.
 """
-import json, sys, html, os
+import json, sys, html, os, hashlib
 
 def esc(s):
     return html.escape(str(s), quote=True) if s is not None else ''
@@ -558,13 +558,22 @@ def steps_html(item, D):
     eff = D.get('efforts', {}).get(item.get('품'))
     cost = f'<span class="cost">{esc(eff["label"])}</span>' if eff else ''
     k = esc(item['id'])
-    out = [f'<div class="step first"><input type="checkbox" id="s-{k}-0" data-done="{k}.0">'
-           f'<label for="s-{k}-0" class="todo">{esc(ss[0])}</label>{cost}</div>']
+
+    def key(text):
+        # 순서가 아니라 글에 맨다.
+        # 순서로 매기면 갱신이 첫 걸음을 뺐을 때 둘째가 첫째의 표시를 물려받는다.
+        # 글이 그대로면 표시도 그대로 남고, 글이 바뀌면 새 걸음으로 친다.
+        h = hashlib.sha1(text.encode('utf-8')).hexdigest()[:8]
+        return f'{k}.{h}'
+
+    def box(text, i, cls=''):
+        d = key(text)
+        return (f'<input type="checkbox" id="s-{d}" data-done="{esc(d)}">'
+                f'<label for="s-{d}"{cls}>{esc(text)}</label>')
+
+    out = [f'<div class="step first">{box(ss[0], 0, chr(32) + "class=" + chr(34) + "todo" + chr(34))}{cost}</div>']
     if len(ss) > 1:
-        rest = ''.join(
-            f'<li><input type="checkbox" id="s-{k}-{i}" data-done="{k}.{i}">'
-            f'<label for="s-{k}-{i}">{esc(x)}</label></li>'
-            for i, x in enumerate(ss[1:], 1))
+        rest = ''.join(f'<li>{box(x, i)}</li>' for i, x in enumerate(ss[1:], 1))
         out.append(f'<ol class="rest">{rest}</ol>')
     return ''.join(out)
 
