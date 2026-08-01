@@ -596,7 +596,7 @@ def entry_html(item, D, venue_index):
     # 마감만 보면 마감 없는 갈래가 조용히 가라앉는다.
     t = item.get('dates', {}).get('touched')
     touch = (f'<span class="touch" data-touched="{esc(t)}"></span>' if t
-             else '<span class="touch none">손댄 날 모름</span>')
+             else '<span class="touch none">작업 기록 없음</span>')
     tags = ' '.join(x for x in (item.get('status', ''), item.get('품', '')) if x)
     # 결마다 빛깔을 준다. 왼쪽 띠 하나로 무슨 종류인지 눈이 먼저 안다
     return f"""<article class="entry t-{esc(st.get('tone', 'live'))}" data-tags="{esc(tags)}">{when_col(item)}
@@ -819,9 +819,9 @@ BOARD_JS = """<script>
   // 마지막으로 손댄 날. 오래 멎어 있으면 눈에 띄게 한다
   document.querySelectorAll('.touch[data-touched]').forEach(function (el) {
     var n = days(el.dataset.touched);
-    if (n <= 7) { el.textContent = n <= 0 ? '오늘 손댐' : n + '일 전에 손댐'; }
-    else if (n <= 20) { el.textContent = n + '일째 안 움직임'; el.dataset.cold = '1'; }
-    else { el.textContent = n + '일째 멎어 있음'; el.dataset.stalled = '1'; }
+    if (n <= 7) { el.textContent = n <= 0 ? '오늘 작업' : n + '일 전 작업'; }
+    else if (n <= 20) { el.textContent = n + '일째 안 함'; el.dataset.cold = '1'; }
+    else { el.textContent = n + '일째 멈춤'; el.dataset.stalled = '1'; }
   });
 
   // 지난 서른 날에 한 일
@@ -832,9 +832,9 @@ BOARD_JS = """<script>
     var bits = [];
     if (n['냈다']) bits.push('낸 것 <b>' + n['냈다'] + '</b>');
     if (n['끝났다']) bits.push('끝난 것 <b>' + n['끝났다'] + '</b>');
-    if (n['손댔다']) bits.push('손댄 갈래 <b>' + n['손댔다'] + '</b>');
+    if (n['손댔다']) bits.push('작업한 것 <b>' + n['손댔다'] + '</b>');
     box.innerHTML = bits.length
-      ? '<span class="cap">지난 서른 날</span>' + bits.join('<span class="dot">·</span>')
+      ? '<span class="cap">지난 30일</span>' + bits.join('<span class="dot">·</span>')
       : '';
   }
 
@@ -1288,7 +1288,7 @@ def waiting_clock(D, venue_index):
                 f'<div class="clock-body">{body}</div></details>')
     if not rows:
         return ''
-    return secbox('답을 기다리는 중', len(rows), '<div class="clocks">' + ''.join(rows) + '</div>')
+    return secbox('답 기다리는 일', len(rows), '<div class="clocks">' + ''.join(rows) + '</div>')
 
 
 def build_calendar(D, venue_index, nven, narc):
