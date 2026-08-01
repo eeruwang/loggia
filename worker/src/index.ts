@@ -36,13 +36,15 @@ interface Env {
   MAIL_FROM: string;
   MAIL_TO: string;
   PREVIEW_TOKEN?: string;  // 비밀. 손으로 한 통 부쳐 볼 때 쓴다
-  LEDGER?: KVNamespace;    // 해치운 걸음 장부. 없으면 판은 이 기기에만 적는다
+  LEDGER?: KVNamespace;    // 장부. 해치운 걸음과 새로 적은 걸음이 여기 산다
   LEDGER_TOKEN?: string;   // 비밀. 판 안에 박혀 있다. 판이 암호문이므로 함께 잠긴다
 }
 
 /** 장부 한 칸. 무엇을 언제 해치웠는지. */
 type DoneRow = { t: string; s: string; at: string };
-type Ledger = Record<string, DoneRow>;
+/** 손으로 새로 적은 걸음. 아직 데이터에 들어가지 않았다. */
+type AddRow = { item: string; t: string; due?: string; at: string };
+type Ledger = Record<string, DoneRow | AddRow>;
 
 type Row = {
   t: string; v: string;
@@ -53,6 +55,8 @@ type Rep = { m: number[]; day: number | string; t: string; v: string; guess: boo
 type Digest = {
   built: string; site: string;
   due: Row[]; doing: Row[]; wait: Row[]; quiet: Row[]; repeats: Rep[];
+  log?: { d: string; k: string; t: string }[];
+  compass?: string[];
 };
 
 // ── 날짜 ────────────────────────────────────────────────────────────────────
@@ -112,17 +116,19 @@ async function fetchDigest(env: Env): Promise<Digest> {
 // 메일에는 사용자 정의 속성도 flex 도 쓸 수 없다. 그래서 값을 그대로 적고
 // 칸은 표로 짠다. 어두운 낯빛은 아래 <style> 이 덮어쓴다.
 
-type Tone = 'now' | 'soon' | 'wait' | 'stop' | 'later';
+type Tone = 'now' | 'soon' | 'wait' | 'stop' | 'later' | 'live';
 
 const LIGHT = {
   paper: '#f6f7f8', surface: '#ffffff', sunk: '#edeff2',
   ink: '#11141d', ink2: '#494e5a', ink3: '#757b8a', rule: '#dcdfe4',
   now: '#d3231d', soon: '#c46008', wait: '#1861b4', stop: '#737782', later: '#6c727f',
+  live: '#156f51',
 };
 const DARK = {
   paper: '#13151b', surface: '#1d1f26', sunk: '#23262f',
   ink: '#f3f4f7', ink2: '#b6bac3', ink3: '#8b919c', rule: '#373a43',
   now: '#f56a66', soon: '#f99f39', wait: '#5fb2f1', stop: '#8c919b', later: '#969ca6',
+  live: '#45d39f',
 };
 
 const FONT = "'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,"
@@ -149,11 +155,13 @@ const DARK_CSS = `
   .k-wait  { color:${DARK.wait} !important }
   .k-stop  { color:${DARK.stop} !important }
   .k-later { color:${DARK.later} !important }
+  .k-live  { color:${DARK.live} !important }
   .b-now   { background:${DARK.now} !important }
   .b-soon  { background:${DARK.soon} !important }
   .b-wait  { background:${DARK.wait} !important }
   .b-stop  { background:${DARK.stop} !important }
   .b-later { background:${DARK.later} !important }
+  .b-live  { background:${DARK.live} !important }
   /* 초점 상자는 뒤집힌다 */
   .fx      { background:${DARK.ink} !important }
   .fx-cap  { color:#5c6270 !important }
@@ -224,7 +232,7 @@ function pickOne(d: Digest, today: string): Row | null {
   return [...d.doing].sort((a, b) => score(a) - score(b))[0];
 }
 
-function compose(d: Digest, today: string) {
+function compose(d: Digest, today: string, pend: AddRow[] = []) {
   const one = pickOne(d, today);
   const vsep = (v: string) => (v ? ' · ' + v : '');
 
@@ -263,6 +271,25 @@ function compose(d: Digest, today: string) {
   reps.sort((a, b) => a.n - b.n);
 
   const blocks: Block[] = [];
+
+  // 손으로 새로 적은 걸음. 아직 데이터에 들어가지 않았으므로 따로 부른다.
+  // 밤에 적은 것이 이튿날 아침 편지에 없으면 적은 보람이 없다.
+  if (pend.length) {
+    const rows = pend
+      .map((a) => ({ a, n: a.due ? until(today, a.due) : 9999 }))
+      .sort((x, y) => x.n - y.n);
+    blocks.push({
+      cap: '새로 적은 것',
+      cards: rows.slice(0, 6).map((x) => ({
+        big: x.a.due ? (x.n < 0 ? String(-x.n) : x.n === 0 ? '오늘' : 'D-' + x.n) : '—',
+        small: x.a.due && x.n < 0 ? '일 지남' : '',
+        tone: x.a.due ? dTone(x.n) : ('later' as Tone),
+        title: x.a.t,
+        meta: `${x.a.at.replace(/-/g, '.')} 적음`,
+      })),
+    });
+  }
+
   if (past.length) {
     blocks.push({
       cap: '지난 마감',
@@ -403,8 +430,8 @@ function focusBox(one: Row | null, today: string): string {
 </td></tr></table>`;
 }
 
-function render(d: Digest, today: string) {
-  const { one, subject, blocks } = compose(d, today);
+function render(d: Digest, today: string, pend: AddRow[] = []) {
+  const { one, subject, blocks } = compose(d, today, pend);
   const w = WEEK[new Date(today + 'T00:00:00Z').getUTCDay()];
 
   const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8">
@@ -462,11 +489,146 @@ function render(d: Digest, today: string) {
   return { subject, html, text };
 }
 
+// ── 석 달에 한 번, 돌아보는 편지 ─────────────────────────────────────────────
+//
+// 「지난 30일」은 셈이지 성찰이 아니다. 셈은 무엇이 있었는지를 말하고
+// 성찰은 그것이 어디로 가고 있었는지를 묻는다.
+//
+// 그러므로 이 편지는 답하지 않는다. 숫자를 늘어놓고 나침반의 줄을 옆에 세운 뒤,
+// 그 둘이 맞는지를 묻고 만다. 답은 사람이 한다.
+function isQuarterStart(today: string): boolean {
+  const [, m, dd] = today.split('-').map(Number);
+  return dd === 1 && (m === 1 || m === 4 || m === 7 || m === 10);
+}
+
+function renderQuarter(d: Digest, today: string) {
+  const y = Number(today.slice(0, 4));
+  const m = Number(today.slice(5, 7));
+  const q = Math.floor((m - 1) / 3);           // 이번 분기
+  const prev = q === 0 ? [y - 1, 4] : [y, q];  // 돌아볼 것은 지난 분기
+  const t = dayNo(today);
+
+  const log = (d.log ?? []).filter((x) => t - dayNo(x.d) <= 92 && t - dayNo(x.d) >= 0);
+  const n = { 냈다: 0, 끝났다: 0, 손댔다: 0 } as Record<string, number>;
+  const seen: Record<string, boolean> = {};
+  for (const x of log) {
+    n[x.k] = (n[x.k] ?? 0) + 1;
+    if (x.k === '손댔다') seen[x.t] = true;
+  }
+
+  const moved = log
+    .filter((x) => x.k !== '손댔다')
+    .sort((a, b) => (a.d < b.d ? 1 : -1));
+
+  const stuck = d.quiet
+    .map((r) => ({ r, n: -until(today, r.touched!) }))
+    .filter((x) => x.n >= 60)
+    .sort((a, b) => b.n - a.n);
+
+  const waiting = d.wait
+    .map((r) => ({ r, n: -until(today, r.sent!) }))
+    .sort((a, b) => b.n - a.n);
+
+  const blocks: Block[] = [];
+  if (moved.length) {
+    blocks.push({
+      cap: '나아간 것',
+      cards: moved.slice(0, 8).map((x) => ({
+        big: md(x.d), small: '', tone: 'live' as Tone,
+        title: x.t, meta: x.k === '냈다' ? '냈다' : '끝났다',
+      })),
+    });
+  }
+  if (stuck.length) {
+    blocks.push({
+      cap: '두 달 넘게 멈춘 것',
+      cards: stuck.slice(0, 6).map((x) => ({
+        big: String(x.n), small: '일째', tone: 'stop' as Tone,
+        title: x.r.t, meta: (x.r.v || '') + ` · 마지막 작업 ${md(x.r.touched!)}`,
+      })),
+    });
+  }
+  if (waiting.length) {
+    blocks.push({
+      cap: '아직 답이 없는 것',
+      cards: waiting.map((x) => ({
+        big: String(x.n), small: '일째', tone: 'wait' as Tone,
+        title: x.r.t, meta: (x.r.v || '') + (x.r.until ? ` · 보통 ${x.r.until}일` : ''),
+      })),
+    });
+  }
+
+  const label = `${prev[0]}년 ${prev[1]}분기`;
+  const subject = `[돌아보기] ${label} · 낸 것 ${n['냈다']} · 끝난 것 ${n['끝났다']}`;
+
+  const head = `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+  style="margin:22px 0 0"><tr><td class="fx pad" style="background:${LIGHT.ink};
+  border-radius:14px;padding:26px 28px 28px">
+  <div class="fx-cap" style="font-size:12px;font-weight:800;letter-spacing:.14em;
+    color:#7b818f;margin-bottom:14px">${esc(label)} 돌아보기</div>
+  <div class="fxt fx-t" style="font-size:26px;font-weight:700;line-height:1.4;
+    letter-spacing:-.01em;color:${LIGHT.paper}">낸 것 ${n['냈다']} · 끝난 것 ${n['끝났다']} ·
+    손댄 갈래 ${Object.keys(seen).length}</div>
+  <div class="fx-m" style="margin-top:14px;font-size:13px;line-height:1.6;color:#8f95a3">
+    지난 석 달 동안 판에 남은 자취입니다. 판에 적지 않은 일은 여기 없습니다.</div>
+</td></tr></table>`;
+
+  const compass = (d.compass ?? []).length ? `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+  style="margin:34px 0 0"><tr><td class="card pad" style="background:${LIGHT.surface};
+  border:1px solid ${LIGHT.rule};border-radius:12px;padding:22px 24px">
+  <div class="cap" style="font-size:12px;font-weight:800;letter-spacing:.14em;
+    color:${LIGHT.ink3};margin-bottom:14px">나침반에 대고</div>
+  ${(d.compass ?? []).map((l) => `<p class="t" style="margin:0 0 10px;font-size:15px;
+    line-height:1.66;color:${LIGHT.ink}">${esc(l)}</p>`).join('')}
+  <p class="m" style="margin:16px 0 0;padding-top:14px;border-top:1px solid ${LIGHT.rule};
+    font-size:14px;line-height:1.7;color:${LIGHT.ink3}">
+    이 줄들과 위의 숫자가 맞습니까. 맞지 않으면 둘 중 하나가 낡은 것입니다.
+    나침반을 고칠 때인지, 손을 옮길 때인지 정해 두십시오.</p>
+</td></tr></table>` : '';
+
+  const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>${esc(subject)}</title>
+<style>${DARK_CSS}</style></head>
+<body class="bg" style="margin:0;padding:0;background:${LIGHT.paper}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+  class="bg" style="background:${LIGHT.paper}">
+<tr><td align="center" style="padding:26px 12px 46px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+  style="max-width:600px;font-family:${FONT};line-height:1.62;font-variant-numeric:tabular-nums">
+<tr><td class="pad" style="padding:0 4px">
+  <span class="cap" style="font-size:11px;font-weight:800;letter-spacing:.34em;
+    color:${LIGHT.ink3}">LOGGIA</span>
+</td></tr>
+<tr><td style="padding:0 4px">${head}</td></tr>
+<tr><td style="padding:0 4px">${blocks.map(block).join('')}</td></tr>
+<tr><td style="padding:0 4px">${compass}</td></tr>
+<tr><td style="padding:38px 4px 0">
+  <a class="btn" href="${esc(d.site)}" style="display:inline-block;background:${LIGHT.ink};
+    color:${LIGHT.paper};font-size:15px;font-weight:800;text-decoration:none;
+    padding:14px 24px;border-radius:10px">로지아 열기 →</a>
+</td></tr>
+</table></td></tr></table></body></html>`;
+
+  const text = [`LOGGIA  ${label} 돌아보기`, '',
+    `낸 것 ${n['냈다']} · 끝난 것 ${n['끝났다']} · 손댄 갈래 ${Object.keys(seen).length}`,
+    ...blocks.map((b) => `\n── ${b.cap} (${b.cards.length})\n`
+      + b.cards.map((c) => `${(c.big + ' ' + c.small).trim().padEnd(8)} ${c.title} · ${c.meta}`).join('\n')),
+    '', ...(d.compass ?? []), '', d.site].join('\n');
+
+  return { subject, html, text };
+}
+
 // ── 부치기 ──────────────────────────────────────────────────────────────────
 async function send(env: Env): Promise<string> {
   const d = await fetchDigest(env);
   const today = todaySeoul(Date.now());
-  const { subject, html, text } = render(d, today);
+  const { subject, html, text } = isQuarterStart(today)
+    ? renderQuarter(d, today)
+    : render(d, today, await pending(env));
   const r = await env.EMAIL.send({
     to: env.MAIL_TO, from: env.MAIL_FROM, subject, html, text,
   });
@@ -489,7 +651,8 @@ async function send(env: Env): Promise<string> {
 //
 // 열쇠는 판 안에 박혀 있다. 판이 암호문이므로 암호를 푼 사람만 그것을 본다.
 // 지금 보안 모형과 어긋나지 않는다.
-const KEY = 'board';
+const DONE_KEY = 'board';   // 해치운 걸음
+const ADD_KEY = 'added';    // 새로 적은 걸음
 
 function json(v: unknown, status = 200): Response {
   return new Response(JSON.stringify(v), {
@@ -499,11 +662,12 @@ function json(v: unknown, status = 200): Response {
   });
 }
 
-async function ledger(req: Request, env: Env, k: string | null): Promise<Response> {
+async function ledger(req: Request, env: Env, k: string | null,
+                      key: string): Promise<Response> {
   if (!env.LEDGER || !env.LEDGER_TOKEN || k !== env.LEDGER_TOKEN) {
     return new Response('없습니다', { status: 404 });
   }
-  const now: Ledger = (await env.LEDGER.get(KEY, 'json')) ?? {};
+  const now: Ledger = (await env.LEDGER.get(key, 'json')) ?? {};
   if (req.method === 'GET') return json(now);
   if (req.method !== 'POST') return new Response('안 됩니다', { status: 405 });
 
@@ -511,8 +675,15 @@ async function ledger(req: Request, env: Env, k: string | null): Promise<Respons
   const body = (await req.json()) as { set?: Ledger; del?: string[] };
   for (const [id, row] of Object.entries(body.set ?? {})) now[id] = row;
   for (const id of body.del ?? []) delete now[id];
-  await env.LEDGER.put(KEY, JSON.stringify(now));
+  await env.LEDGER.put(key, JSON.stringify(now));
   return json(now);
+}
+
+/** 아직 데이터에 들어가지 않은 걸음들. 편지도 이것을 함께 읽는다. */
+async function pending(env: Env): Promise<AddRow[]> {
+  if (!env.LEDGER) return [];
+  const m = (await env.LEDGER.get(ADD_KEY, 'json')) as Record<string, AddRow> | null;
+  return Object.values(m ?? {});
 }
 
 export default {
@@ -528,7 +699,8 @@ export default {
   // 판의 알맹이는 어떤 경우에도 돌려주지 않는다. 결과는 편지함에서 본다.
   async fetch(req: Request, env: Env): Promise<Response> {
     const u = new URL(req.url);
-    if (u.pathname === '/done') return ledger(req, env, u.searchParams.get('k'));
+    if (u.pathname === '/done') return ledger(req, env, u.searchParams.get('k'), DONE_KEY);
+    if (u.pathname === '/add') return ledger(req, env, u.searchParams.get('k'), ADD_KEY);
     if (u.pathname !== '/send' || !env.PREVIEW_TOKEN
         || u.searchParams.get('k') !== env.PREVIEW_TOKEN) {
       return new Response('없습니다', { status: 404 });

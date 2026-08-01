@@ -321,6 +321,43 @@ box-shadow:0 8px 28px rgba(0,0,0,.22);max-width:calc(100vw - 32px)}
 font-size:13px;font-weight:800;border-radius:99px;padding:7px 15px}
 .carry .copy,.carry .save{background:var(--paper);color:var(--ink)}
 .carry .save[disabled]{opacity:.5;cursor:default}
+
+/* 걸음에 매달린 날짜. 갈래 전체의 마감과 다르므로 작게 둔다 */
+.sdue{margin-left:9px;font-size:12.5px;font-weight:800;color:var(--later);
+font-variant-numeric:tabular-nums;align-self:center}
+.sdue[data-urgency=now]{color:var(--now)}
+.sdue[data-urgency=soon]{color:var(--soon)}
+.sdue[data-urgency=past]{color:var(--ink-3)}
+
+/* 걸음을 손으로 더하는 자리 */
+.addbox{margin-top:12px}
+.addbox .pending{list-style:none;margin:0 0 8px;padding:0}
+.addbox .pending:empty{margin:0}
+.addbox .pending li{display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+padding:8px 12px;margin-bottom:6px;background:var(--sunk);border-radius:9px;
+border-left:3px solid var(--wait);font-size:15px;line-height:1.5;color:var(--ink)}
+.addbox .pending .tag{font-size:11px;font-weight:800;letter-spacing:.04em;
+color:var(--wait);white-space:nowrap}
+.addbox .pending .drop{margin-left:auto;appearance:none;border:0;background:transparent;
+cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;color:var(--ink-3);padding:2px 4px}
+.addbox .pending .drop:hover{color:var(--now)}
+.addbtn{appearance:none;border:1px dashed var(--rule-2);background:transparent;cursor:pointer;
+font-family:inherit;font-size:13px;font-weight:700;color:var(--ink-3);
+padding:7px 13px;border-radius:8px}
+.addbtn:hover{color:var(--ink);border-color:var(--ink-3)}
+.addbtn::before{content:'+ '}
+.addform{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+/* display 를 적어 두면 hidden 이 먹지 않는다. UA 규칙보다 이쪽이 세다 */
+.addform[hidden],.addbtn[hidden]{display:none}
+.addform input{font-family:inherit;font-size:15px;color:var(--ink);background:var(--surface);
+border:1px solid var(--rule-2);border-radius:8px;padding:9px 12px}
+.addform .at{flex:1 1 260px;min-width:0}
+.addform .ad{color:var(--ink-2);font-size:13.5px}
+.addform button{appearance:none;border:0;cursor:pointer;font-family:inherit;
+font-size:13px;font-weight:800;padding:9px 15px;border-radius:8px}
+.addform .ok{background:var(--ink);color:var(--paper)}
+.addform .ok[disabled]{opacity:.5;cursor:default}
+.addform .cancel{background:transparent;color:var(--ink-3);padding:9px 6px}
 .carry .clear{background:transparent;color:var(--paper);opacity:.66;padding:7px 8px}
 .carry .clear:hover{opacity:1}
 .carry .hint{font-size:12px;opacity:.6}
@@ -548,11 +585,19 @@ def when_col(item):
 
 
 def steps_of(item):
-    """다음 걸음들. 한 줄만 적어도 되고 차례로 여럿을 적어도 된다."""
-    st = item.get('steps')
-    if st:
-        return list(st)
-    return [item['next']] if item.get('next') else []
+    """다음 걸음들. 저마다 제 날짜를 가질 수 있다.
+
+    데이터에는 두 꼴 다 적을 수 있다.
+        "추천인에게 메일 보내기"
+        {"t": "초고 넘기기", "due": "2026-08-10"}
+    앞의 꼴이 대부분이므로 뒤의 꼴은 날짜가 정말 그 걸음에 매달릴 때만 쓴다.
+    갈래 전체의 마감은 그대로 `dates.deadline` 이다.
+    """
+    st = item.get('steps') or ([item['next']] if item.get('next') else [])
+    out = []
+    for x in st:
+        out.append({'t': x} if isinstance(x, str) else dict(x))
+    return out
 
 
 def steps_html(item, D):
@@ -575,16 +620,40 @@ def steps_html(item, D):
         h = hashlib.sha1(text.encode('utf-8')).hexdigest()[:8]
         return f'{k}.{h}'
 
-    def box(text, i, cls=''):
-        d = key(text)
+    def box(st, cls=''):
+        d = key(st['t'])
+        due = (f'<span class="sdue" data-deadline="{esc(st["due"])}">D-</span>'
+               if st.get('due') else '')
         return (f'<input type="checkbox" id="s-{d}" data-done="{esc(d)}">'
-                f'<label for="s-{d}"{cls}>{esc(text)}</label>')
+                f'<label for="s-{d}"{cls}>{esc(st["t"])}</label>{due}')
 
-    out = [f'<div class="step first">{box(ss[0], 0, chr(32) + "class=" + chr(34) + "todo" + chr(34))}{cost}</div>']
+    out = [f'<div class="step first">{box(ss[0], chr(32) + "class=" + chr(34) + "todo" + chr(34))}{cost}</div>']
     if len(ss) > 1:
-        rest = ''.join(f'<li>{box(x, i)}</li>' for i, x in enumerate(ss[1:], 1))
-        out.append(f'<ol class="rest">{rest}</ol>')
+        out.append('<ol class="rest">'
+                   + ''.join(f'<li>{box(x)}</li>' for x in ss[1:]) + '</ol>')
     return ''.join(out)
+
+
+def add_html(item):
+    """걸음을 손으로 더하는 자리.
+
+    적은 것은 장부에 쌓이고 판에 곧바로 보인다. 데이터에 들어가는 것은
+    다음 갱신 때다. 그때까지는 「새로 적음」이라고 붙여 둔다.
+    아직 참이 아닌 것을 참인 척 그리지 않기 위해서다.
+
+    장부 열쇠가 없으면 이 자리는 아예 나오지 않는다.
+    """
+    if not os.environ.get('LEDGER_TOKEN'):
+        return ''
+    return (f'<div class="addbox" data-for="{esc(item["id"])}">'
+            '<ol class="pending"></ol>'
+            '<button type="button" class="addbtn">걸음 더하기</button>'
+            '<form class="addform" hidden>'
+            '<input type="text" class="at" placeholder="무엇을 할까요" maxlength="200" required>'
+            '<input type="date" class="ad" aria-label="이 걸음의 마감">'
+            '<button type="submit" class="ok">더하기</button>'
+            '<button type="button" class="cancel">그만</button>'
+            '</form></div>')
 
 
 def entry_html(item, D, venue_index):
@@ -599,11 +668,11 @@ def entry_html(item, D, venue_index):
              else '<span class="touch none">작업 기록 없음</span>')
     tags = ' '.join(x for x in (item.get('status', ''), item.get('품', '')) if x)
     # 결마다 빛깔을 준다. 왼쪽 띠 하나로 무슨 종류인지 눈이 먼저 안다
-    return f"""<article class="entry t-{esc(st.get('tone', 'live'))}" data-tags="{esc(tags)}">{when_col(item)}
+    return f"""<article class="entry t-{esc(st.get('tone', 'live'))}" data-id="{esc(item['id'])}" data-tags="{esc(tags)}">{when_col(item)}
 <div class="body"><div class="title-line"><h3 class="t">{esc(item['title'])}</h3>
 <span class="state">{esc(st['label'])}</span></div>
 <div class="meta">{venue}<span class="k">{esc(item.get('kind',''))}</span>{touch}</div>
-{steps_html(item, D)}{note}{links_html(item)}</div></article>"""
+{steps_html(item, D)}{note}{links_html(item)}{add_html(item)}</div></article>"""
 
 
 def pick_focus(D):
@@ -657,7 +726,7 @@ def build_index(D, venue_index, nven, narc):
         out.append(f"""<section class="focus"><div class="cap">지금 이것부터</div>
 <div class="line"><span class="dday" data-wide="1" data-deadline="{iso}">D-</span>
 <span class="who">{esc(f['title'])}{' · ' + esc(v['name']) if v else ''}</span></div>
-<p class="todo">{esc(steps_of(f)[0])}</p>
+<p class="todo">{esc(steps_of(f)[0]['t'])}</p>
 <div class="when">마감 {iso[5:7].lstrip('0')}월 {iso[8:].lstrip('0')}일</div></section>""")
     # 답을 기다리는 것은 달력의 응답 시계가 맡는다. 여기서 또 보이면 두 번 읽게 된다
     shown = [x for x in D['sections'] if x['id'] != 'waiting']
@@ -697,6 +766,7 @@ def build_index(D, venue_index, nven, narc):
             for d in sorted(D['decisions'], key=lambda x: x['date'], reverse=True))
         out.append(fold('정한 것', len(D['decisions']), f'<div class="decs">{ds}</div>'))
     out.append(BOARD_JS)
+    out.append(ADD_JS)
     out.append(FILTER_JS)
     out.append(SEC_JS)
     c = D.get('compass')
@@ -981,6 +1051,115 @@ BOARD_JS = """<script>
     });
     refresh();
   }
+})();
+</script>"""
+
+
+
+ADD_JS = """<script>
+// 걸음을 손으로 더하는 자리.
+//
+// 적은 것은 워커의 장부에 쌓이고 판에는 곧바로 보인다. 데이터에 들어가는 것은
+// 다음 갱신 때다. 그때까지 「새로 적음」이라고 붙여 두는 것은, 아직 참이 아닌
+// 것을 참인 척 그리지 않기 위해서다.
+//
+// 날짜를 적으면 그 걸음이 제 D-day 를 갖는다. 셈은 판을 열 때마다 다시 한다.
+(function () {
+  if (typeof LEDGER === 'undefined') return;
+  var U = '/add?k=' + encodeURIComponent(LEDGER.k);
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var ADD = {};
+
+  function iso(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
+         + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function dlabel(v) {
+    var p = v.split('-');
+    var n = Math.round((new Date(+p[0], +p[1] - 1, +p[2]) - today) / 86400000);
+    return { t: n < 0 ? (-n) + '일 지남' : n === 0 ? '오늘' : 'D-' + n,
+             u: n < 0 ? 'past' : n <= 7 ? 'now' : n <= 30 ? 'soon' : 'later' };
+  }
+
+  function draw() {
+    document.querySelectorAll('.addbox').forEach(function (bx) {
+      var ol = bx.querySelector('.pending');
+      ol.textContent = '';
+      Object.keys(ADD).forEach(function (k) {
+        var a = ADD[k];
+        if (a.item !== bx.dataset.for) return;
+        var li = document.createElement('li');
+        li.dataset.k = k;
+        // 손으로 적은 글은 마디로 넣는다. 판을 흔들 틈을 주지 않는다
+        var t = document.createElement('span');
+        t.className = 't'; t.textContent = a.t; li.appendChild(t);
+        if (a.due) {
+          var d = dlabel(a.due), sp = document.createElement('span');
+          sp.className = 'sdue'; sp.dataset.urgency = d.u; sp.textContent = d.t;
+          li.appendChild(sp);
+        }
+        var tag = document.createElement('span');
+        tag.className = 'tag'; tag.textContent = '새로 적음'; li.appendChild(tag);
+        var x = document.createElement('button');
+        x.type = 'button'; x.className = 'drop'; x.textContent = '지우기';
+        li.appendChild(x);
+        ol.appendChild(li);
+      });
+    });
+  }
+
+  function post(body) {
+    return fetch(U, { method: 'POST', headers: { 'content-type': 'application/json' },
+                      body: JSON.stringify(body) })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (j) { ADD = j; draw(); });
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.addbtn');
+    if (b) {
+      var f = b.parentNode.querySelector('.addform');
+      f.hidden = false; b.hidden = true; f.querySelector('.at').focus();
+      return;
+    }
+    var c = e.target.closest('.cancel');
+    if (c) {
+      var f2 = c.closest('.addform');
+      f2.hidden = true; f2.reset();
+      f2.parentNode.querySelector('.addbtn').hidden = false;
+      return;
+    }
+    var d = e.target.closest('.drop');
+    if (d) { post({ del: [d.closest('li').dataset.k] }); }
+  });
+
+  document.addEventListener('submit', function (e) {
+    var f = e.target.closest('.addform');
+    if (!f) return;
+    e.preventDefault();
+    var bx = f.closest('.addbox');
+    var t = f.querySelector('.at').value.trim();
+    if (!t) return;
+    var due = f.querySelector('.ad').value;
+    var row = { item: bx.dataset.for, t: t, at: iso(new Date()) };
+    if (due) row.due = due;
+    var id = (self.crypto && crypto.randomUUID ? crypto.randomUUID()
+              : String(Date.now()) + Math.random().toString(36).slice(2)).slice(0, 12);
+    var set = {}; set[id] = row;
+    var ok = f.querySelector('.ok');
+    ok.disabled = true; ok.textContent = '넣는 중';
+    post({ set: set }).then(function () {
+      f.reset(); f.hidden = true;
+      bx.querySelector('.addbtn').hidden = false;
+      ok.textContent = '더하기';
+    }, function () { ok.textContent = '다시'; })
+      .then(function () { ok.disabled = false; });
+  });
+
+  fetch(U, { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) { if (j) { ADD = j; draw(); } })
+    .catch(function () {});
 })();
 </script>"""
 
@@ -1460,9 +1639,9 @@ def digest_json(D, venue_index):
             ss = steps_of(it)
             base = {'t': it['title'], 'v': vname(it.get('venue'))}
             if d.get('deadline'):
-                due.append(dict(base, due=d['deadline'], step=(ss[0] if ss else '')))
+                due.append(dict(base, due=d['deadline'], step=(ss[0]['t'] if ss else '')))
             if sec['id'] == 'now' and ss:
-                doing.append(dict(base, step=ss[0], due=d.get('deadline', ''),
+                doing.append(dict(base, step=ss[0]['t'], due=(ss[0].get('due') or d.get('deadline', '')),
                                   pum=D.get('efforts', {}).get(it.get('품'), {}).get('label', '')))
             if d.get('sent') and st.get('tone') == 'wait':
                 v = venue_index.get(it.get('venue')) or {}
@@ -1485,6 +1664,13 @@ def digest_json(D, venue_index):
         'wait': wait,
         'quiet': quiet,
         'repeats': reps,
+        # 분기마다 돌아볼 때 쓰는 것들. 평소 편지는 이 둘을 보지 않는다
+        'log': [x for x in ([{'d': it.get('dates', {}).get(k), 'k': lab, 't': it['title']}
+                             for it, _arc in all_items(D)
+                             for k, lab in (('sent', '냈다'), ('decided', '끝났다'),
+                                            ('touched', '손댔다'))])
+                if x['d'] and len(x['d']) == 10],
+        'compass': (D.get('compass') or {}).get('lines') or [],
     }
 
 
