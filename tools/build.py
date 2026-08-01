@@ -484,7 +484,9 @@ def build_archive(D, venue_index, nven, narc):
                        h0='', hc='', h1='', h2=' here', h3='', nven=nven, narc=narc)]
     years = {}
     for it in D.get('archive', []):
-        y = (it.get('dates', {}).get('decided') or '0000')[:4]
+        # 날짜는 연월까지만 아는 것도 있다. 그런 것은 연도만 떼어 묶는다
+        dd = it.get('dates', {})
+        y = (dd.get('decided') or dd.get('sent') or '')[:4] or '해 모름'
         years.setdefault(y, []).append(it)
     for y in sorted(years, reverse=True):
         out.append(f'<div class="sec"><h2>{y}</h2><span class="c">{len(years[y])}</span></div>')
@@ -512,7 +514,10 @@ def build_archive(D, venue_index, nven, narc):
 
 
 def build_calendar(D, venue_index, nven, narc):
-    """달력. 날짜는 페이지가 열릴 때 그린다. 그래야 오늘이 늘 가운데 온다."""
+    """달력. 날짜는 페이지가 열릴 때 그린다. 그래야 오늘이 늘 가운데 온다.
+
+    연월까지만 아는 날짜는 찍지 않는다. 하루를 지어내야 하기 때문이다.
+    """
     ev = []
     for sec in D['sections']:
         for it in sec['items']:
@@ -539,6 +544,8 @@ def build_calendar(D, venue_index, nven, narc):
         for v in g['venues']:
             if v.get('deadline') and (v['deadline'], v['id']) not in taken:
                 ev.append({'d': v['deadline'], 'k': '마감', 't': v['name']})
+    ev = [e for e in ev if len(e['d']) == 10]   # 하루까지 아는 것만
+
     # 같은 날 같은 글은 한 번만
     uniq, key_seen = [], set()
     for e in sorted(ev, key=lambda x: (x['d'], x['t'])):
