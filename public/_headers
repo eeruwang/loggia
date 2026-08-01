@@ -2,8 +2,17 @@
 /font/*
   Cache-Control: public, max-age=31536000, immutable
 
-# 판은 갱신될 때마다 달라진다. 늘 물어보게 한다.
+# 껍데기와 옷과 그리는 손. 자주 바뀌지 않으나 낡으면 판이 어긋난다.
 /*.html
   Cache-Control: no-cache
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
+/app.css
+  Cache-Control: no-cache
+/app.js
+  Cache-Control: no-cache
+
+# 알맹이. 갱신할 때마다 달라진다. 늘 물어보게 한다.
+/data.enc
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
