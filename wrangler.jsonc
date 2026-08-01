@@ -12,11 +12,10 @@
   },
 
   // 해치운 걸음 장부. 기기끼리 같은 줄을 보게 한다.
-  // 이름공간을 만든 뒤 그 id 를 여기 적고 아래 세 줄의 주석을 벗긴다.
-  //   Storage & Databases → KV → Create → 이름 loggia-ledger
-  // "kv_namespaces": [
-  //   { "binding": "LEDGER", "id": "<여기에 id>" }
-  // ],
+  // 이름공간 loggia-ledger 하나에 board 라는 칸 하나뿐이다.
+  "kv_namespaces": [
+    { "binding": "LEDGER", "id": "19adfab3939447df80d35084d96d1656" }
+  ],
 
   // 클라우드플레어 이메일 서비스. 아침 편지를 부치는 곳
   "send_email": [

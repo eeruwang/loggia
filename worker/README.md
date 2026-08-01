@@ -94,15 +94,8 @@ Workers → 해당 워커 → **설정 → 변수 및 암호**. 종류를 **암�
 
 ### 3-1. 장부를 놓는다
 
-**Storage & Databases → KV → Create** 로 이름공간 하나를 만든다.
-이름은 `loggia-ledger`. 만들고 나온 id 를 `wrangler.jsonc` 의 `kv_namespaces`
-에 적고 주석을 벗긴다.
-
-```jsonc
-"kv_namespaces": [
-  { "binding": "LEDGER", "id": "<만들고 나온 id>" }
-],
-```
+이름공간 `loggia-ledger` 를 만들어 `wrangler.jsonc` 에 이어 두었다.
+2026년 8월 1일에 붙였다. 칸은 `board` 하나뿐이다.
 
 이것이 없어도 판은 온전하다. 네모를 눌러도 그 표시가 이 기기에만 남을 뿐이다.
 
