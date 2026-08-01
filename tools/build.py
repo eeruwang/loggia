@@ -279,16 +279,37 @@ background:var(--sunk);padding:12px 14px;border-radius:9px}
 .gist .who{display:block;margin-top:6px;font-size:12.5px;color:var(--ink-3);font-weight:600}
 .lede{font-size:15.5px;color:var(--ink-2);margin:0 0 6px}
 
+/* 거르개. 마디 위에 한 줄 */
+.filters{display:flex;flex-wrap:wrap;gap:7px;margin:24px 0 8px}
+.filters button{appearance:none;cursor:pointer;font-family:var(--font);font-size:13.5px;
+font-weight:700;color:var(--ink-2);background:var(--surface);border:1.5px solid var(--rule-2);
+border-radius:99px;padding:7px 15px;display:inline-flex;align-items:baseline;gap:7px}
+.filters button:hover{border-color:var(--ink-3);color:var(--ink)}
+.filters button b{font-size:12px;font-weight:700;color:var(--ink-3)}
+.filters button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.filters button[aria-pressed=true] b{color:var(--paper);opacity:.6}
+.group[hidden]{display:none}
+
 /* 답을 기다리는 중 */
 .clocks{margin-top:2px}
-.clock{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 20px;margin-bottom:10px;
-background:var(--surface);border:1px solid var(--rule);border-left:6px solid var(--wait);border-radius:12px}
+.clock{margin-bottom:10px;background:var(--surface);border:1px solid var(--rule);
+border-left:6px solid var(--wait);border-radius:12px;overflow:hidden}
+.clock>summary{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 20px;
+cursor:pointer;list-style:none}
+.clock>summary::-webkit-details-marker{display:none}
+.clock>summary:hover{background:var(--sunk)}
+.clock .arrow{font-size:12px;color:var(--ink-3);transition:transform .14s;flex:none}
+.clock[open] .arrow{transform:rotate(90deg)}
+.clock[open]>summary{border-bottom:1px solid var(--rule)}
+.clock-body{padding:16px 20px 18px}
+.clock-body .todo{margin-top:0}
+.clock-body .todo::before{color:var(--wait)}
 .clock .el{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--ink);min-width:84px}
 .clock[data-late]{border-left-color:var(--now)}
 .clock[data-late] .el{color:var(--now)}
 .clock .t{font-size:17px;font-weight:700;color:var(--ink)}
 .clock .v{font-size:13px;font-weight:600;color:var(--ink-3)}
-.clock .side{margin-left:auto;display:flex;gap:16px;font-size:13px;color:var(--ink-2);align-items:center}
+.clock .side{margin-left:auto;order:0;display:flex;gap:16px;font-size:13px;color:var(--ink-2);align-items:center}
 .clock .side .lab{margin-right:6px;color:var(--ink-3);font-weight:700}
 .clock[data-late] .side::after{content:'물어볼 때';color:var(--surface);background:var(--now);
 font-weight:800;font-size:12px;padding:3px 10px;border-radius:99px}
@@ -446,7 +467,7 @@ def entry_html(item, D, venue_index):
             else '<p class="todo none">지금 할 일 없음</p>')
     note = f'<p class="note">{esc(item["note"])}</p>' if item.get('note') else ''
     # 결마다 빛깔을 준다. 왼쪽 띠 하나로 무슨 종류인지 눈이 먼저 안다
-    return f"""<article class="entry t-{esc(st.get('tone', 'live'))}">{when_col(item)}
+    return f"""<article class="entry t-{esc(st.get('tone', 'live'))}" data-tags="{esc(item.get('status',''))}">{when_col(item)}
 <div class="body"><div class="title-line"><h3 class="t">{esc(item['title'])}</h3>
 <span class="state">{esc(st['label'])}</span></div>
 <div class="meta">{venue}<span class="k">{esc(item.get('kind',''))}</span></div>
@@ -477,10 +498,26 @@ def build_index(D, venue_index, nven, narc):
 <span class="who">{esc(f['title'])}{' · ' + esc(v['name']) if v else ''}</span></div>
 <p class="todo">{esc(f['next'])}</p>
 <div class="when">마감 {iso[5:7].lstrip('0')}월 {iso[8:].lstrip('0')}일</div></section>""")
-    for s in D['sections']:
-        out.append(f'<div class="sec"><h2>{esc(s["label"])}</h2><span class="c">{len(s["items"])}</span></div>')
-        for it in sorted(s['items'], key=lambda i: i.get('dates', {}).get('deadline') or '9999'):
+    # 답을 기다리는 것은 달력의 응답 시계가 맡는다. 여기서 또 보이면 두 번 읽게 된다
+    shown = [x for x in D['sections'] if x['id'] != 'waiting']
+
+    # 거르개. 지금 판에 실제로 있는 상태만 단추로 낸다
+    seen = {}
+    for x in shown:
+        for it in x['items']:
+            seen[it.get('status')] = seen.get(it.get('status'), 0) + 1
+    order = [k for k in D['statuses'] if k in seen]
+    total = sum(seen.values())
+    out.append(filters_html([('*', '전체', total)]
+                            + [(k, D['statuses'][k]['label'], seen[k]) for k in order],
+                            '상태로 골라 보기'))
+
+    for x in shown:
+        out.append(f'<section class="group"><div class="sec"><h2>{esc(x["label"])}</h2>'
+                   f'<span class="c">{len(x["items"])}</span></div>')
+        for it in sorted(x['items'], key=lambda i: i.get('dates', {}).get('deadline') or '9999'):
             out.append(entry_html(it, D, venue_index))
+        out.append('</section>')
     if D.get('decisions'):
         by = {}
         for it, _ in all_items(D):
@@ -492,6 +529,7 @@ def build_index(D, venue_index, nven, narc):
             + f'</p><p class="why">{esc(d.get("why", ""))}</p></div></div>'
             for d in sorted(D['decisions'], key=lambda x: x['date'], reverse=True))
         out.append(fold('정한 것', len(D['decisions']), f'<div class="decs">{ds}</div>'))
+    out.append(FILTER_JS)
     c = D.get('compass')
     if c:
         lines = ''.join(f'<p>{esc(l)}</p>' for l in c['lines'])
@@ -504,8 +542,23 @@ def build_index(D, venue_index, nven, narc):
 def build_journals(D, venue_index, items_by_venue, nven, narc):
     out = [HEAD.format(title='낼 곳', css=CSS, updated=D['meta']['updated'].replace('-', '.'),
                        h0='', hc='', h1=' here', h2='', h3='', nven=nven, narc=narc)]
+    # 거르개. 색인과 마감으로 좁힌다
+    tally, ndl = {}, 0
     for g in D['venueGroups']:
-        out.append(f'<div class="sec"><h2>{esc(g["name"])}</h2><span class="c">{len(g["venues"])}</span></div>')
+        for v in g['venues']:
+            for _, t in index_tags(v, D):
+                tally[t] = tally.get(t, 0) + 1
+            if v.get('deadline'):
+                ndl += 1
+    keys = [t for t in ('A&HCI', 'SSCI', 'Scopus', 'KCI 등재', 'ESCI', '색인 없음') if t in tally]
+    out.append(filters_html([('*', '전체', nven)]
+                            + [(t, t, tally[t]) for t in keys]
+                            + ([('마감', '마감 있음', ndl)] if ndl else []),
+                            '색인과 마감으로 골라 보기'))
+
+    for g in D['venueGroups']:
+        out.append(f'<section class="group"><div class="sec"><h2>{esc(g["name"])}</h2>'
+                   f'<span class="c">{len(g["venues"])}</span></div>')
         for v in g['venues']:
             name = (f'<a href="{esc(v["url"])}" target="_blank" rel="noopener">{esc(v["name"])}</a>'
                     if v.get('url') else esc(v['name']))
@@ -545,12 +598,15 @@ def build_journals(D, venue_index, items_by_venue, nven, narc):
                               + '</div>')
                 hist = (f'<div class="history"><div class="cap">이 곳에 낸 것 · {len(rows)}건</div>'
                         + ''.join(rs) + '</div>')
-            out.append(f"""<section class="venue-block" id="{esc(v['id'])}">
+            tagset = [t for _, t in index_tags(v, D)] + (['마감'] if v.get('deadline') else [])
+            out.append(f"""<section class="venue-block" id="{esc(v['id'])}" data-tags="{esc(' '.join(tagset))}">
 <div class="venue-head"><h3>{name}</h3><span class="sub">{esc(v.get('sub',''))} · {esc(v.get('type',''))}</span></div>
 {f'<div class="idx-row">{tags}</div>' if tags else ''}
 {f'<div class="venue-facts">{"".join(facts)}</div>' if facts else ''}
 {f'<p class="note">{esc(v["note"])}</p>' if v.get('note') else ''}
 {hist}</section>""")
+        out.append('</section>')
+    out.append(FILTER_JS)
     if D.get('watch'):
         out.append('<div class="sec"><h2>길목</h2><span class="c">%d</span></div>' % len(D['watch']))
         ws = ''.join(f'<a class="link web" href="{esc(w["url"])}" target="_blank" rel="noopener">{esc(w["name"])}</a>'
@@ -581,6 +637,55 @@ def fold(title, count, body):
     n = f'<span class="c">{count}</span>' if count else ''
     return (f'<details class="fold"><summary><h2>{esc(title)}</h2>{n}'
             f'<span class="arrow">\u25b8</span></summary>{body}</details>')
+
+
+def filters_html(buttons, label='골라 보기'):
+    """거르는 단추 한 줄.
+
+    단추마다 열쇠말 하나. 상자마다 data-tags 에 그 열쇠말이 적혀 있으면 남는다.
+    빈 마디는 저절로 접힌다. 셈도 보이는 것만으로 다시 센다.
+    """
+    if len(buttons) < 2:
+        return ''
+    bs = ''.join(
+        f'<button type="button" data-filter="{esc(k)}"'
+        + (' aria-pressed="true"' if k == '*' else '')
+        + f'>{esc(t)}' + (f'<b>{n}</b>' if n is not None else '') + '</button>'
+        for k, t, n in buttons)
+    return f'<div class="filters" role="group" aria-label="{esc(label)}">{bs}</div>'
+
+
+FILTER_JS = """<script>
+// 거르개. 누른 단추의 열쇠말을 가진 상자만 남긴다.
+(function () {
+  var bar = document.querySelector('.filters');
+  if (!bar) return;
+  var groups = Array.prototype.slice.call(document.querySelectorAll('.group'));
+  groups.forEach(function (g) {
+    var c = g.querySelector('.c');
+    if (c) c.dataset.all = c.textContent;
+  });
+  bar.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    var k = b.dataset.filter;
+    bar.querySelectorAll('button').forEach(function (x) {
+      x.setAttribute('aria-pressed', x === b);
+    });
+    groups.forEach(function (g) {
+      var seen = 0;
+      g.querySelectorAll('[data-tags]').forEach(function (el) {
+        var on = k === '*' || (' ' + el.dataset.tags + ' ').indexOf(' ' + k + ' ') >= 0;
+        el.hidden = !on;
+        if (on) seen++;
+      });
+      g.hidden = seen === 0;
+      var c = g.querySelector('.c');
+      if (c) c.textContent = k === '*' ? c.dataset.all : seen;
+    });
+  });
+})();
+</script>"""
 
 
 def item_thinkers(item, D):
@@ -762,15 +867,23 @@ def waiting_clock(D, venue_index):
                 side.append(f'<span class="lab">대개</span>{days}일')
             if expect:
                 side.append(f'<span class="lab">짐작</span>{expect.replace("-", ".")}')
+            body = ''
+            if it.get('next'):
+                body += f'<p class="todo">{esc(it["next"])}</p>'
+            if it.get('note'):
+                body += f'<p class="note">{esc(it["note"])}</p>'
+            body += links_html(it)
+            # 바깥 상자에는 data-since 를 걸지 않는다.
+            # 날수를 적는 손이 그 상자의 안을 통째로 지워 버린다.
             rows.append(
-                # 바깥 상자에는 data-since 를 걸지 않는다.
-                # 날수를 적는 손이 그 상자의 안을 통째로 지워 버린다.
-                f'<div class="clock" data-sent="{esc(d["sent"])}"'
-                + (f' data-days="{days}"' if days else '') + '>'
+                f'<details class="clock" data-sent="{esc(d["sent"])}"'
+                + (f' data-days="{days}"' if days else '') + '><summary>'
                 f'<span class="el" data-since="{esc(d["sent"])}"></span>'
                 f'<span class="t">{esc(it["title"])}</span>'
                 f'<span class="v">{esc(v.get("name", ""))}</span>'
-                f'<span class="side">{"".join(f"<span>{s}</span>" for s in side)}</span></div>')
+                f'<span class="side">{"".join(f"<span>{s}</span>" for s in side)}</span>'
+                f'<span class="arrow">\u25b8</span></summary>'
+                f'<div class="clock-body">{body}</div></details>')
     if not rows:
         return ''
     return ('<div class="sec"><h2>답을 기다리는 중</h2><span class="c">%d</span></div>' % len(rows)
