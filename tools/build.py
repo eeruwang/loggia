@@ -866,7 +866,8 @@ def build_materials(D, nven, narc):
             + '</p><p class="from">' + esc(r.get('어디', '')) + '</p></div><div class="to">'
             + ''.join(f'<span>{esc(x)}</span>' for x in r.get('쓸 곳', []))
             + '</div>'
-            + (f'<a class="link file" href="{esc(r["url"])}" target="_blank" rel="noopener">파일</a>'
+            + (f'<a class="link file" href="{esc(r["url"])}" target="_blank" rel="noopener">'
+               f'{esc(r.get("파일", "파일"))}</a>'
                if r.get('url') else '')
             + '</div>'
             for r in D['reuse'])
