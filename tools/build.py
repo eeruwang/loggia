@@ -538,6 +538,63 @@ def build_calendar(D, venue_index, nven, narc):
     return ''.join(out)
 
 
+def snapshot_md(D, venue_index):
+    """눈으로 훑는 사본. 드롭박스에 내려놓아 눌러 보는 용도다.
+
+    진짜 데이터가 아니다. 여기 고쳐 봐야 판에 닿지 않는다.
+    그 사실을 첫 줄에 적어 둔다.
+    """
+    L = ['# 로지아 스냅샷',
+         '',
+         f'갱신 {D["meta"]["updated"]} · {D["meta"].get("note", "")}',
+         '',
+         '> 이것은 **눈으로 보는 사본**이다. 진짜 데이터는 저장소 `eeruwang/loggia` 의',
+         '> `data.enc` 안에 잠겨 있다. 여기를 고쳐도 판은 바뀌지 않는다.',
+         '> 고치려면 `tools/fetch.sh` 로 받아 `loggia-data.json` 을 손본다.',
+         '']
+    for s in D['sections']:
+        L += [f'## {s["label"]}', '']
+        for it in s['items']:
+            v = venue_index.get(it.get('venue'))
+            st = D['statuses'].get(it.get('status'), {}).get('label', it.get('status', ''))
+            d = it.get('dates', {})
+            when = (('마감 ' + d['deadline']) if d.get('deadline')
+                    else ('냄 ' + d['sent']) if d.get('sent') else '')
+            head = f'- **{it["title"]}**'
+            if v:
+                head += f' · {v["name"]}'
+            L.append(head + f'  \n  {it.get("kind", "")} · {st}' + (f' · {when}' if when else ''))
+            if it.get('next'):
+                L.append(f'  \n  다음 걸음. {it["next"]}')
+            if it.get('note'):
+                L.append(f'  \n  {it["note"]}')
+            L.append('')
+    if D.get('archive'):
+        L += ['## 지난 일', '']
+        for it in D['archive']:
+            d = it.get('dates', {})
+            L.append(f'- **{it["title"]}** · {D["statuses"].get(it.get("status"), {}).get("label", "")}'
+                     + (f' · {d["decided"]}' if d.get('decided') else ''))
+            if it.get('review', {}).get('gist'):
+                L.append(f'  \n  심사평. {it["review"]["gist"]}')
+            L.append('')
+    L += ['## 낼 곳', '']
+    for g in D['venueGroups']:
+        L += [f'### {g["name"]}', '']
+        for v in g['venues']:
+            tags = ' · '.join(t for _, t in index_tags(v, D))
+            bits = [b for b in [v.get('sub'), tags, v.get('flag'),
+                                ('마감 ' + v['deadline']) if v.get('deadline') else None,
+                                v.get('cost')] if b]
+            L.append(f'- **{v["name"]}** — ' + ' · '.join(bits) if bits else f'- **{v["name"]}**')
+            if v.get('note'):
+                L.append(f'  \n  {v["note"]}')
+            L.append('')
+    if D.get('memo'):
+        L += ['## 기억해 둘 것', ''] + [f'- {m}' for m in D['memo']] + ['']
+    return '\n'.join(L)
+
+
 def main():
     data_path, out_dir = sys.argv[1], sys.argv[2]
     D = json.load(open(data_path, encoding='utf-8'))
@@ -568,6 +625,12 @@ def main():
         with open(os.path.join(out_dir, name), 'w', encoding='utf-8') as f:
             f.write(html_text)
         print(f'  {name}  {len(html_text)//1024}KB')
+
+    # 눈으로 보는 사본. 판과 함께 나오되 저장소에는 올리지 않는다
+    md = snapshot_md(D, venue_index)
+    with open(os.path.join(out_dir, '스냅샷.md'), 'w', encoding='utf-8') as f:
+        f.write(md)
+    print(f'  스냅샷.md  {len(md.encode())//1024}KB  (드롭박스에 내려놓는 사본)')
 
 
 if __name__ == '__main__':
