@@ -329,35 +329,51 @@ font-variant-numeric:tabular-nums;align-self:center}
 .sdue[data-urgency=soon]{color:var(--soon)}
 .sdue[data-urgency=past]{color:var(--ink-3)}
 
-/* 걸음을 손으로 더하는 자리 */
-.addbox{margin-top:12px}
-.addbox .pending{list-style:none;margin:0 0 8px;padding:0}
-.addbox .pending:empty{margin:0}
-.addbox .pending li{display:flex;align-items:center;gap:9px;flex-wrap:wrap;
-padding:8px 12px;margin-bottom:6px;background:var(--sunk);border-radius:9px;
+/* 새로 추가한 할 일. 아직 데이터에 들어가지 않았다 */
+.pending{list-style:none;margin:12px 0 0;padding:0}
+.pending:empty{margin:0}
+.pending li{display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+padding:9px 13px;margin-bottom:6px;background:var(--sunk);border-radius:9px;
 border-left:3px solid var(--wait);font-size:15px;line-height:1.5;color:var(--ink)}
-.addbox .pending .tag{font-size:11px;font-weight:800;letter-spacing:.04em;
+.pending .tag{font-size:11px;font-weight:800;letter-spacing:.04em;
 color:var(--wait);white-space:nowrap}
-.addbox .pending .drop{margin-left:auto;appearance:none;border:0;background:transparent;
+.pending .drop{margin-left:auto;appearance:none;border:0;background:transparent;
 cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;color:var(--ink-3);padding:2px 4px}
-.addbox .pending .drop:hover{color:var(--now)}
-.addbtn{appearance:none;border:1px dashed var(--rule-2);background:transparent;cursor:pointer;
-font-family:inherit;font-size:13px;font-weight:700;color:var(--ink-3);
-padding:7px 13px;border-radius:8px}
-.addbtn:hover{color:var(--ink);border-color:var(--ink-3)}
-.addbtn::before{content:'+ '}
-.addform{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-/* display 를 적어 두면 hidden 이 먹지 않는다. UA 규칙보다 이쪽이 세다 */
-.addform[hidden],.addbtn[hidden]{display:none}
-.addform input{font-family:inherit;font-size:15px;color:var(--ink);background:var(--surface);
-border:1px solid var(--rule-2);border-radius:8px;padding:9px 12px}
-.addform .at{flex:1 1 260px;min-width:0}
-.addform .ad{color:var(--ink-2);font-size:13.5px}
-.addform button{appearance:none;border:0;cursor:pointer;font-family:inherit;
-font-size:13px;font-weight:800;padding:9px 15px;border-radius:8px}
-.addform .ok{background:var(--ink);color:var(--paper)}
-.addform .ok[disabled]{opacity:.5;cursor:default}
-.addform .cancel{background:transparent;color:var(--ink-3);padding:9px 6px}
+.pending .drop:hover{color:var(--now)}
+
+/* 오른쪽 아래 단추 하나. 어느 카드에 넣을지는 안에서 고른다 */
+.fab{position:fixed;right:22px;bottom:22px;z-index:40;
+width:52px;height:52px;border-radius:16px;border:0;cursor:pointer;
+background:var(--ink);color:var(--paper);font-family:inherit;
+font-size:26px;font-weight:400;line-height:1;padding:0;
+box-shadow:0 6px 20px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.12);
+transition:transform .12s ease,box-shadow .12s ease}
+.fab:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(0,0,0,.22)}
+.fab:active{transform:translateY(0)}
+.fab[hidden]{display:none}
+.sheet{position:fixed;right:22px;bottom:22px;z-index:41;width:min(360px,calc(100vw - 44px));
+background:var(--surface);border:1px solid var(--rule);border-radius:18px;
+padding:20px 20px 18px;box-shadow:0 18px 50px rgba(0,0,0,.24)}
+.sheet[hidden]{display:none}
+.sheetform{display:flex;flex-direction:column;gap:0}
+.sheet .sl{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--ink-3);
+margin:0 0 6px}
+.sheet .sl:not(:first-child){margin-top:14px}
+.sheet .opt{font-weight:600;letter-spacing:0;color:var(--rule-2)}
+.sheet select,.sheet input{width:100%;font-family:inherit;font-size:15px;color:var(--ink);
+background:var(--paper);border:1px solid var(--rule-2);border-radius:10px;padding:11px 12px}
+.sheet select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);
+background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px,5px 5px;
+background-repeat:no-repeat;padding-right:36px}
+.sheet input:focus,.sheet select:focus{outline:2px solid var(--ink);outline-offset:1px}
+.srow{display:flex;align-items:center;gap:8px;margin-top:18px}
+.srow button{appearance:none;border:0;cursor:pointer;font-family:inherit;
+font-size:14px;font-weight:800;padding:11px 18px;border-radius:10px}
+.srow .ok{background:var(--ink);color:var(--paper);flex:1}
+.srow .ok[disabled]{opacity:.5;cursor:default}
+.srow .cancel{background:transparent;color:var(--ink-3)}
+@media(max-width:560px){.sheet{right:12px;left:12px;bottom:12px;width:auto}
+.fab{right:16px;bottom:16px}}
 .carry .clear{background:transparent;color:var(--paper);opacity:.66;padding:7px 8px}
 .carry .clear:hover{opacity:1}
 .carry .hint{font-size:12px;opacity:.6}
@@ -635,25 +651,15 @@ def steps_html(item, D):
 
 
 def add_html(item):
-    """걸음을 손으로 더하는 자리.
+    """새로 추가한 할 일이 설 자리.
 
-    적은 것은 장부에 쌓이고 판에 곧바로 보인다. 데이터에 들어가는 것은
-    다음 갱신 때다. 그때까지는 「새로 적음」이라고 붙여 둔다.
-    아직 참이 아닌 것을 참인 척 그리지 않기 위해서다.
-
-    장부 열쇠가 없으면 이 자리는 아예 나오지 않는다.
+    더하는 단추는 카드마다 두지 않는다. 카드가 열이면 단추도 열이 되어
+    눈이 어지럽다. 화면 오른쪽 아래 하나만 두고, 거기서 어느 카드에 넣을지
+    고르게 한다.
     """
     if not os.environ.get('LEDGER_TOKEN'):
         return ''
-    return (f'<div class="addbox" data-for="{esc(item["id"])}">'
-            '<ol class="pending"></ol>'
-            '<button type="button" class="addbtn">걸음 더하기</button>'
-            '<form class="addform" hidden>'
-            '<input type="text" class="at" placeholder="무엇을 할까요" maxlength="200" required>'
-            '<input type="date" class="ad" aria-label="이 걸음의 마감">'
-            '<button type="submit" class="ok">더하기</button>'
-            '<button type="button" class="cancel">그만</button>'
-            '</form></div>')
+    return f'<ol class="pending" data-for="{esc(item["id"])}"></ol>' 
 
 
 def entry_html(item, D, venue_index):
@@ -706,18 +712,38 @@ def build_index(D, venue_index, nven, narc):
     # 열쇠는 빚을 때 환경에서 받는다. 빚어진 판은 암호문이므로 함께 잠긴다.
     lt = os.environ.get('LEDGER_TOKEN', '')
     out.append('<div class="carry" id="carry" hidden>'
-               '<span class="cap">해치운 걸음 <b class="n">0</b></span>'
+               '<span class="cap">끝낸 일 <b class="n">0</b></span>'
                + ('<button type="button" class="save">저장</button>' if lt
-                  else '<button type="button" class="copy">옮겨 적기</button>')
-               + '<button type="button" class="clear">지우기</button>'
+                  else '<button type="button" class="copy">복사</button>')
+               + '<button type="button" class="clear">전체 해제</button>'
                + '<span class="hint">'
-               + ('모았다가 한 번에 저장합니다. 다른 기기에서도 같은 줄이 보입니다'
-                  if lt else '베낀 것을 채팅에 붙이면 판이 따라옵니다')
+               + ('한 번에 저장합니다. 다른 기기에서도 보입니다'
+                  if lt else '복사해서 채팅에 붙이면 반영됩니다')
                + '</span></div>')
     if lt:
         out.append('<script>const LEDGER=' + json.dumps({'k': lt}) + ';</script>')
     out.append('<div class="tally" id="tally"></div>'
                '<script>const DONE = ' + json.dumps(done, ensure_ascii=False) + ';</script>')
+
+    # 할 일을 더하는 자리. 화면 오른쪽 아래 하나뿐이다.
+    if lt:
+        opts = ''.join(
+            f'<option value="{esc(it["id"])}">{esc(it["title"])}</option>'
+            for sec in D['sections'] if sec['id'] != 'waiting'
+            for it in sec['items'])
+        out.append(
+            '<button type="button" class="fab" id="fab" aria-label="할 일 추가">+</button>'
+            '<div class="sheet" id="sheet" hidden role="dialog" aria-label="할 일 추가">'
+            '<form class="sheetform">'
+            '<label class="sl">어디에</label>'
+            f'<select class="ai">{opts}</select>'
+            '<label class="sl">무엇을</label>'
+            '<input type="text" class="at" placeholder="할 일을 적으세요" maxlength="200" required>'
+            '<label class="sl">언제까지 <span class="opt">비워 둬도 됩니다</span></label>'
+            '<input type="date" class="ad">'
+            '<div class="srow"><button type="submit" class="ok">추가</button>'
+            '<button type="button" class="cancel">취소</button></div>'
+            '</form></div>')
 
     f = pick_focus(D)
     if f:
@@ -953,7 +979,7 @@ BOARD_JS = """<script>
     bar.hidden = on.length === 0 && !dirty;
     var n = bar.querySelector('.n');
     if (n) n.textContent = on.length;
-    bar.dataset.text = '로지아 갱신. 아래를 해치웠다.\\n'
+    bar.dataset.text = '로지아 갱신. 아래를 끝냈습니다.\\n'
       + on.map(function (b) { return '- ' + title(b) + ' · ' + label(b); }).join('\\n');
     var sv = bar.querySelector('.save');
     if (sv) { sv.disabled = !dirty; sv.textContent = dirty ? '저장' : '저장됨'; }
@@ -1031,7 +1057,7 @@ BOARD_JS = """<script>
       var t = bar.dataset.text;
       var done = function () {
         var el = cbtn;
-        var was = el.textContent; el.textContent = '베꼈습니다';
+        var was = el.textContent; el.textContent = '복사했습니다';
         setTimeout(function () { el.textContent = was; }, 1600);
       };
       if (navigator.clipboard) { navigator.clipboard.writeText(t).then(done, done); }
@@ -1057,18 +1083,22 @@ BOARD_JS = """<script>
 
 
 ADD_JS = """<script>
-// 걸음을 손으로 더하는 자리.
+// 할 일을 손으로 추가하는 자리.
 //
-// 적은 것은 워커의 장부에 쌓이고 판에는 곧바로 보인다. 데이터에 들어가는 것은
-// 다음 갱신 때다. 그때까지 「새로 적음」이라고 붙여 두는 것은, 아직 참이 아닌
-// 것을 참인 척 그리지 않기 위해서다.
+// 적은 것은 워커의 장부에 곧바로 들어가고 판에는 「새로 추가」로 뜬다.
+// 깃허브의 데이터에 들어가는 것은 다음 갱신 때다. 그때까지 표를 붙여 두는
+// 것은, 아직 참이 아닌 것을 참인 척 그리지 않기 위해서다.
 //
-// 날짜를 적으면 그 걸음이 제 D-day 를 갖는다. 셈은 판을 열 때마다 다시 한다.
+// 날짜를 적으면 그 할 일이 제 D-day 를 갖는다. 셈은 판을 열 때마다 다시 한다.
 (function () {
   if (typeof LEDGER === 'undefined') return;
   var U = '/add?k=' + encodeURIComponent(LEDGER.k);
   var today = new Date(); today.setHours(0, 0, 0, 0);
   var ADD = {};
+  var fab = document.getElementById('fab');
+  var sheet = document.getElementById('sheet');
+  if (!fab || !sheet) return;
+  var form = sheet.querySelector('.sheetform');
 
   function iso(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
@@ -1082,26 +1112,25 @@ ADD_JS = """<script>
   }
 
   function draw() {
-    document.querySelectorAll('.addbox').forEach(function (bx) {
-      var ol = bx.querySelector('.pending');
+    document.querySelectorAll('.pending').forEach(function (ol) {
       ol.textContent = '';
       Object.keys(ADD).forEach(function (k) {
         var a = ADD[k];
-        if (a.item !== bx.dataset.for) return;
+        if (a.item !== ol.dataset.for) return;
         var li = document.createElement('li');
         li.dataset.k = k;
         // 손으로 적은 글은 마디로 넣는다. 판을 흔들 틈을 주지 않는다
         var t = document.createElement('span');
-        t.className = 't'; t.textContent = a.t; li.appendChild(t);
+        t.textContent = a.t; li.appendChild(t);
         if (a.due) {
           var d = dlabel(a.due), sp = document.createElement('span');
           sp.className = 'sdue'; sp.dataset.urgency = d.u; sp.textContent = d.t;
           li.appendChild(sp);
         }
         var tag = document.createElement('span');
-        tag.className = 'tag'; tag.textContent = '새로 적음'; li.appendChild(tag);
+        tag.className = 'tag'; tag.textContent = '새로 추가'; li.appendChild(tag);
         var x = document.createElement('button');
-        x.type = 'button'; x.className = 'drop'; x.textContent = '지우기';
+        x.type = 'button'; x.className = 'drop'; x.textContent = '삭제';
         li.appendChild(x);
         ol.appendChild(li);
       });
@@ -1115,44 +1144,38 @@ ADD_JS = """<script>
       .then(function (j) { ADD = j; draw(); });
   }
 
+  function open_(on) {
+    sheet.hidden = !on; fab.hidden = on;
+    if (on) sheet.querySelector('.at').focus();
+  }
+
+  fab.addEventListener('click', function () { open_(true); });
+  sheet.querySelector('.cancel').addEventListener('click', function () {
+    form.reset(); open_(false);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !sheet.hidden) { form.reset(); open_(false); }
+  });
   document.addEventListener('click', function (e) {
-    var b = e.target.closest('.addbtn');
-    if (b) {
-      var f = b.parentNode.querySelector('.addform');
-      f.hidden = false; b.hidden = true; f.querySelector('.at').focus();
-      return;
-    }
-    var c = e.target.closest('.cancel');
-    if (c) {
-      var f2 = c.closest('.addform');
-      f2.hidden = true; f2.reset();
-      f2.parentNode.querySelector('.addbtn').hidden = false;
-      return;
-    }
-    var d = e.target.closest('.drop');
-    if (d) { post({ del: [d.closest('li').dataset.k] }); }
+    var d = e.target.closest('.pending .drop');
+    if (d) post({ del: [d.closest('li').dataset.k] });
   });
 
-  document.addEventListener('submit', function (e) {
-    var f = e.target.closest('.addform');
-    if (!f) return;
+  form.addEventListener('submit', function (e) {
     e.preventDefault();
-    var bx = f.closest('.addbox');
-    var t = f.querySelector('.at').value.trim();
+    var t = form.querySelector('.at').value.trim();
     if (!t) return;
-    var due = f.querySelector('.ad').value;
-    var row = { item: bx.dataset.for, t: t, at: iso(new Date()) };
+    var due = form.querySelector('.ad').value;
+    var row = { item: form.querySelector('.ai').value, t: t, at: iso(new Date()) };
     if (due) row.due = due;
     var id = (self.crypto && crypto.randomUUID ? crypto.randomUUID()
               : String(Date.now()) + Math.random().toString(36).slice(2)).slice(0, 12);
     var set = {}; set[id] = row;
-    var ok = f.querySelector('.ok');
-    ok.disabled = true; ok.textContent = '넣는 중';
+    var ok = form.querySelector('.ok');
+    ok.disabled = true; ok.textContent = '저장 중';
     post({ set: set }).then(function () {
-      f.reset(); f.hidden = true;
-      bx.querySelector('.addbtn').hidden = false;
-      ok.textContent = '더하기';
-    }, function () { ok.textContent = '다시'; })
+      form.reset(); open_(false); ok.textContent = '추가';
+    }, function () { ok.textContent = '다시 시도'; })
       .then(function () { ok.disabled = false; });
   });
 

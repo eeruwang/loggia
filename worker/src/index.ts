@@ -279,13 +279,13 @@ function compose(d: Digest, today: string, pend: AddRow[] = []) {
       .map((a) => ({ a, n: a.due ? until(today, a.due) : 9999 }))
       .sort((x, y) => x.n - y.n);
     blocks.push({
-      cap: '새로 적은 것',
+      cap: '새로 추가한 일',
       cards: rows.slice(0, 6).map((x) => ({
         big: x.a.due ? (x.n < 0 ? String(-x.n) : x.n === 0 ? '오늘' : 'D-' + x.n) : '—',
         small: x.a.due && x.n < 0 ? '일 지남' : '',
         tone: x.a.due ? dTone(x.n) : ('later' as Tone),
         title: x.a.t,
-        meta: `${x.a.at.replace(/-/g, '.')} 적음`,
+        meta: `${x.a.at.replace(/-/g, '.')} 추가`,
       })),
     });
   }
@@ -310,7 +310,7 @@ function compose(d: Digest, today: string, pend: AddRow[] = []) {
   }
   if (late.length) {
     blocks.push({
-      cap: '오래 기다린 것',
+      cap: '오래 기다린 일',
       cards: late.map((x) => ({
         big: String(x.n), small: '일째', tone: 'wait' as Tone,
         title: x.r.t,
@@ -320,7 +320,7 @@ function compose(d: Digest, today: string, pend: AddRow[] = []) {
   }
   if (cold.length) {
     blocks.push({
-      cap: '멈춰 있는 것',
+      cap: '멈춰 있는 일',
       cards: cold.slice(0, 4).map((x) => ({
         big: String(x.n), small: '일째', tone: 'stop' as Tone,
         title: x.r.t, meta: (x.r.v || '') + ` · 마지막 작업 ${md(x.r.touched!)}`,
@@ -329,7 +329,7 @@ function compose(d: Digest, today: string, pend: AddRow[] = []) {
   }
   if (reps.length) {
     blocks.push({
-      cap: '다시 돌아오는 것',
+      cap: '다시 돌아오는 일',
       cards: reps.slice(0, 3).map((x) => ({
         // 되풀이는 참된 마감이 아니다. 같은 D- 글자를 다른 빛깔로 쓰면
         // 눈이 헷갈리므로 여기서는 아예 다른 말로 적는다.
@@ -532,10 +532,10 @@ function renderQuarter(d: Digest, today: string) {
   const blocks: Block[] = [];
   if (moved.length) {
     blocks.push({
-      cap: '나아간 것',
+      cap: '지난 석 달에 한 일',
       cards: moved.slice(0, 8).map((x) => ({
         big: md(x.d), small: '', tone: 'live' as Tone,
-        title: x.t, meta: x.k === '냈다' ? '냈다' : '끝났다',
+        title: x.t, meta: x.k === '냈다' ? '제출' : '완료',
       })),
     });
   }
@@ -571,7 +571,7 @@ function renderQuarter(d: Digest, today: string) {
     letter-spacing:-.01em;color:${LIGHT.paper}">낸 것 ${n['냈다']} · 끝난 것 ${n['끝났다']} ·
     손댄 갈래 ${Object.keys(seen).length}</div>
   <div class="fx-m" style="margin-top:14px;font-size:13px;line-height:1.6;color:#8f95a3">
-    지난 석 달 동안 판에 남은 자취입니다. 판에 적지 않은 일은 여기 없습니다.</div>
+    지난 석 달 동안 기록에 남은 것입니다. 적어 두지 않은 일은 여기 없습니다.</div>
 </td></tr></table>`;
 
   const compass = (d.compass ?? []).length ? `
@@ -579,7 +579,7 @@ function renderQuarter(d: Digest, today: string) {
   style="margin:34px 0 0"><tr><td class="card pad" style="background:${LIGHT.surface};
   border:1px solid ${LIGHT.rule};border-radius:12px;padding:22px 24px">
   <div class="cap" style="font-size:12px;font-weight:800;letter-spacing:.14em;
-    color:${LIGHT.ink3};margin-bottom:14px">나침반에 대고</div>
+    color:${LIGHT.ink3};margin-bottom:14px">연구 지형도와 견주면</div>
   ${(d.compass ?? []).map((l) => `<p class="t" style="margin:0 0 10px;font-size:15px;
     line-height:1.66;color:${LIGHT.ink}">${esc(l)}</p>`).join('')}
   <p class="m" style="margin:16px 0 0;padding-top:14px;border-top:1px solid ${LIGHT.rule};
