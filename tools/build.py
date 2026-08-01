@@ -242,6 +242,12 @@ background:var(--sunk);padding:3px 11px;border-radius:99px}
 /* 낼 곳과 재료의 상자 */
 .venue-block{background:var(--surface);border:1px solid var(--rule);border-radius:12px;
 padding:20px 22px 22px;margin-bottom:12px}
+.venue-block.t-live{border-left:6px solid var(--live)}
+.venue-block.t-wait{border-left:6px solid var(--wait)}
+.venue-block.t-stop{border-left:6px solid var(--stop)}
+.venue-block.t-done{border-left:6px solid var(--done)}
+.venue-head .mark{margin-left:auto}
+.rep .vn{font-size:12.5px;font-weight:600;color:var(--ink-3)}
 .venue-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .venue-head h3{font-size:20px;font-weight:800;letter-spacing:-.015em;margin:0;line-height:1.3}
 .venue-head h3 a{color:var(--ink);text-decoration:none;border-bottom:2px solid var(--rule-2)}
@@ -723,9 +729,9 @@ def build_archive(D, venue_index, nven, narc):
             rv = it.get('review')
             gist = (f'<p class="gist">{esc(rv["gist"])}<span class="who">{esc(rv.get("who",""))}</span></p>'
                     if rv else '')
-            out.append(f"""<section class="venue-block">
-<div class="venue-head"><h3>{esc(it['title'])}</h3><span class="sub">{esc(it.get('kind',''))}</span></div>
-<div class="idx-row"><span class="mark {cls}">{esc(st['label'])}</span></div>
+            out.append(f"""<section class="venue-block t-{esc(st.get('tone', 'done'))}">
+<div class="venue-head"><h3>{esc(it['title'])}</h3><span class="sub">{esc(it.get('kind',''))}</span>
+<span class="mark {cls}">{esc(st['label'])}</span></div>
 {f'<div class="venue-facts">{"".join(facts)}</div>' if facts else ''}
 {gist}
 {f'<p class="note">{esc(it["note"])}</p>' if it.get('note') else ''}
@@ -826,8 +832,9 @@ def build_calendar(D, venue_index, nven, narc):
     if D.get('repeats'):
         rl = ''.join(
             f'<div class="rep"><span class="when">{"·".join(str(m) for m in r["months"])}월 '
-            f'{r.get("day", "말일") if isinstance(r.get("day", "말일"), str) else str(r["day"]) + "일"}</span>'
-            f'<span class="t">{esc(r["label"])}</span>'
+            f'{r.get("day", "말일") if isinstance(r.get("day", "말일"), str) else str(r["day"]) + "일"}</span>'            + f'<span class="t">{esc(r["label"])}</span>'
+            + (f'<span class="vn">{esc(venue_index[r["venue"]]["name"])}</span>'
+               if r.get('venue') in venue_index else '')
             + ('<span class="guess">짐작</span>' if r.get('짐작') else '')
             + (f'<span class="n">{esc(r["note"])}</span>' if r.get('note') else '')
             + '</div>' for r in D['repeats'])
