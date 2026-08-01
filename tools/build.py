@@ -407,6 +407,30 @@ def all_items(D):
         yield it, True
 
 
+def item_thinkers(item, D):
+    """이 글이 누구를 쓰고 있나.
+
+    두 길로 모은다.
+    하나, 항목의 글에서 이름을 찾는다. thinkers 의 `말` 에 적어 둔 이름들이다.
+    둘, `uses.이론가` 에 손으로 적은 것.
+
+    첫째 길이 있어서 대개는 손으로 적을 일이 없다. 메모에 이름을 쓰면 그것으로 족하다.
+    그리고 이론가를 나중에 더하면 이미 쌓인 메모를 거슬러 훑어 그때 걸린다.
+
+    `말` 에는 사람 이름만 적는다. 학파나 개념 이름을 넣으면 잘못 걸린다.
+    이를테면 '신현상학까지는 넓히지 않는다'는 메모는 슈미츠를 쓴다는 뜻이 아니다.
+    """
+    hay = ' '.join(str(item.get(k, '')) for k in ('title', 'kind', 'note', 'next'))
+    found = []
+    for tid, t in D.get('thinkers', {}).items():
+        if any(w and w in hay for w in t.get('말', [])):
+            found.append(tid)
+    for tid in item.get('uses', {}).get('이론가', []):
+        if tid not in found:
+            found.append(tid)
+    return found
+
+
 def build_materials(D, nven, narc):
     """무엇으로 지었나. 이론가와 개념과 읽기에서 거꾸로 글을 찾는다.
 
@@ -418,7 +442,7 @@ def build_materials(D, nven, narc):
     by_thinker, by_concept, by_reading = {}, {}, {}
     for it, arc in all_items(D):
         u = it.get('uses', {})
-        for t in u.get('이론가', []):
+        for t in item_thinkers(it, D):
             by_thinker.setdefault(t, []).append((it, arc))
         for c in u.get('개념', []):
             by_concept.setdefault(c, []).append((it, arc))
