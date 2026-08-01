@@ -262,7 +262,7 @@ function compose(d: Digest, today: string) {
   }
   if (ahead.length) {
     blocks.push({
-      cap: '이레 안',
+      cap: '일주일 안',
       cards: ahead.map((x) => ({
         big: dBig(x.n), small: md(x.r.due!), tone: dTone(x.n),
         title: x.r.t, meta: (x.r.v || '') + (x.r.step ? vsep(cut(split2(x.r.step)[0], 30)) : ''),
@@ -271,41 +271,45 @@ function compose(d: Digest, today: string) {
   }
   if (late.length) {
     blocks.push({
-      cap: '답이 늦다',
+      cap: '오래 기다린 것',
       cards: late.map((x) => ({
         big: String(x.n), small: '일째', tone: 'wait' as Tone,
         title: x.r.t,
-        meta: (x.r.v || '') + (x.r.until ? ` · 대개 ${x.r.until}일` : '') + ` · ${md(x.r.sent!)} 냄`,
+        meta: (x.r.v || '') + (x.r.until ? ` · 보통 ${x.r.until}일` : '') + ` · ${md(x.r.sent!)} 제출`,
       })),
     });
   }
   if (cold.length) {
     blocks.push({
-      cap: '멎어 있다',
+      cap: '멈춰 있는 것',
       cards: cold.slice(0, 4).map((x) => ({
         big: String(x.n), small: '일째', tone: 'stop' as Tone,
-        title: x.r.t, meta: (x.r.v || '') + ` · ${md(x.r.touched!)} 마지막`,
+        title: x.r.t, meta: (x.r.v || '') + ` · 마지막 작업 ${md(x.r.touched!)}`,
       })),
     });
   }
   if (reps.length) {
     blocks.push({
-      cap: '돌아온다',
+      cap: '다시 돌아오는 것',
       cards: reps.slice(0, 3).map((x) => ({
         // 되풀이는 참된 마감이 아니다. 같은 D- 글자를 다른 빛깔로 쓰면
         // 눈이 헷갈리므로 여기서는 아예 다른 말로 적는다.
         big: x.n === 0 ? '오늘' : String(x.n), small: x.n === 0 ? '' : '일 뒤',
         tone: 'later' as Tone,
-        title: x.r.t, meta: (x.r.v || '') + (x.r.guess ? ' · 짐작' : ''),
+        title: x.r.t, meta: (x.r.v || '') + (x.r.guess ? ' · 추정' : ''),
       })),
     });
   }
 
   const hot = soon.length ? soon[0].n : null;
   const [act] = one ? split2(one.step!) : [''];
+  // 제목의 머리표. 상자 안의 「지남」은 좁은 칸에 맞춘 말이지만
+  // 잠금 화면에서는 며칠 지났는지가 보여야 손이 움직인다.
+  const badge = (n: number) =>
+    n < 0 ? `${-n}일 지남` : n === 0 ? '오늘 마감' : `D-${n}`;
   const subject = one
-    ? (hot !== null && hot <= 3 ? `[${dBig(hot)}] ` : '') + `오늘 하나 · ${cut(act, 42)}`
-    : '오늘은 적힌 걸음이 없습니다';
+    ? (hot !== null && hot <= 3 ? `[${badge(hot)}] ` : '') + `오늘 딱 하나 · ${cut(act, 42)}`
+    : '오늘은 할 일이 없습니다';
 
   return { one, subject, blocks };
 }
@@ -358,11 +362,11 @@ function focusBox(one: Row | null, today: string): string {
   style="margin:22px 0 0"><tr><td class="fx" style="background:${LIGHT.ink};
   border-radius:14px;padding:26px 28px 28px">
   <div class="fx-cap" style="font-size:12px;font-weight:800;letter-spacing:.14em;
-    color:#7b818f;margin-bottom:14px">오늘 하나</div>
+    color:#7b818f;margin-bottom:14px">오늘 딱 하나</div>
   <div class="fx-t" style="font-size:24px;font-weight:700;line-height:1.4;
-    color:${LIGHT.paper}">적힌 걸음이 없습니다</div>
+    color:${LIGHT.paper}">오늘 할 일이 없습니다</div>
   <div class="fx-s" style="margin-top:10px;font-size:14px;line-height:1.66;color:#b9bec8">
-    판을 열어 다음 걸음을 하나만 적어 두면 내일 아침 이 자리에 옵니다.</div>
+    로지아에 다음 할 일을 하나만 적어 두면 내일 아침 이 자리에 뜹니다.</div>
 </td></tr></table>`;
   }
   const n = one.due ? until(today, one.due) : null;
@@ -374,7 +378,7 @@ function focusBox(one: Row | null, today: string): string {
   style="margin:22px 0 0"><tr><td class="fx pad" style="background:${LIGHT.ink};
   border-radius:14px;padding:26px 28px 28px">
   <div class="fx-cap" style="font-size:12px;font-weight:800;letter-spacing:.14em;
-    color:#7b818f;margin-bottom:14px">오늘 하나</div>
+    color:#7b818f;margin-bottom:14px">오늘 딱 하나</div>
   ${n !== null ? `<div class="fxd fx-${tone}" style="font-size:42px;font-weight:800;
     letter-spacing:-.03em;line-height:1;color:${LIGHT[tone]};
     font-variant-numeric:tabular-nums">${esc(dBig(n))}</div>` : ''}
@@ -422,10 +426,9 @@ function render(d: Digest, today: string) {
 <tr><td style="padding:38px 4px 0">
   <a class="btn" href="${esc(d.site)}" style="display:inline-block;background:${LIGHT.ink};
     color:${LIGHT.paper};font-size:15px;font-weight:800;letter-spacing:-.01em;
-    text-decoration:none;padding:14px 24px;border-radius:10px">판을 연다 →</a>
+    text-decoration:none;padding:14px 24px;border-radius:10px">로지아 열기 →</a>
   <div class="m" style="margin-top:14px;font-size:12px;color:${LIGHT.ink3}">
-    판이 만들어진 날 ${esc(d.built.replace(/-/g, '.'))} ·
-    날수는 이 편지를 부치는 순간에 셈합니다</div>
+    마지막 업데이트 ${esc(d.built.replace(/-/g, '.'))}</div>
 </td></tr>
 
 </table></td></tr></table></body></html>`;
@@ -434,8 +437,8 @@ function render(d: Digest, today: string) {
   const text = [
     `LOGGIA  ${today.replace(/-/g, '.')} ${w}`,
     '',
-    '── 오늘 하나 ' + (one?.due ? dBig(until(today, one.due)) : ''),
-    one ? act : '적힌 걸음이 없습니다',
+    '── 오늘 딱 하나 ' + (one?.due ? dBig(until(today, one.due)) : ''),
+    one ? act : '오늘 할 일이 없습니다',
     ...(why ? [why] : []),
     ...(one ? [[one.t, one.v, one.pum].filter(Boolean).join(' · ')] : []),
     ...blocks.map((b) => `\n── ${b.cap} (${b.cards.length})\n`
