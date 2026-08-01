@@ -1,5 +1,5 @@
 // =============================================================================
-// 로지아 아침 편지
+// 로지아 아침 메일
 //
 // 하루 한 번, 판을 대신 읽고 한 줄을 부친다.
 //
@@ -11,17 +11,17 @@
 // 깨어나는 길이 둘이다
 //   scheduled  시계가 깨운다. wrangler.jsonc 의 crons 가 그 시계다.
 //              아무도 주소를 열지 않아도, 데스크탑이 꺼져 있어도 깨어난다.
-//   fetch      손으로 한 통 부쳐 볼 때만. 판의 알맹이는 돌려주지 않는다.
+//   fetch      손으로 한 통 부쳐 볼 때만. 판의 내용은 돌려주지 않는다.
 //
 // 날짜 셈을 여기서 하는 이유
 //   며칠 남았는지는 부치는 그 순간에만 참이다. 빌더가 미리 세어 두면
 //   판을 두 주 동안 올리지 않은 아침에 거짓말을 하게 된다.
 //   digest.enc 에는 날것만 들어 있고, 셈은 전부 아래에서 한다.
 //
-// 열쇠가 둘인 이유
+// 키가 둘인 이유
 //   사람이 손으로 치는 암호는 엔트로피가 낮아 PBKDF2 를 육십만 번 돌려야
 //   한다. 그 셈은 무료 판의 십 밀리초를 훌쩍 넘긴다. 워커는 사람이 아니므로
-//   처음부터 무작위 256비트를 준다. 늘일 것이 없으니 푸는 데 일 밀리초도
+//   처음부터 무작위 256비트를 쓴다. 반복 계산이 없으니 푸는 데 1밀리초도
 //   들지 않는다.
 // =============================================================================
 
@@ -36,13 +36,13 @@ interface Env {
   MAIL_FROM: string;
   MAIL_TO: string;
   PREVIEW_TOKEN?: string;  // 비밀. 손으로 한 통 부쳐 볼 때 쓴다
-  LEDGER?: KVNamespace;    // 장부. 해치운 걸음과 새로 적은 걸음이 여기 산다
+  LEDGER?: KVNamespace;    // 기록. 해치운 할 일과 새로 적은 할 일이 여기 산다
   LEDGER_TOKEN?: string;   // 비밀. 판 안에 박혀 있다. 판이 암호문이므로 함께 잠긴다
 }
 
-/** 장부 한 칸. 무엇을 언제 해치웠는지. */
+/** 기록 한 칸. 무엇을 언제 해치웠는지. */
 type DoneRow = { t: string; s: string; at: string };
-/** 손으로 새로 적은 걸음. 아직 데이터에 들어가지 않았다. */
+/** 손으로 새로 적은 할 일. 아직 데이터에 들어가지 않았다. */
 type AddRow = { item: string; t: string; due?: string; at: string };
 type Ledger = Record<string, DoneRow | AddRow>;
 
@@ -108,9 +108,9 @@ async function fetchDigest(env: Env): Promise<Digest> {
 //
 //   하나. 대비를 살린다. 옅은 회색으로 중요한 것을 적지 않는다.
 //   둘.  제목이 가장 굵고 크다.
-//   셋.  덩이로 자른다. 한 갈래가 한 상자다. 왼쪽 띠의 빛깔로 결을 안다.
+//   셋.  덩이로 자른다. 한 항목이 한 상자다. 왼쪽 막대의 색로 결을 안다.
 //
-// 빛깔은 꾸밈이 아니라 뜻이다.
+// 색은 꾸밈이 아니라 뜻이다.
 //   붉음 급하다 · 주황 다가온다 · 파랑 남을 기다린다 · 회색 멎었다
 //
 // 메일에는 사용자 정의 속성도 flex 도 쓸 수 없다. 그래서 값을 그대로 적고
@@ -138,7 +138,7 @@ const FONT = "'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,
  * 어두운 낯빛.
  *
  * 초점 상자는 판에서 --ink 를 바탕으로 쓴다. 어두운 낯빛에서 --ink 는
- * 밝은 빛깔이 되므로 상자가 통째로 뒤집힌다. 판이 그러하니 편지도 그렇게 둔다.
+ * 밝은 색이 되므로 상자가 통째로 뒤집힌다. 판이 그러하니 편지도 그렇게 둔다.
  */
 const DARK_CSS = `
 @media (prefers-color-scheme: dark) {
@@ -191,14 +191,14 @@ const esc = (s: string) =>
  * 판이 쓰는 말 그대로.
  *
  * 넓은 자리에서는 며칠 지났는지를 통째로 적는다. 좁은 칸에서는 숫자만 크게
- * 두고 아랫줄에 말을 붙인다. 「지남」 한 마디만 던지면 얼마나 지났는지가
+ * 두고 아랫줄에 말을 붙인다. 「지남」 한 섹션만 던지면 얼마나 지났는지가
  * 사라지고, 그 숫자가 실은 손을 움직이게 하는 것이다.
  */
 function dBig(n: number): string {
   return n < 0 ? `${-n}일 지남` : n === 0 ? '오늘' : `D-${n}`;
 }
 
-/** 판이 쓰는 빛깔 그대로. 이레 안이면 붉고 한 달 안이면 주황이다. */
+/** 판이 쓰는 색 그대로. 이레 안이면 붉고 한 달 안이면 주황이다. */
 function dTone(n: number): Tone {
   return n < 0 ? 'now' : n <= 7 ? 'now' : n <= 30 ? 'soon' : 'later';
 }
@@ -218,7 +218,7 @@ function split2(step: string): [string, string] {
 /**
  * 오늘 하나.
  *
- * 진행 중인 것 가운데 첫 걸음이 있는 것을 고른다. 마감이 가장 가까운 것이
+ * 진행 중인 것 가운데 첫 할 일이 있는 것을 고른다. 마감이 가장 가까운 것이
  * 먼저다. 이미 지난 마감은 뒤로 미루지 않고 맨 앞에 세운다. 지난 것을
  * 조용히 숨기면 그것이 있었다는 사실까지 함께 사라진다.
  */
@@ -272,8 +272,8 @@ function compose(d: Digest, today: string, pend: AddRow[] = []) {
 
   const blocks: Block[] = [];
 
-  // 손으로 새로 적은 걸음. 아직 데이터에 들어가지 않았으므로 따로 부른다.
-  // 밤에 적은 것이 이튿날 아침 편지에 없으면 적은 보람이 없다.
+  // 손으로 새로 적은 할 일. 아직 데이터에 들어가지 않았으므로 따로 부른다.
+  // 밤에 적은 것이 이튿날 아침 메일에 없으면 적은 보람이 없다.
   if (pend.length) {
     const rows = pend
       .map((a) => ({ a, n: a.due ? until(today, a.due) : 9999 }))
@@ -331,7 +331,7 @@ function compose(d: Digest, today: string, pend: AddRow[] = []) {
     blocks.push({
       cap: '다시 돌아오는 일',
       cards: reps.slice(0, 3).map((x) => ({
-        // 되풀이는 참된 마감이 아니다. 같은 D- 글자를 다른 빛깔로 쓰면
+        // 되풀이는 참된 마감이 아니다. 같은 D- 글자를 다른 색로 쓰면
         // 눈이 헷갈리므로 여기서는 아예 다른 말로 적는다.
         big: x.n === 0 ? '오늘' : String(x.n), small: x.n === 0 ? '' : '일 뒤',
         tone: 'later' as Tone,
@@ -569,7 +569,7 @@ function renderQuarter(d: Digest, today: string) {
     color:#7b818f;margin-bottom:14px">${esc(label)} 돌아보기</div>
   <div class="fxt fx-t" style="font-size:26px;font-weight:700;line-height:1.4;
     letter-spacing:-.01em;color:${LIGHT.paper}">낸 것 ${n['냈다']} · 끝난 것 ${n['끝났다']} ·
-    손댄 갈래 ${Object.keys(seen).length}</div>
+    손댄 항목 ${Object.keys(seen).length}</div>
   <div class="fx-m" style="margin-top:14px;font-size:13px;line-height:1.6;color:#8f95a3">
     지난 석 달 동안 기록에 남은 것입니다. 적어 두지 않은 일은 여기 없습니다.</div>
 </td></tr></table>`;
@@ -614,7 +614,7 @@ function renderQuarter(d: Digest, today: string) {
 </table></td></tr></table></body></html>`;
 
   const text = [`LOGGIA  ${label} 돌아보기`, '',
-    `낸 것 ${n['냈다']} · 끝난 것 ${n['끝났다']} · 손댄 갈래 ${Object.keys(seen).length}`,
+    `낸 것 ${n['냈다']} · 끝난 것 ${n['끝났다']} · 손댄 항목 ${Object.keys(seen).length}`,
     ...blocks.map((b) => `\n── ${b.cap} (${b.cards.length})\n`
       + b.cards.map((c) => `${(c.big + ' ' + c.small).trim().padEnd(8)} ${c.title} · ${c.meta}`).join('\n')),
     '', ...(d.compass ?? []), '', d.site].join('\n');
@@ -635,24 +635,24 @@ async function send(env: Env): Promise<string> {
   return r.messageId;
 }
 
-// ── 해치운 걸음 장부 ─────────────────────────────────────────────────────────
+// ── 해치운 할 일 기록 ─────────────────────────────────────────────────────────
 //
 // 판은 미리 그려 둔 정적 파일이고 그리는 것은 파이썬이다. 그러므로 네모를
-// 눌렀다고 원본이 따라 고쳐질 길은 없다. 고치려면 판의 암호와 깃허브 쓰기
-// 열쇠를 이 워커 안에 넣어야 하는데, 그러면 아침 편지만 읽던 것이 판 전체를
+// 눌렀다고 원본이 따라 고쳐질 길은 없다. 고치려면 보드 암호와 깃허브 쓰기
+// 키를 이 워커 안에 넣어야 하는데, 그러면 아침 메일만 읽던 워커가 보드 전체를
 // 읽고 쓰는 물건이 된다.
 //
-// 그래서 원본을 건드리지 않고 장부만 따로 쥔다. 얻는 것이 더 크다.
+// 그래서 원본을 건드리지 않고 기록만 따로 쥔다. 얻는 것이 더 크다.
 // 휴대전화에서 그은 줄이 노트북에서도 그어진다. 이 기기에만 남던 표시로는
 // 되지 않던 일이다.
 //
-// 원본에 닿는 것은 다음 갱신 때 사람이 한다. 장부를 읽어 걸음을 빼고
-// 손댄 날을 고치고 장부를 비운다.
+// 원본에 닿는 것은 다음 갱신 때 사람이 한다. 기록을 읽어 할 일을 빼고
+// 마지막 작업일을 고치고 기록을 비운다.
 //
-// 열쇠는 판 안에 박혀 있다. 판이 암호문이므로 암호를 푼 사람만 그것을 본다.
+// 키는 판 안에 박혀 있다. 판이 암호문이므로 암호를 푼 사람만 그것을 본다.
 // 지금 보안 모형과 어긋나지 않는다.
-const DONE_KEY = 'board';   // 해치운 걸음
-const ADD_KEY = 'added';    // 새로 적은 걸음
+const DONE_KEY = 'board';   // 해치운 할 일
+const ADD_KEY = 'added';    // 새로 적은 할 일
 
 function json(v: unknown, status = 200): Response {
   return new Response(JSON.stringify(v), {
@@ -679,7 +679,7 @@ async function ledger(req: Request, env: Env, k: string | null,
   return json(now);
 }
 
-/** 아직 데이터에 들어가지 않은 걸음들. 편지도 이것을 함께 읽는다. */
+/** 아직 데이터에 들어가지 않은 할 일들. 편지도 이것을 함께 읽는다. */
 async function pending(env: Env): Promise<AddRow[]> {
   if (!env.LEDGER) return [];
   const m = (await env.LEDGER.get(ADD_KEY, 'json')) as Record<string, AddRow> | null;
@@ -696,7 +696,7 @@ export default {
 
   // 손으로 한 통 부쳐 보고 싶을 때.
   //   GET /send?k=<PREVIEW_TOKEN>
-  // 판의 알맹이는 어떤 경우에도 돌려주지 않는다. 결과는 편지함에서 본다.
+  // 판의 내용은 어떤 경우에도 돌려주지 않는다. 결과는 편지함에서 본다.
   async fetch(req: Request, env: Env): Promise<Response> {
     const u = new URL(req.url);
     if (u.pathname === '/done') return ledger(req, env, u.searchParams.get('k'), DONE_KEY);

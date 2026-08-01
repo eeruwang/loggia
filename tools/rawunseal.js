@@ -2,14 +2,14 @@
 // =============================================================================
 // rawunseal.js — rawseal.js 가 봉한 것을 푼다. 확인할 때 쓴다.
 //
-//   node rawunseal.js <봉한 파일> <나올 파일> <열쇠 base64>
+//   node rawunseal.js <봉한 파일> <나올 파일> <키 base64>
 // =============================================================================
 const fs = require('fs');
 const crypto = require('crypto');
 
 const [, , src, dst, keyB64] = process.argv;
 if (!src || !dst || !keyB64) {
-  console.error('쓰임  node rawunseal.js <봉한 파일> <나올 파일> <열쇠 base64>');
+  console.error('쓰임  node rawunseal.js <봉한 파일> <나올 파일> <키 base64>');
   process.exit(1);
 }
 

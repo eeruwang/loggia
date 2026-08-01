@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-build.py — loggia-data.json 에서 판이 아닌 것 둘을 짓는다.
+build.py — loggia-data.json 에서 화면이 아닌 두 가지를 만든다.
 
     python3 tools/build.py loggia-data.json site/
 
 만들어지는 것
-    site/digest.json   아침 편지가 읽는 꾸러미. publish.sh 가 digest.enc 로 봉한다
-    site/스냅샷.md      눈으로 훑는 사본. 드롭박스에 내려놓는다
+    site/digest.json   아침 메일이 읽는 꾸러미. publish.sh 가 digest.enc 로 암호화한다
+    site/스냅샷.md      눈으로 훑어보는 사본. 드롭박스에 넣어 둔다
 
-판 다섯 장은 여기서 짓지 않는다. 2026년 8월 1일에 브라우저로 옮겼다.
-그리는 손은 `public/app.js` 에 있고, 껍데기는 `public/*.html` 다섯 장이다.
-옮긴 까닭은 이렇다. 잠근 덩이는 갱신할 때마다 처음부터 끝까지 달라 보이므로,
+다섯 페이지는 여기서 짓지 않는다. 2026년 8월 1일에 브라우저로 옮겼다.
+화면 만드는 코드는 `public/app.js` 에 있고, HTML 틀은 `public/*.html` 다섯 페이지다.
+옮긴 까닭은 이렇다. 암호화된 파일은 갱신할 때마다 처음부터 끝까지 달라 보이므로,
 글자 하나를 고쳐도 368KB가 저장소에 새로 쌓였다. 이제 올라가는 것은 47KB의
 data.enc 하나뿐이다.
 
-날짜 셈은 여기서 하나도 하지 않는다. 오늘이 언제인지는 판을 여는 그 순간과
-편지를 부치는 그 순간에만 알 수 있다.
+날짜 셈은 여기서 하나도 하지 않는다. 오늘이 언제인지는 보드를 여는 그 순간과
+메일을 보내는 그 순간에만 알 수 있다.
 """
 import json, sys, os
 
@@ -33,9 +33,9 @@ def all_items(D):
 def index_tags(venue, D):
     """색인 딱지를 (모양, 글자) 짝으로 돌려준다.
 
-    데이터에는 열쇠말만 적는다.  "indexes": ["ahci", "scopus"]
+    데이터에는 키만 적는다.  "indexes": ["ahci", "scopus"]
     앞에 빼기표를 붙이면 미등재를 뜻한다.  "-ahci"  →  A&HCI 미등재
-    옛 꼴인 [["strong", "A&HCI"]] 도 그대로 받는다.
+    예전 형식인 [["strong", "A&HCI"]] 도 그대로 받는다.
 
     화면에서 쓰는 같은 손이 `public/app.js` 의 indexTags 에 있다.
     둘이 어긋나면 스냅샷과 판이 다른 말을 한다. 고칠 때 함께 고친다.
@@ -58,12 +58,12 @@ def index_tags(venue, D):
 
 
 def steps_of(item):
-    """다음 걸음들. 저마다 제 날짜를 가질 수 있다.
+    """다음 할 일들. 저마다 제 날짜를 가질 수 있다.
 
         "추천인에게 메일 보내기"
         {"t": "초고 넘기기", "due": "2026-08-10"}
 
-    장부에서 오는 걸음은 여기 없다. 그것은 판에만 뜬다. 아침 편지는 데이터에
+    기록에서 오는 할 일은 여기 없다. 그것은 보드에만 뜬다. 아침 메일은 데이터에
     적힌 것만 말한다. 아직 참이 아닌 것을 참인 척 부치지 않기 위해서다.
     """
     st = item.get('steps') or ([item['next']] if item.get('next') else [])
@@ -73,8 +73,8 @@ def steps_of(item):
 def digest_json(D, venue_index):
     """워커가 아침에 읽는 작은 꾸러미.
 
-    여기서는 날짜 셈을 하나도 하지 않는다. 판이 몇 주 동안 올라가지 않아도
-    아침 편지가 낡지 않으려면, 담는 것은 날것이어야 하고 며칠 남았는지는
+    여기서는 날짜 셈을 하나도 하지 않는다. 보드가 몇 주 동안 올라가지 않아도
+    아침 메일이 낡지 않으려면, 담는 것은 날것이어야 하고 며칠 남았는지는
     워커가 세야 한다.
     """
     def vname(vid):
@@ -124,9 +124,9 @@ def digest_json(D, venue_index):
 
 
 def snapshot_md(D, venue_index):
-    """눈으로 훑는 사본. 드롭박스에 내려놓아 눌러 보는 용도다.
+    """눈으로 훑어보는 사본. 드롭박스에 내려놓아 눌러 보는 용도다.
 
-    진짜 데이터가 아니다. 여기 고쳐 봐야 판에 닿지 않는다.
+    진짜 데이터가 아니다. 여기 고쳐 봐야 판에 반영되지 않는다.
     그 사실을 첫 줄에 적어 둔다.
     """
     L = ['# 로지아 스냅샷',
@@ -134,7 +134,7 @@ def snapshot_md(D, venue_index):
          f'갱신 {D["meta"]["updated"]} · {D["meta"].get("note", "")}',
          '',
          '> 이것은 **눈으로 보는 사본**이다. 진짜 데이터는 저장소 `eeruwang/loggia` 의',
-         '> `public/data.enc` 안에 잠겨 있다. 여기를 고쳐도 판은 바뀌지 않는다.',
+         '> `public/data.enc` 안에 잠겨 있다. 여기를 고쳐도 보드는 바뀌지 않는다.',
          '> 고치려면 `tools/fetch.sh` 로 받아 `loggia-data.json` 을 손본다.',
          '']
     for s in D['sections']:
@@ -150,7 +150,7 @@ def snapshot_md(D, venue_index):
                 head += f' · {v["name"]}'
             L.append(head + f'  \n  {it.get("kind", "")} · {st}' + (f' · {when}' if when else ''))
             if it.get('next'):
-                L.append(f'  \n  다음 걸음. {it["next"]}')
+                L.append(f'  \n  다음 할 일. {it["next"]}')
             if it.get('note'):
                 L.append(f'  \n  {it["note"]}')
             L.append('')
@@ -198,8 +198,8 @@ def main():
     dg = json.dumps(digest_json(D, venue_index), ensure_ascii=False, separators=(',', ':'))
     with open(os.path.join(out_dir, 'digest.json'), 'w', encoding='utf-8') as f:
         f.write(dg)
-    print(f'  digest.json  {len(dg.encode())//1024}KB  (아침 편지가 읽는 것)')
-    print('  판 다섯 장은 브라우저가 그린다. public/app.js 를 본다.')
+    print(f'  digest.json  {len(dg.encode())//1024}KB  (아침 메일이 읽는 것)')
+    print('  다섯 페이지는 브라우저가 그린다. public/app.js 를 본다.')
 
 
 if __name__ == '__main__':

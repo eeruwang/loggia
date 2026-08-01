@@ -1,33 +1,33 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ledger-apply.py — 판에서 손으로 하신 것을 데이터로 옮긴다.
+ledger-apply.py — 사이트에서 직접 체크하거나 추가한 것을 데이터에 반영한다.
 
-    LEDGER_TOKEN="..." python3 tools/ledger-apply.py            무엇이 바뀔지 보여만 준다
-    LEDGER_TOKEN="..." python3 tools/ledger-apply.py -w         데이터에 넣는다
-    LEDGER_TOKEN="..." python3 tools/ledger-apply.py --clear    장부를 비운다 (올린 뒤에)
+    LEDGER_TOKEN="..." python3 tools/ledger-apply.py            바뀔 내용만 보여준다
+    LEDGER_TOKEN="..." python3 tools/ledger-apply.py -w         데이터에 반영한다
+    LEDGER_TOKEN="..." python3 tools/ledger-apply.py --clear    기록을 비운다 (올린 뒤에)
 
 무엇을 하는가
 
-    판에서 네모를 눌러 끝냈다고 표시하신 것과, 오른쪽 아래 「+」로 적어 넣으신
-    할 일이 워커의 장부에 쌓인다. 그것을 데이터로 옮기는 일은 정해진 절차라
-    사람이 판단할 여지가 없다. 그래서 이 도구가 대신 한다.
+    사이트에서 체크박스를 눌러 끝냈다고 표시한 것과, 오른쪽 아래 「+」로 적어
+    넣은 할 일이 워커에 임시로 쌓인다. 그걸 데이터에 옮기는 건 정해진 절차라
+    사람이 판단할 게 없다. 그래서 이 도구가 대신 한다.
 
-      /done 의 열쇠는 <갈래id>.<걸음글의 지문 여덟 자>
-        → 그 갈래에서 지문이 맞는 걸음을 빼고, 손댄 날을 그날로 고친다
-      /add 는 손으로 적어 넣으신 할 일
-        → 그 갈래의 걸음 끝에 넣는다. 날짜가 있으면 함께
-      /done 의 열쇠가 add: 로 시작하면 적어 넣자마자 끝내신 것
-        → 걸음에 넣지 않고 버린다. 손댄 날만 고친다
+      /done 의 키는 <항목id>.<할 일 내용의 sha1 앞 8자>
+        → 그 항목에서 키가 맞는 할 일을 빼고, 마지막 작업일을 그날로 바꾼다
+      /add 는 직접 적어 넣은 할 일
+        → 그 항목의 할 일 목록 끝에 넣는다. 날짜가 있으면 같이
+      /done 의 키가 add: 로 시작하면 추가하자마자 체크한 것
+        → 할 일에 넣지 않고 버린다. 마지막 작업일만 바꾼다
 
-    판단이 남는 자리는 하나뿐이다. 걸음이 다 없어진 갈래에 다음에 무엇을
-    할지 정하는 것. 그것은 여기서 알려만 주고 사람이 정한다.
+    판단이 필요한 건 하나뿐이다. 할 일이 다 없어진 항목에 다음에 뭘 할지
+    정하는 것. 그건 여기서 알려만 주고 사람이 정한다.
 
-비우는 때
+기록을 비우는 시점
 
-    **판을 올린 뒤에 비운다.** 올리기 전에 비우면 그 사이에 판을 열어
-    네모를 누르신 것이 사라진다. -w 로 넣을 때 옮긴 열쇠를 `.ledger-applied`
-    에 적어 두므로, 올린 다음 --clear 만 부르면 된다.
+    **사이트에 올린 다음에 비운다.** 올리기 전에 비우면 그 사이에 사이트에서
+    체크한 게 사라진다. -w 로 반영할 때 옮긴 키를 `.ledger-applied` 에 적어
+    두므로, 올린 다음 --clear 만 부르면 된다.
 """
 import json, os, sys, hashlib, datetime, argparse
 import urllib.request, urllib.error, urllib.parse
@@ -46,9 +46,9 @@ def get(url):
         with urllib.request.urlopen(url, timeout=20) as r:
             return json.loads(r.read().decode('utf-8'))
     except urllib.error.HTTPError as e:
-        die(f'장부를 읽지 못했습니다 ({e.code}). LEDGER_TOKEN 을 확인하세요.')
+        die(f'기록을 읽지 못했습니다 ({e.code}). LEDGER_TOKEN 을 확인해 주세요.')
     except Exception as e:
-        die(f'장부에 닿지 못했습니다. {e}')
+        die(f'서버에 연결하지 못했습니다. {e}')
 
 
 def post(url, body):
@@ -58,15 +58,15 @@ def post(url, body):
         with urllib.request.urlopen(req, timeout=20) as r:
             return json.loads(r.read().decode('utf-8'))
     except Exception as e:
-        die(f'장부를 비우지 못했습니다. {e}')
+        die(f'기록을 비우지 못했습니다. {e}')
 
 
-def steps_of(item):
+def todos_of(item):
     st = item.get('steps') or ([item['next']] if item.get('next') else [])
     return [{'t': x} if isinstance(x, str) else dict(x) for x in st]
 
 
-def put_steps(item, ss):
+def put_todos(item, ss):
     item['steps'] = [s['t'] if not s.get('due') else {'t': s['t'], 'due': s['due']} for s in ss]
     if not item['steps']:
         del item['steps']
@@ -89,7 +89,7 @@ def find(d, iid):
 
 
 def touch(item, when):
-    """손댄 날은 뒤로 물리지 않는다. 이미 더 나중이면 그대로 둔다."""
+    """마지막 작업일은 뒤로 되돌리지 않는다. 이미 더 나중이면 그대로 둔다."""
     dt = item.setdefault('dates', {})
     if not dt.get('touched') or dt['touched'] < when:
         dt['touched'] = when
@@ -109,7 +109,7 @@ def main():
 
     tok = os.environ.get('LEDGER_TOKEN')
     if not tok:
-        die('LEDGER_TOKEN 이 없습니다. 드롭박스의 board_keys.txt 에 있습니다.')
+        die('LEDGER_TOKEN 이 필요합니다. 드롭박스의 board_keys.txt 에 있습니다.')
 
     site = args.site
     if not site and os.path.exists(args.file):
@@ -117,18 +117,18 @@ def main():
     site = (site or 'https://loggia.moonilsun.com/').rstrip('/')
     q = '?k=' + urllib.parse.quote(tok)
 
-    # ── 비우기. 올린 뒤에 부른다 ──────────────────────────────────────────
+    # ── 비우기. 사이트에 올린 다음에 부른다 ───────────────────────────────
     if args.clear:
         if not os.path.exists(MARK):
-            die(f'{MARK} 가 없습니다. 먼저 -w 로 넣으세요.')
+            die(f'{MARK} 가 없습니다. 먼저 -w 로 반영해 주세요.')
         mark = json.load(open(MARK, encoding='utf-8'))
         for slot in ('done', 'add'):
             keys = mark.get(slot) or []
             if keys:
                 left = post(f'{site}/{slot}{q}', {'del': keys})
-                print(f'/{slot} 에서 {len(keys)}개 지움. 남은 것 {len(left)}개')
+                print(f'/{slot} 에서 {len(keys)}개를 지웠습니다. 남은 것 {len(left)}개')
         os.remove(MARK)
-        print('장부를 비웠습니다.')
+        print('기록을 비웠습니다.')
         return
 
     if not os.path.exists(args.file):
@@ -138,14 +138,14 @@ def main():
     done = get(f'{site}/done{q}')
     add = get(f'{site}/add{q}')
     if not done and not add:
-        print('장부가 비어 있습니다. 옮길 것이 없습니다.')
+        print('사이트에서 체크하거나 추가한 것이 없습니다.')
         return
 
     plan, touched_ids = [], {}
     clear_done, clear_add = [], []
     used_add = set()
 
-    # ── 적어 넣자마자 끝내신 것. 걸음에 넣지 않고 버린다 ──────────────────
+    # ── 추가하자마자 체크한 것. 할 일에 넣지 않고 버린다 ──────────────────
     for k, row in done.items():
         if not k.startswith('add:'):
             continue
@@ -160,34 +160,34 @@ def main():
             clear_add.append(ak)
         it = find(d, iid) if iid else None
         if it is None:
-            plan.append(('버림', iid or '?', txt, '적자마자 끝내신 것. 갈래를 못 찾아 그냥 버립니다'))
+            plan.append(('버림', iid or '?', txt, '추가하자마자 체크한 것인데 항목을 못 찾아 그냥 버립니다'))
             continue
         touched_ids[iid] = max(touched_ids.get(iid, ''), when)
-        plan.append(('버림', iid, txt, '적자마자 끝내신 것. 걸음에 넣지 않습니다'))
+        plan.append(('버림', iid, txt, '추가하자마자 체크해서 할 일에 넣지 않습니다'))
 
-    # ── 끝냈다고 표시하신 걸음 ────────────────────────────────────────────
+    # ── 체크해서 끝냈다고 표시한 할 일 ────────────────────────────────────
     for k, row in done.items():
         if k.startswith('add:'):
             continue
         clear_done.append(k)
         if '.' not in k:
-            plan.append(('모름', '?', k, '열쇠 꼴이 낯섭니다. 그냥 버립니다'))
+            plan.append(('모름', '?', k, '키 형식이 이상해서 그냥 버립니다'))
             continue
         iid, fp = k.rsplit('.', 1)
         when = row.get('at') or datetime.date.today().isoformat()
         it = find(d, iid)
         if it is None:
-            plan.append(('없음', iid, row.get('s', ''), '그런 갈래가 없습니다. 그냥 버립니다'))
+            plan.append(('못 찾음', iid, row.get('s', ''), '그런 항목이 없어서 그냥 버립니다'))
             continue
         touched_ids[iid] = max(touched_ids.get(iid, ''), when)
-        ss = steps_of(it)
+        ss = todos_of(it)
         hit = [i for i, s in enumerate(ss) if fingerprint(s['t']) == fp]
         if not hit:
-            plan.append(('이미없음', iid, row.get('s', ''), '데이터에 그 걸음이 없습니다. 손댄 날만 고칩니다'))
+            plan.append(('건너뜀', iid, row.get('s', ''), '데이터에 이미 없는 할 일이라 날짜만 바꿉니다'))
             continue
-        plan.append(('걸음뺌', iid, ss[hit[0]]['t'], ''))
+        plan.append(('완료', iid, ss[hit[0]]['t'], ''))
 
-    # ── 손으로 적어 넣으신 할 일 ──────────────────────────────────────────
+    # ── 사이트에서 직접 적어 넣은 할 일 ───────────────────────────────────
     for ak, a in add.items():
         if ak in used_add:
             continue
@@ -196,23 +196,25 @@ def main():
         it = find(d, iid) if iid else None
         when = a.get('at') or datetime.date.today().isoformat()
         if it is None:
-            plan.append(('없음', iid or '?', a.get('t', ''), '그런 갈래가 없습니다. 그냥 버립니다'))
+            plan.append(('못 찾음', iid or '?', a.get('t', ''), '그런 항목이 없어서 그냥 버립니다'))
             continue
         touched_ids[iid] = max(touched_ids.get(iid, ''), when)
-        plan.append(('걸음더함', iid, a.get('t', ''),
-                     f'마감 {a["due"]}' if a.get('due') else ''))
+        plan.append(('추가', iid, a.get('t', ''),
+                     f'{a["due"]}까지' if a.get('due') else ''))
 
-    # ── 보여 주기 ─────────────────────────────────────────────────────────
+    # ── 바뀔 내용 보여주기 ────────────────────────────────────────────────
     W = max((len(x[1]) for x in plan), default=8)
     for kind, iid, txt, note in plan:
-        print(f'  {kind:<8} {iid:<{W}}  {txt}' + (f'   ({note})' if note else ''))
-    print(f'  손댄 날    ' + ', '.join(f'{i} → {w}' for i, w in sorted(touched_ids.items())))
+        print(f'  {kind:<7} {iid:<{W}}  {txt}' + (f'   ({note})' if note else ''))
+    if touched_ids:
+        print('  마지막 작업일  '
+              + ', '.join(f'{i} → {w}' for i, w in sorted(touched_ids.items())))
 
     if not args.write:
-        print('\n아직 안 넣었습니다. 넣으려면 -w 를 붙이세요.')
+        print('\n아직 반영하지 않았습니다. 반영하려면 -w 를 붙여 주세요.')
         return
 
-    # ── 넣기 ──────────────────────────────────────────────────────────────
+    # ── 반영하기 ──────────────────────────────────────────────────────────
     for k, row in done.items():
         if k.startswith('add:') or '.' not in k:
             continue
@@ -220,22 +222,22 @@ def main():
         it = find(d, iid)
         if it is None:
             continue
-        ss = steps_of(it)
+        ss = todos_of(it)
         keep = [s for s in ss if fingerprint(s['t']) != fp]
         if len(keep) != len(ss):
-            put_steps(it, keep)
+            put_todos(it, keep)
     for ak, a in add.items():
         if ak in used_add:
             continue
         it = find(d, a.get('item'))
         if it is None:
             continue
-        ss = steps_of(it)
+        ss = todos_of(it)
         row = {'t': a.get('t', '')}
         if a.get('due'):
             row['due'] = a['due']
         ss.append(row)
-        put_steps(it, ss)
+        put_todos(it, ss)
     for iid, when in touched_ids.items():
         it = find(d, iid)
         if it is not None:
@@ -244,17 +246,17 @@ def main():
     d.setdefault('meta', {})['updated'] = datetime.date.today().isoformat()
     with open(args.file, 'w', encoding='utf-8') as f:
         f.write(json.dumps(d, ensure_ascii=False, indent=1))
-    print(f'\n넣었습니다  {args.file}')
+    print(f'\n반영했습니다  {args.file}')
 
-    empty = [i for i in touched_ids if find(d, i) is not None and not steps_of(find(d, i))]
+    empty = [i for i in touched_ids if find(d, i) is not None and not todos_of(find(d, i))]
     if empty:
-        print('  ! 걸음이 없어진 갈래: ' + ', '.join(empty)
-              + '\n    다음에 무엇을 할지 사용자에게 물어야 합니다.')
+        print('  ! 할 일이 다 없어진 항목: ' + ', '.join(empty)
+              + '\n    다음에 뭘 할지 사용자에게 물어봐야 합니다.')
 
     with open(MARK, 'w', encoding='utf-8') as f:
         json.dump({'done': clear_done, 'add': clear_add}, f, ensure_ascii=False)
-    print(f'  옮긴 열쇠를 {MARK} 에 적어 두었습니다.')
-    print('  판을 올린 뒤에 --clear 로 장부를 비우세요.')
+    print(f'  옮긴 키를 {MARK} 에 적어 두었습니다.')
+    print('  사이트에 올린 다음 --clear 로 기록을 비워 주세요.')
 
 
 if __name__ == '__main__':

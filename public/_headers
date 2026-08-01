@@ -1,8 +1,8 @@
-# 글꼴은 이름에 내용이 박혀 있지 않으나 바뀌지 않는다. 한 해를 재운다.
+# 글형식은 이름에 내용이 박혀 있지 않으나 바뀌지 않는다. 한 해를 재운다.
 /font/*
   Cache-Control: public, max-age=31536000, immutable
 
-# 껍데기와 옷과 그리는 손. 자주 바뀌지 않으나 낡으면 판이 어긋난다.
+# HTML 틀과 스타일과 화면 만드는 코드. 자주 바뀌지 않으나 낡으면 판이 어긋난다.
 /*.html
   Cache-Control: no-cache
   X-Content-Type-Options: nosniff
@@ -12,7 +12,7 @@
 /app.js
   Cache-Control: no-cache
 
-# 알맹이. 갱신할 때마다 달라진다. 늘 물어보게 한다.
+# 내용. 갱신할 때마다 달라진다. 늘 물어보게 한다.
 /data.enc
   Cache-Control: no-cache
   X-Content-Type-Options: nosniff

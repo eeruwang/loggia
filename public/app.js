@@ -1,19 +1,19 @@
 /* =============================================================================
-   app.js — 판을 브라우저에서 그린다.
+   app.js — 화면을 브라우저에서 만든다.
 
-   옛적에는 파이썬이 판 다섯 장을 미리 그려 각각 잠갔다. 잠근 덩이는 갱신할
+   예전에는 파이썬이 다섯 페이지를 미리 만들어 각각 암호화했다. 암호화된 파일은 갱신할
    때마다 처음부터 끝까지 달라 보이므로, 글자 하나를 고쳐도 368KB가 저장소에
-   새로 쌓였다. 이제 올라가는 것은 data.enc 하나뿐이다. 껍데기와 이 파일은
+   새로 쌓였다. 이제 올라가는 것은 data.enc 하나뿐이다. HTML 파일과 이 파일은
    내용이 바뀔 때에만 바뀐다.
 
    순서는 이렇다.
-     암호를 받는다 → 열쇠를 뽑는다 → data.enc 를 받아 푼다
-     → 장부 두 개를 읽어 데이터와 합친다 → 화면을 그린다
+     암호를 받는다 → 키를 만든다 → data.enc 를 받아 푼다
+     → 체크 기록을 읽어 데이터와 합친다 → 화면을 만든다
 
-   장부를 미리 읽어 합치므로, 새로 추가한 할 일이 다른 걸음과 같은 목록에
-   처음부터 서 있다. 그려 놓고 나중에 끼워 넣던 손이 없어졌다.
+   체크 기록을 미리 읽어 합치므로, 새로 추가한 할 일이 다른 할 일과 같은 목록에
+   처음부터 서 있다. 다 그린 다음 나중에 끼워 넣던 처리가 없어졌다.
 
-   여기 있는 글은 비밀이 아니다. 비밀은 data.enc 안에만 있다.
+   이 파일의 내용은 비밀이 아니다. 비밀은 data.enc 안에만 있다.
    ========================================================================== */
 (function () {
 'use strict';
@@ -26,9 +26,9 @@ function esc(s) {
                   .replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
 }
 
-/* 걸음의 열쇠는 순서가 아니라 글에 맨다. 순서로 매기면 갱신이 첫 걸음을
+/* 할 일의 키는 순서가 아니라 내용으로 만든다. 순서로 매기면 갱신이 첫 할 일을
    뺐을 때 둘째가 첫째의 표시를 물려받는다. 파이썬이 쓰던 sha1 과 같은 값이
-   나와야 이미 장부에 쌓인 표시가 살아남는다. */
+   나와야 이미 기록에 쌓인 표시가 살아남는다. */
 function sha1hex(str) {
   var bytes = new TextEncoder().encode(str);
   var ml = bytes.length;
@@ -73,12 +73,12 @@ function cmp(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
 
 /* ── 데이터에서 곧바로 나오는 것들 ───────────────────────────────────────── */
 
-var D = null;         // 판의 데이터
+var D = null;         // 보드 데이터
 var VEN = {};         // 처 id → 처
 var BYVEN = {};       // 처 id → [[항목, 지난일인가]]
 var NVEN = 0, NARC = 0;
-var ADD = {};         // 손으로 더한 할 일 (장부)
-var SRV = {};         // 해치웠다고 장부에 적힌 것
+var ADD = {};         // 손으로 더한 할 일 (기록)
+var SRV = {};         // 해치웠다고 기록에 적힌 것
 
 function indexData() {
   VEN = {}; BYVEN = {};
@@ -114,9 +114,9 @@ function statusOf(item, fallbackTone) {
 /* ── 조각들 ──────────────────────────────────────────────────────────────── */
 
 /* 색인 딱지를 [모양, 글자] 짝으로 돌려준다.
-   데이터에는 열쇠말만 적는다.  "indexes": ["ahci", "scopus"]
+   데이터에는 키만 적는다.  "indexes": ["ahci", "scopus"]
    앞에 빼기표를 붙이면 미등재를 뜻한다.  "-ahci"  →  A&HCI 미등재
-   옛 꼴인 [["strong", "A&HCI"]] 도 그대로 받는다. */
+   예전 형식인 [["strong", "A&HCI"]] 도 그대로 받는다. */
 function indexTags(venue) {
   var kinds = D.indexKinds || {};
   var out = [];
@@ -162,15 +162,15 @@ function whenCol(item) {
   return '<div class="when-col"><span class="dday none">—</span></div>';
 }
 
-/* 다음 걸음들. 저마다 제 날짜를 가질 수 있다.
+/* 다음 할 일들. 저마다 제 날짜를 가질 수 있다.
 
    데이터에는 두 꼴 다 적을 수 있다.
        "추천인에게 메일 보내기"
        {"t": "초고 넘기기", "due": "2026-08-10"}
 
-   여기에 장부에서 온 것을 이어 붙인다. 손으로 더한 할 일도 같은 목록에 선다.
+   여기에 기록에서 온 것을 이어 붙인다. 손으로 더한 할 일도 같은 목록에 선다.
    따로 상자를 만들면 눈이 두 번 읽는다. 아직 데이터에 없으므로 글의 지문
-   대신 장부 열쇠를 그대로 쓰고, 표를 하나 달아 아직 참이 아님을 밝힌다. */
+   대신 기록 토큰을 그대로 쓰고, 표를 하나 달아 아직 참이 아님을 밝힌다. */
 function stepsOf(item) {
   var out = [];
   var st = item.steps || (item.next ? [item.next] : []);
@@ -187,8 +187,8 @@ function stepsOf(item) {
   return out;
 }
 
-/* 첫 걸음은 크게, 나머지는 작게 차례로.
-   네모를 누르면 장부에 적히고, 저장하면 목록에서 내려간다. */
+/* 첫 할 일은 크게, 나머지는 작게 차례로.
+   네모를 누르면 기록에 적히고, 저장하면 목록에서 내려간다. */
 function stepsHtml(item) {
   var ss = stepsOf(item);
   if (!ss.length) return '<p class="todo none">지금 할 일 없음</p>';
@@ -221,13 +221,13 @@ function entryHtml(item) {
   var venue = v ? '<a class="venue" href="journals.html#' + esc(item.venue) + '">'
                   + esc(v.name) + '</a>' : '';
   var note = item.note ? '<p class="note">' + esc(item.note) + '</p>' : '';
-  // 마지막으로 손댄 날. 오래 멎어 있으면 눈에 띄게 한다.
-  // 마감만 보면 마감 없는 갈래가 조용히 가라앉는다.
+  // 마지막으로 마지막 작업일. 오래 멎어 있으면 눈에 띄게 한다.
+  // 마감만 보면 마감 없는 항목이 조용히 가라앉는다.
   var t = (item.dates || {}).touched;
   var touch = t ? '<span class="touch" data-touched="' + esc(t) + '"></span>'
                 : '<span class="touch none">작업 기록 없음</span>';
   var tags = [item.status || '', item['품'] || ''].filter(Boolean).join(' ');
-  // 결마다 빛깔을 준다. 왼쪽 띠 하나로 무슨 종류인지 눈이 먼저 안다
+  // 종류마다 색을 준다. 왼쪽 막대 하나로 무슨 종류인지 눈이 먼저 안다
   return '<article class="entry t-' + esc(st.tone || 'live') + '" data-id="' + esc(item.id)
        + '" data-tags="' + esc(tags) + '">' + whenCol(item) + '\n'
        + '<div class="body"><div class="title-line"><h3 class="t">' + esc(item.title) + '</h3>\n'
@@ -248,7 +248,7 @@ function pickFocus() {
   return best;
 }
 
-/* 접어 두는 마디. 읽을 것이지 오늘 할 일이 아니라면 접는다. */
+/* 접어 두는 섹션. 읽을 것이지 오늘 할 일이 아니라면 접는다. */
 function fold(title, count, body, anchor) {
   var n = count ? '<span class="c">' + count + '</span>' : '';
   var a = anchor ? ' id="' + esc(anchor) + '"' : '';
@@ -256,7 +256,7 @@ function fold(title, count, body, anchor) {
        + '<span class="arrow">▸</span></summary>' + body + '</details>';
 }
 
-/* 마디 하나. 머리를 누르면 접힌다. 펼침과 접힘은 이 기기에 남는다. */
+/* 섹션 하나. 머리를 누르면 접힌다. 펼침과 접힘은 이 기기에 남는다. */
 function secbox(title, count, body, key, open_) {
   var n = (count === null || count === undefined) ? '' : '<span class="c">' + count + '</span>';
   var k = (key || title) ? ' data-k="' + esc(key || title) + '"' : '';
@@ -266,7 +266,7 @@ function secbox(title, count, body, key, open_) {
        + '<span class="arrow">▸</span></summary>' + body + '</details>';
 }
 
-/* 거르는 단추 한 줄. 단추마다 열쇠말 하나. 상자의 data-tags 에 그 말이
+/* 거르는 단추 한 줄. 단추마다 키 하나. 상자의 data-tags 에 그 말이
    적혀 있으면 남는다. */
 function filtersHtml(buttons, label) {
   if (buttons.length < 2) return '';
@@ -335,7 +335,7 @@ function headHtml(page, title) {
 }
 
 function footHtml() {
-  return '\n<div class="colophon">암호로 잠긴 판 · 갱신 ' + dots(D.meta.updated) + '</div>\n</div>';
+  return '\n<div class="colophon">암호로 잠긴 보드 · 갱신 ' + dots(D.meta.updated) + '</div>\n</div>';
 }
 
 /* ── 현황판 ──────────────────────────────────────────────────────────────── */
@@ -404,7 +404,7 @@ function buildIndex() {
   // 답을 기다리는 것은 달력의 응답 시계가 맡는다. 여기서 또 보이면 두 번 읽게 된다
   var shown = (D.sections || []).filter(function (x) { return x.id !== 'waiting'; });
 
-  // 거르개. 지금 판에 실제로 있는 상태만 단추로 낸다
+  // 필터. 지금 지금 실제로 있는 상태만 단추로 낸다
   var seen = {}, total = 0, pum = {};
   shown.forEach(function (x) {
     (x.items || []).forEach(function (it) {
@@ -419,7 +419,7 @@ function buildIndex() {
   Object.keys(D.efforts || {}).forEach(function (k) {
     if (pum[k]) buttons.push([k, D.efforts[k].label, pum[k]]);
   });
-  out.push(filtersHtml(buttons, '상태와 품으로 골라 보기'));
+  out.push(filtersHtml(buttons, '상태와 걸리는 시간으로 골라 보기'));
 
   shown.forEach(function (x) {
     var items = (x.items || []).slice().sort(function (a, b) {
@@ -455,7 +455,7 @@ function buildIndex() {
 function buildJournals() {
   var out = [headHtml('journals', '낼 곳')];
 
-  // 거르개. 색인과 마감으로 좁힌다
+  // 필터. 색인과 마감으로 좁힌다
   var tally = {}, ndl = 0;
   (D.venueGroups || []).forEach(function (g) {
     g.venues.forEach(function (v) {
@@ -499,7 +499,7 @@ function buildJournals() {
 
       var rows = BYVEN[v.id] || [];
       var hist = rows.length
-        ? '<div class="history"><div class="cap">이 곳에 낸 것 · ' + rows.length + '건</div>'
+        ? '<div class="history"><div class="cap">여기에 낸 것 · ' + rows.length + '건</div>'
           + historyRows(rows) + '</div>'
         : '';
       var tagset = tg.map(function (p) { return p[1]; }).concat(v.deadline ? ['마감'] : []);
@@ -574,8 +574,8 @@ function buildMaterials() {
   }
 
   var out = [headHtml('materials', '재료')];
-  out.push('<p class="lede">무엇으로 지었나. 항목에 적어 둔 열쇠말을 뒤집어 모은 것이다. '
-    + '읽기는 파일이 아니라 읽기 묶음을 가리킨다. 글은 드롭박스에 있다.</p>');
+  out.push('<p class="lede">무엇으로 썼나. 항목에 적어 둔 이론가와 개념과 읽기를 거꾸로 모은 것이다. '
+    + '읽기는 파일 하나가 아니라 읽기 묶음을 가리킨다. 글은 드롭박스에 있다.</p>');
   // 이 장은 길다. 맨 위에 바로 가는 길을 낸다
   out.push('<div class="jump">'
     + '<a href="#thinkers">이론가</a><a href="#concepts">개념</a>'
@@ -591,14 +591,14 @@ function buildMaterials() {
     return '<section class="venue-block" id="t-' + esc(tid) + '">\n'
       + '<div class="venue-head"><h3>' + esc(t.name) + '</h3><span class="sub">'
       + esc(t.sub || '') + '</span></div>\n'
-      + '<div class="history"><div class="cap">받치고 있는 글 · ' + e.length + '편</div>'
+      + '<div class="history"><div class="cap">참고한 글 · ' + e.length + '편</div>'
       + historyRows(e, true) + '</div></section>';
   }).join(''), 'thinkers'));
 
-  // 개념. 열쇠말이 많으므로 눌러서 내려가는 대신 눌러서 걸러 낸다.
-  // 자리표로 뛰면 눈이 판을 잃는다. 거르면 자리가 그대로 있고 남는 것만 바뀐다.
+  // 개념. 종류가 많으므로 눌러서 이동하는 대신 눌러서 걸러 낸다.
+  // 앵커로 뛰면 화면 위치를 잃는다. 걸러 내면 자리는 그대로 있고 목록만 바뀐다.
   //
-  // 거르개의 열쇠말은 개념 이름이 아니라 번호다. 이름에 띄어쓰기가 있으면
+  // 필터의 키는 개념 이름이 아니라 번호다. 이름에 띄어쓰기가 있으면
   // (「일기적 실천」) 띄어쓰기로 가르는 견줌이 무너진다.
   var co = ranked(byConcept, cOrder);
   var cbody = [filtersHtml(
@@ -621,9 +621,9 @@ function buildMaterials() {
       ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.name) + '</a>'
       : esc(r.name);
     var inner = e.length
-      ? '<div class="history"><div class="cap">여기서 흘러간 곳 · ' + e.length + '편</div>'
+      ? '<div class="history"><div class="cap">여기서 이어진 글 · ' + e.length + '편</div>'
         + historyRows(e, true) + '</div>'
-      : '<p class="note">아직 어느 글에도 닿지 않았다. 덜 캔 광맥이거나, 다음 글의 씨앗이다.</p>';
+      : '<p class="note">아직 어느 글에도 쓰지 않았다.</p>';
     return '<section class="venue-block" id="r-' + esc(rid) + '">\n'
       + '<div class="venue-head"><h3>' + name + '</h3><span class="sub">'
       + esc(r.sub || '') + '</span></div>\n' + inner + '</section>';
@@ -641,8 +641,8 @@ function buildMaterials() {
         + '</div>';
     }).join('');
     out.push(fold('다시 쓸 것', D.reuse.length,
-      '<p class="lede">한 번 쓴 글의 어느 대목이 다음 어디로 가는가. '
-      + '지원서를 열 때 여기부터 본다.</p><div class="reuses">' + rs + '</div>', 'reuse'));
+      '<p class="lede">한 번 쓴 글의 어느 부분을 다음에 어디로 쓸지. '
+      + '지원서를 쓸 때 여기부터 본다.</p><div class="reuses">' + rs + '</div>', 'reuse'));
   }
   if (D.people && D.people.length) {
     var ps = D.people.map(function (pp) {
@@ -714,7 +714,7 @@ function waitingClock() {
       var v = VEN[it.venue] || {};
       var days = v['답까지'];
       var side = [];
-      if (days) side.push('<span class="lab">대개</span>' + days + '일');
+      if (days) side.push('<span class="lab">보통</span>' + days + '일');
       if (d.expected) side.push('<span class="lab">짐작</span>' + dots(d.expected));
       var body = '';
       if (it.next) body += '<p class="todo">' + esc(it.next) + '</p>';
@@ -802,7 +802,7 @@ function buildCalendar() {
   }
   out.push(secbox('한 해', null,
     '<div class="cal-legend"><span><b>굵은 날</b> 무엇인가 있는 날</span>\n'
-    + '<span><b>붉은 밑줄</b> 이레 안 마감</span><span><b>주황 밑줄</b> 한 달 안 마감</span>\n'
+    + '<span><b>붉은 밑줄</b> 일주일 안 마감</span><span><b>주황 밑줄</b> 한 달 안 마감</span>\n'
     + '<span><b>네모</b> 오늘</span></div>\n'
     + '<div class="cal-grid" id="cal"></div>'));
   out.push(footHtml());
@@ -840,7 +840,7 @@ function paintDates(root) {
     var box = el.closest('.clock');
     if (box && box.dataset.days && n > +box.dataset.days) box.dataset.late = '1';
   });
-  // 마지막으로 손댄 날. 오래 멎어 있으면 눈에 띄게 한다
+  // 마지막으로 마지막 작업일. 오래 멎어 있으면 눈에 띄게 한다
   root.querySelectorAll('.touch[data-touched]').forEach(function (el) {
     var n = Math.round((today - fromIso(el.dataset.touched)) / 86400000);
     if (n <= 7) { el.textContent = n <= 0 ? '오늘 작업' : n + '일 전 작업'; }
@@ -868,8 +868,8 @@ function bindTheme(root) {
   paint();
 }
 
-/* 마디의 펼침과 접힘을 이 기기에 남긴다.
-   자리표로 뛰어든 마디는 접혀 있어도 열어 준다. */
+/* 섹션의 펼침과 접힘을 이 기기에 남긴다.
+   자리표로 뛰어든 섹션은 접혀 있어도 열어 준다. */
 function bindSections(root, page) {
   function openHash() {
     var el = location.hash && document.querySelector(location.hash);
@@ -881,17 +881,18 @@ function bindSections(root, page) {
     var key = 'loggia.sec.' + page + '.html.' + d.dataset.k;
     try { var v = localStorage.getItem(key); if (v !== null) d.open = v === '1'; } catch (e) {}
     d.addEventListener('toggle', function () {
-      if (d.dataset.auto) return;   // 거르개가 연 것은 기억하지 않는다
+      if (d.dataset.auto) return;   // 필터가 연 것은 기억하지 않는다
       try { localStorage.setItem(key, d.open ? '1' : '0'); } catch (e) {}
     });
   });
 }
 
-/* 거르개. 누른 단추의 열쇠말을 가진 상자만 남긴다.
+/* 필터. 누른 단추의 키를 가진 상자만 남긴다.
 
-   거르개는 두 자리에 설 수 있다. 마디 밖에 서면 판의 마디 전부를 고르고,
-   마디 안에 서면 제가 든 마디 안만 고른다. 재료 장의 개념 거르개가 뒤엣것이다.
-   그러지 않으면 개념 하나를 고를 때 이론가와 읽기 마디까지 통째로 사라진다. */
+   필터는 두 군데에 놓일 수 있다. 섹션 밖에 있으면 페이지의 모든 섹션을 거르고,
+   섹션 안에 있으면 자기가 속한 섹션 안만 거른다. 재료 페이지의 개념 필터가
+   후자다. 그렇게 하지 않으면 개념 하나를 고를 때 이론가와 읽기 섹션까지
+   통째로 사라진다. */
 function bindFilters(root) {
   root.querySelectorAll('.filters').forEach(function (bar) {
     var own = bar.closest('details.group');
@@ -908,7 +909,7 @@ function bindFilters(root) {
         x.setAttribute('aria-pressed', x === b);
       });
       groups.forEach(function (g) {
-        // 거를 것이 하나도 없는 마디는 건드리지 않는다. 낼 곳의 「길목」과
+        // 거를 것이 하나도 없는 섹션은 건드리지 않는다. 낼 곳의 「길목」과
         // 「새겨 둘 것」이 그렇다. 건드리면 단추를 한 번 누른 뒤로 그 둘이
         // 사라지고 「전체」로 돌아와도 오지 않는다.
         var taggable = g.querySelectorAll('[data-tags]');
@@ -919,9 +920,9 @@ function bindFilters(root) {
           el.hidden = !on;
           if (on) seen++;
         });
-        // 제 거르개가 든 마디는 감추지 않는다. 감추면 거르개도 함께 사라진다.
+        // 제 필터가 든 섹션은 감추지 않는다. 감추면 필터도 함께 사라진다.
         if (g !== own) g.hidden = seen === 0;
-        // 거른 것이 접힌 마디 안에 있으면 안 보인다. 열어 준다.
+        // 거른 것이 접힌 섹션 안에 있으면 안 보인다. 열어 준다.
         // 다만 이 열기는 기억하지 않는다. 손으로 접어 둔 뜻을 지우면 안 된다.
         if (k !== '*' && seen && g !== own && g.tagName === 'DETAILS' && !g.open) {
           g.dataset.auto = '1'; g.open = true;
@@ -935,7 +936,7 @@ function bindFilters(root) {
   });
 }
 
-/* 지난 서른 날에 한 일. 판을 열면 먼저 눈에 든다 */
+/* 지난 서른 날에 한 일. 보드를 열면 먼저 눈에 든다 */
 function paintTally(root, done) {
   var box = root.querySelector('#tally');
   if (!box) return;
@@ -953,10 +954,10 @@ function paintTally(root, done) {
     ? '<span class="cap">지난 30일</span>' + bits.join('<span class="dot">·</span>') : '';
 }
 
-/* 해치운 표시.
+/* 완료 표시.
 
    원본을 건드리지 않는다. 데이터는 암호로 잠겨 있고 그 암호는 이 파일에
-   없다. 그래서 워커가 장부만 따로 쥔다. 얻는 것이 더 크다. 휴대전화에서 그은
+   없다. 그래서 워커가 기록만 따로 쥔다. 얻는 것이 더 크다. 휴대전화에서 그은
    줄이 노트북에서도 그어진다. 원본에 닿는 것은 다음 갱신 때 사람이 한다.
 
    저장은 누를 때마다 하지 않고 모았다가 한 번에 보낸다. */
@@ -1015,7 +1016,7 @@ function bindBoard(root) {
     if (sv) { sv.disabled = !dirty; sv.textContent = dirty ? '저장' : '저장됨'; }
   }
 
-  // 지금 판의 모습과 장부를 견주어 보낼 것만 추린다
+  // 지금 화면 상태와 기록을 견주어 보낼 것만 추린다
   function diff() {
     var set = {}, del = [], d = isoOf(new Date());
     allBoxes().forEach(function (b) {
@@ -1057,7 +1058,7 @@ function bindBoard(root) {
       var v = localStorage.getItem(key);
       b.checked = v === null ? srvOn : v === '1';
     } catch (e) { b.checked = srvOn; }
-    // 장부가 이미 알고 있는 것은 장부가 옳다. 다른 기기에서 그은 줄이 여기에도 온다
+    // 기록이 이미 알고 있는 것은 기록이 옳다. 다른 기기에서 그은 줄이 여기에도 온다
     if (srvOn && !b.checked) { b.checked = true; lset(b); }
     mark(b);
     b.addEventListener('change', function () { lset(b); mark(b); dirty = true; refresh(); });
@@ -1102,11 +1103,11 @@ function bindBoard(root) {
   return { rebind: rebind };
 }
 
-/* 할 일을 손으로 추가하는 자리.
+/* 할 일을 직접 추가하는 자리.
 
-   적은 것은 워커의 장부에 곧바로 들어가고 판에는 「새로 추가」로 뜬다.
-   깃허브의 데이터에 들어가는 것은 다음 갱신 때다. 그때까지 표를 붙여 두는
-   것은, 아직 참이 아닌 것을 참인 척 그리지 않기 위해서다. */
+   적은 것은 워커의 기록에 바로 들어가고 화면에는 「새로 추가」 표시가 붙는다.
+   깃허브 데이터에 들어가는 건 다음 갱신 때다. 그때까지 표시를 붙여 두는 이유는,
+   아직 확정되지 않은 것을 확정된 것처럼 보이지 않게 하려는 것이다. */
 function bindAdd(root, redrawEntry, board) {
   var LT = D.meta.ledger || '';
   if (!LT) return;
@@ -1123,7 +1124,7 @@ function bindAdd(root, redrawEntry, board) {
       .then(function (j) {
         var before = ADD;
         ADD = j;
-        // 건드린 갈래만 다시 그린다. 판 전체를 다시 그리면 접어 둔 마디와
+        // 건드린 항목만 다시 그린다. 판 전체를 다시 그리면 접어 둔 섹션과
         // 보던 자리가 튄다.
         var ids = {};
         [before, ADD].forEach(function (m) {
@@ -1249,7 +1250,7 @@ function paintCalendar(root, EV, REP) {
   }
 }
 
-/* ── 판을 그린다 ─────────────────────────────────────────────────────────── */
+/* ── 화면 만들기 ─────────────────────────────────────────────────────────── */
 
 var BUILD = {
   index: buildIndex, calendar: buildCalendar, journals: buildJournals,
@@ -1286,7 +1287,7 @@ function render(page, app) {
 }
 
 /* ── 자물쇠 ──────────────────────────────────────────────────────────────── */
-/* data.enc 하나만 잠겨 있다. 소금도 그 안에 하나뿐이므로, 판마다 소금이
+/* data.enc 하나만 암호화되어 있다. 솔트도 그 안에 하나뿐이므로, 페이지마다 솔트가
    갈리던 옛 걱정이 없다. */
 
 var ITER = 600000;
@@ -1294,7 +1295,7 @@ var PASS_KEY = 'loggia.pass';
 var $ = function (id) { return document.getElementById(id); };
 function b64(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
 
-var BLOB = null;   // ['loggia1', 소금, 초기값, 덩이]
+var BLOB = null;   // ['loggia1', 솔트, 초기값, 덩이]
 
 function loadBlob() {
   return fetch('data.enc', { cache: 'no-cache' }).then(function (r) {
@@ -1333,7 +1334,7 @@ function cache(k) {
   });
 }
 
-/* 장부 두 개를 먼저 읽어 데이터와 합친다. 그려 놓고 끼워 넣지 않는다. */
+/* 기록 두 개를 먼저 읽어 데이터와 합친다. 그려 놓고 끼워 넣지 않는다. */
 function loadLedger() {
   var lt = D.meta.ledger;
   if (!lt || document.body.dataset.page !== 'index') return Promise.resolve();
@@ -1393,7 +1394,7 @@ function tryOpen(pass, remember) {
 }
 
 /* 열 때 스스로 해 보는 순서.
-   하나, 이 열림에서 뽑아 둔 열쇠. 곧바로 열린다.
+   하나, 이 열림에서 뽑아 둔 키. 곧바로 열린다.
    둘, 이 기기에 기억해 둔 암호. 몇 초 걸린다.
    셋, 둘 다 없으면 암호를 묻는다. */
 function autoOpen() {
@@ -1429,7 +1430,7 @@ function start() {
   });
 }
 
-/* 브라우저 밖에서는 그리는 손만 내준다. tools/render-test.js 가 이것으로
+/* 브라우저 밖에서는 화면 만드는 코드만 내준다. tools/render-test.js 가 이것으로
    파이썬이 내던 판과 글자 하나까지 견준다. */
 if (typeof document === 'undefined') {
   if (typeof module !== 'undefined' && module.exports) {

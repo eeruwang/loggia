@@ -12,7 +12,7 @@ if (!inFile || !outFile || !pass) {
 
 const parts = fs.readFileSync(inFile, 'utf8').trim().split('.');
 if (parts[0] !== 'loggia1' || parts.length !== 4) {
-  console.error('알아볼 수 없는 꼴입니다. loggia1.<소금>.<초기값>.<덩이> 여야 합니다.');
+  console.error('알아볼 수 없는 꼴입니다. loggia1.<솔트>.<초기값>.<덩이> 여야 합니다.');
   process.exit(1);
 }
 const [, s, i, c] = parts;
