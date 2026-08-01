@@ -36,7 +36,13 @@ interface Env {
   MAIL_FROM: string;
   MAIL_TO: string;
   PREVIEW_TOKEN?: string;  // 비밀. 손으로 한 통 부쳐 볼 때 쓴다
+  LEDGER?: KVNamespace;    // 해치운 걸음 장부. 없으면 판은 이 기기에만 적는다
+  LEDGER_TOKEN?: string;   // 비밀. 판 안에 박혀 있다. 판이 암호문이므로 함께 잠긴다
 }
+
+/** 장부 한 칸. 무엇을 언제 해치웠는지. */
+type DoneRow = { t: string; s: string; at: string };
+type Ledger = Record<string, DoneRow>;
 
 type Row = {
   t: string; v: string;
@@ -467,6 +473,48 @@ async function send(env: Env): Promise<string> {
   return r.messageId;
 }
 
+// ── 해치운 걸음 장부 ─────────────────────────────────────────────────────────
+//
+// 판은 미리 그려 둔 정적 파일이고 그리는 것은 파이썬이다. 그러므로 네모를
+// 눌렀다고 원본이 따라 고쳐질 길은 없다. 고치려면 판의 암호와 깃허브 쓰기
+// 열쇠를 이 워커 안에 넣어야 하는데, 그러면 아침 편지만 읽던 것이 판 전체를
+// 읽고 쓰는 물건이 된다.
+//
+// 그래서 원본을 건드리지 않고 장부만 따로 쥔다. 얻는 것이 더 크다.
+// 휴대전화에서 그은 줄이 노트북에서도 그어진다. 이 기기에만 남던 표시로는
+// 되지 않던 일이다.
+//
+// 원본에 닿는 것은 다음 갱신 때 사람이 한다. 장부를 읽어 걸음을 빼고
+// 손댄 날을 고치고 장부를 비운다.
+//
+// 열쇠는 판 안에 박혀 있다. 판이 암호문이므로 암호를 푼 사람만 그것을 본다.
+// 지금 보안 모형과 어긋나지 않는다.
+const KEY = 'board';
+
+function json(v: unknown, status = 200): Response {
+  return new Response(JSON.stringify(v), {
+    status,
+    headers: { 'content-type': 'application/json; charset=utf-8',
+               'cache-control': 'no-store' },
+  });
+}
+
+async function ledger(req: Request, env: Env, k: string | null): Promise<Response> {
+  if (!env.LEDGER || !env.LEDGER_TOKEN || k !== env.LEDGER_TOKEN) {
+    return new Response('없습니다', { status: 404 });
+  }
+  const now: Ledger = (await env.LEDGER.get(KEY, 'json')) ?? {};
+  if (req.method === 'GET') return json(now);
+  if (req.method !== 'POST') return new Response('안 됩니다', { status: 405 });
+
+  // 한 번에 모아서 받는다. 누를 때마다 부르면 부질없는 왕복이 는다.
+  const body = (await req.json()) as { set?: Ledger; del?: string[] };
+  for (const [id, row] of Object.entries(body.set ?? {})) now[id] = row;
+  for (const id of body.del ?? []) delete now[id];
+  await env.LEDGER.put(KEY, JSON.stringify(now));
+  return json(now);
+}
+
 export default {
   // 하루 한 번. 크론은 UTC 로 돈다. 서울 아침 일곱 시는 전날 22시다.
   async scheduled(_c: ScheduledController, env: Env, ctx: ExecutionContext) {
@@ -480,6 +528,7 @@ export default {
   // 판의 알맹이는 어떤 경우에도 돌려주지 않는다. 결과는 편지함에서 본다.
   async fetch(req: Request, env: Env): Promise<Response> {
     const u = new URL(req.url);
+    if (u.pathname === '/done') return ledger(req, env, u.searchParams.get('k'));
     if (u.pathname !== '/send' || !env.PREVIEW_TOKEN
         || u.searchParams.get('k') !== env.PREVIEW_TOKEN) {
       return new Response('없습니다', { status: 404 });

@@ -319,7 +319,8 @@ box-shadow:0 8px 28px rgba(0,0,0,.22);max-width:calc(100vw - 32px)}
 .carry .cap b{font-weight:800}
 .carry button{appearance:none;border:0;cursor:pointer;font-family:var(--font);
 font-size:13px;font-weight:800;border-radius:99px;padding:7px 15px}
-.carry .copy{background:var(--paper);color:var(--ink)}
+.carry .copy,.carry .save{background:var(--paper);color:var(--ink)}
+.carry .save[disabled]{opacity:.5;cursor:default}
 .carry .clear{background:transparent;color:var(--paper);opacity:.66;padding:7px 8px}
 .carry .clear:hover{opacity:1}
 .carry .hint{font-size:12px;opacity:.6}
@@ -632,11 +633,20 @@ def build_index(D, venue_index, nven, narc):
         if d.get('touched'):
             done.append({'d': d['touched'], 'k': '손댔다', 't': it['title']})
     done = [x for x in done if len(x['d']) == 10]
+    # 장부가 있으면 저장 단추, 없으면 옛 다리인 옮겨 적기.
+    # 열쇠는 빚을 때 환경에서 받는다. 빚어진 판은 암호문이므로 함께 잠긴다.
+    lt = os.environ.get('LEDGER_TOKEN', '')
     out.append('<div class="carry" id="carry" hidden>'
                '<span class="cap">해치운 걸음 <b class="n">0</b></span>'
-               '<button type="button" class="copy">옮겨 적기</button>'
-               '<button type="button" class="clear">지우기</button>'
-               '<span class="hint">베낀 것을 채팅에 붙이면 판이 따라옵니다</span></div>')
+               + ('<button type="button" class="save">저장</button>' if lt
+                  else '<button type="button" class="copy">옮겨 적기</button>')
+               + '<button type="button" class="clear">지우기</button>'
+               + '<span class="hint">'
+               + ('모았다가 한 번에 저장합니다. 다른 기기에서도 같은 줄이 보입니다'
+                  if lt else '베낀 것을 채팅에 붙이면 판이 따라옵니다')
+               + '</span></div>')
+    if lt:
+        out.append('<script>const LEDGER=' + json.dumps({'k': lt}) + ';</script>')
     out.append('<div class="tally" id="tally"></div>'
                '<script>const DONE = ' + json.dumps(done, ensure_ascii=False) + ';</script>')
 
@@ -828,11 +838,18 @@ BOARD_JS = """<script>
       : '';
   }
 
-  // 해치운 표시. 이 기기에만 남는다. 데이터를 건드리지 않는다.
+  // 해치운 표시.
   //
-  // 이 판은 서버가 없다. 네모를 누른 것이 저장소로 곧장 갈 길이 없다.
-  // 가려면 쓰기 열쇠를 페이지 안에 넣어야 하는데, 그러면 암호를 아는 사람이
-  // 저장소를 고칠 수 있게 된다. 판을 잠근 뜻이 없어진다.
+  // 원본을 건드리지 않는다. 판은 미리 그려 둔 파일이고 그리는 것은 파이썬이라,
+  // 네모를 눌렀다고 데이터가 따라 고쳐질 길이 없다. 억지로 뚫으려면 판의
+  // 암호와 저장소 쓰기 열쇠를 페이지나 워커 안에 넣어야 하는데, 그러면
+  // 판을 잠근 뜻이 없어진다.
+  //
+  // 그래서 워커가 장부만 따로 쥔다. 얻는 것이 더 크다. 휴대전화에서 그은 줄이
+  // 노트북에서도 그어진다. 이 기기에만 남던 표시로는 되지 않던 일이다.
+  // 원본에 닿는 것은 다음 갱신 때 사람이 한다.
+  //
+  // 저장은 누를 때마다 하지 않고 모았다가 한 번에 보낸다.
   //
   // 그래서 다리를 놓는다. 누른 것을 한 덩이 글로 베껴 채팅에 붙이면
   // 다음 갱신이 그것을 읽어 데이터에서 걸음을 빼고 손댄 날을 오늘로 고친다.
@@ -847,30 +864,103 @@ BOARD_JS = """<script>
     var t = art && art.querySelector('.title-line .t');
     return t ? t.textContent.trim() : '';
   }
+  var HAS = typeof LEDGER !== 'undefined';
+  var SRV = {};       // 워커의 장부에 이미 적힌 것
+  var dirty = false;  // 아직 안 보낸 것이 있는가
+
+  function mark(b) { b.closest('.step, li').dataset.done = b.checked ? '1' : ''; }
+  function lset(b) {
+    try { localStorage.setItem('loggia.done.' + b.dataset.done,
+                               b.checked ? '1' : '0'); } catch (e) {}
+  }
+  function iso(dt) {
+    return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0')
+         + '-' + String(dt.getDate()).padStart(2, '0');
+  }
   function refresh() {
     if (!bar) return;
     var on = [].filter.call(boxes, function (b) { return b.checked; });
-    bar.hidden = on.length === 0;
+    bar.hidden = on.length === 0 && !dirty;
     var n = bar.querySelector('.n');
     if (n) n.textContent = on.length;
     bar.dataset.text = '로지아 갱신. 아래를 해치웠다.\\n'
       + on.map(function (b) { return '- ' + title(b) + ' · ' + label(b); }).join('\\n');
+    var sv = bar.querySelector('.save');
+    if (sv) { sv.disabled = !dirty; sv.textContent = dirty ? '저장' : '저장됨'; }
   }
+
+  // 지금 판의 모습과 장부를 견주어 보낼 것만 추린다
+  function diff() {
+    var set = {}, del = [], d = iso(new Date());
+    [].forEach.call(boxes, function (b) {
+      var k = b.dataset.done;
+      if (b.checked && !SRV[k]) set[k] = { t: title(b), s: label(b), at: d };
+      if (!b.checked && SRV[k]) del.push(k);
+    });
+    return { set: set, del: del };
+  }
+
+  function save(quiet) {
+    if (!HAS || !dirty) return;
+    var d = diff();
+    if (!Object.keys(d.set).length && !d.del.length) { dirty = false; refresh(); return; }
+    var url = '/done?k=' + encodeURIComponent(LEDGER.k);
+    var body = JSON.stringify(d);
+    // 창을 덮을 때는 답을 기다릴 수 없다. 흘려보내고 끝낸다
+    if (quiet && navigator.sendBeacon) {
+      navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+      Object.keys(d.set).forEach(function (k) { SRV[k] = d.set[k]; });
+      d.del.forEach(function (k) { delete SRV[k]; });
+      dirty = false;
+      return;
+    }
+    var sv = bar && bar.querySelector('.save');
+    if (sv) { sv.disabled = true; sv.textContent = '저장 중'; }
+    fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: body })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (j) { SRV = j; dirty = false; refresh(); })
+      .catch(function () {
+        if (sv) { sv.disabled = false; sv.textContent = '다시 저장'; }
+      });
+  }
+
   boxes.forEach(function (b) {
     var key = 'loggia.done.' + b.dataset.done;
     try { b.checked = localStorage.getItem(key) === '1'; } catch (e) {}
-    b.closest('.step, li').dataset.done = b.checked ? '1' : '';
+    mark(b);
     b.addEventListener('change', function () {
-      try { localStorage.setItem(key, b.checked ? '1' : '0'); } catch (e) {}
-      b.closest('.step, li').dataset.done = b.checked ? '1' : '';
-      refresh();
+      lset(b); mark(b); dirty = true; refresh();
     });
   });
+
+  // 장부를 읽어 이 기기의 표시를 맞춘다. 다른 기기에서 그은 줄이 여기에도 온다.
+  // 아직 안 보낸 것이 있으면 건드리지 않는다. 덮어써 버리면 방금 누른 것이 사라진다.
+  if (HAS) {
+    fetch('/done?k=' + encodeURIComponent(LEDGER.k), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || dirty) return;
+        SRV = j;
+        [].forEach.call(boxes, function (b) {
+          var on = !!SRV[b.dataset.done];
+          if (on !== b.checked) { b.checked = on; lset(b); mark(b); }
+        });
+        refresh();
+      })
+      .catch(function () {});
+    addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') save(true);
+    });
+  }
+
   if (bar) {
-    bar.querySelector('.copy').addEventListener('click', function () {
+    var sbtn = bar.querySelector('.save');
+    if (sbtn) sbtn.addEventListener('click', function () { save(false); });
+    var cbtn = bar.querySelector('.copy');
+    if (cbtn) cbtn.addEventListener('click', function () {
       var t = bar.dataset.text;
       var done = function () {
-        var el = bar.querySelector('.copy');
+        var el = cbtn;
         var was = el.textContent; el.textContent = '베꼈습니다';
         setTimeout(function () { el.textContent = was; }, 1600);
       };
@@ -885,9 +975,7 @@ BOARD_JS = """<script>
     bar.querySelector('.clear').addEventListener('click', function () {
       boxes.forEach(function (b) {
         if (!b.checked) return;
-        b.checked = false;
-        try { localStorage.setItem('loggia.done.' + b.dataset.done, '0'); } catch (e) {}
-        b.closest('.step, li').dataset.done = '';
+        b.checked = false; lset(b); mark(b); dirty = true;
       });
       refresh();
     });
