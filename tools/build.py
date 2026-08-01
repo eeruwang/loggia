@@ -83,7 +83,11 @@ FOOT = """
   document.querySelectorAll('[data-since]').forEach(function (el) {
     var p = el.dataset.since.split('-');
     var d = new Date(+p[0], +p[1]-1, +p[2]);
-    el.textContent = Math.round((today - d) / 86400000) + '일째';
+    var n = Math.round((today - d) / 86400000);
+    el.textContent = n + '일째';
+    // 그 지면이 대개 걸리는 날수를 넘겼으면 물어볼 때다
+    var box = el.closest('.clock');
+    if (box && box.dataset.days && n > +box.dataset.days) box.dataset.late = '1';
   });
 })();
 </script>
@@ -108,6 +112,65 @@ html[data-theme=dark]{--paper:hsl(28 8% 10%);--surface:hsl(28 7% 14%);
 --rule-2:hsl(28 6% 32%);--now:hsl(4 84% 66%);--soon:hsl(34 92% 60%);--later:hsl(35 5% 58%);--good:hsl(154 44% 58%)}
 
 /* 밝기 고르는 단추. 표제 오른쪽에 작게 앉는다 */
+
+/* 접는 마디. 오늘 할 일이 아닌 것은 접어 둔다.
+   펼쳐 둔 것이 많으면 무엇부터 볼지가 흐려진다. */
+.fold{margin:46px 0 0}
+.fold>summary{display:flex;align-items:baseline;gap:12px;padding-bottom:10px;
+border-bottom:2px solid var(--rule-2);cursor:pointer;list-style:none}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary h2{font-size:15px;font-weight:700;letter-spacing:.06em;margin:0;color:var(--ink-2)}
+.fold>summary .c{margin-left:auto;font-size:13px;color:var(--ink-3)}
+.fold>summary .arrow{font-size:11px;color:var(--ink-3);transition:transform .12s}
+.fold[open]>summary{border-bottom-color:var(--ink)}
+.fold[open]>summary h2{color:var(--ink)}
+.fold[open]>summary .arrow{transform:rotate(90deg)}
+.fold .lede{margin:16px 0 0}
+
+/* 답을 기다리는 중. 달력 맨 위. 며칠째인지는 브라우저가 센다 */
+.clocks{margin-top:6px}
+.clock{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:15px 0;
+border-bottom:1px solid var(--rule)}
+.clock .el{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--ink);min-width:76px}
+.clock[data-late] .el{color:var(--now)}
+.clock .t{font-size:14.5px;font-weight:600;color:var(--ink-2)}
+.clock .v{font-size:12.5px;color:var(--ink-3)}
+.clock .side{margin-left:auto;display:flex;gap:14px;font-size:12.5px;color:var(--ink-2)}
+.clock .side .lab{margin-right:6px;color:var(--ink-3)}
+.clock[data-late] .side::after{content:'물어볼 때';color:var(--now);font-weight:700}
+
+/* 해마다 돌아오는 것 */
+.reps{margin-top:6px}
+.rep{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid var(--rule)}
+.rep .when{font-size:12.5px;font-weight:700;color:var(--ink-2);min-width:104px}
+.rep .t{font-size:14px;color:var(--ink)}
+.rep .guess{font-size:11px;font-weight:700;color:var(--ink-3);border:1px dashed var(--rule-2);padding:1px 6px;border-radius:2px}
+.rep .n{font-size:12.5px;color:var(--ink-3);flex-basis:100%}
+.cal-ev .r.rep .tx{color:var(--ink-3)}
+
+/* 정한 것 */
+.decs{margin-top:6px}
+.dec{display:flex;gap:16px;padding:15px 0;border-bottom:1px solid var(--rule)}
+.dec .when{font-size:12.5px;color:var(--ink-3);min-width:78px;flex:none}
+.dec .what{margin:0;font-size:14.5px;font-weight:600;color:var(--ink)}
+.dec .what .on{font-size:12px;font-weight:400;color:var(--ink-3);margin-left:9px}
+.dec .why{margin:4px 0 0;font-size:13.5px;color:var(--ink-2)}
+
+/* 다시 쓸 것 */
+.reuses{margin-top:6px}
+.reuse{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:15px 0;border-bottom:1px solid var(--rule)}
+.reuse .what{margin:0;font-size:14.5px;font-weight:600;color:var(--ink)}
+.reuse .from{margin:3px 0 0;font-size:12.5px;color:var(--ink-3)}
+.reuse .to{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap}
+.reuse .to span{font-size:12px;color:var(--ink-2);border:1px solid var(--rule-2);padding:2px 8px;border-radius:2px}
+
+/* 사람 */
+.whos{margin-top:6px}
+.who-row{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid var(--rule)}
+.who-row .nm{font-size:14.5px;font-weight:600;color:var(--ink)}
+.who-row .role{font-size:12px;color:var(--ink-2);border:1px solid var(--rule-2);padding:2px 8px;border-radius:2px}
+.who-row .last{margin-left:auto;font-size:12.5px;color:var(--ink-3)}
+.who-row .n{flex-basis:100%;margin:4px 0 0;font-size:13.5px;color:var(--ink-2)}
 .mode{display:inline-flex;border:1px solid var(--rule-2);border-radius:3px;overflow:hidden;margin-left:12px;vertical-align:middle}
 .mode button{appearance:none;border:0;background:transparent;cursor:pointer;font-family:var(--font);
 font-size:12px;font-weight:600;color:var(--ink-3);padding:6px 10px;border-right:1px solid var(--rule-2)}
@@ -329,6 +392,17 @@ def build_index(D, venue_index, nven, narc):
         out.append(f'<div class="sec"><h2>{esc(s["label"])}</h2><span class="c">{len(s["items"])}</span></div>')
         for it in sorted(s['items'], key=lambda i: i.get('dates', {}).get('deadline') or '9999'):
             out.append(entry_html(it, D, venue_index))
+    if D.get('decisions'):
+        by = {}
+        for it, _ in all_items(D):
+            by[it['id']] = it['title']
+        ds = ''.join(
+            f'<div class="dec"><span class="when">{esc(d["date"].replace("-", "."))}</span>'
+            f'<div><p class="what">{esc(d["what"])}'
+            + (f'<span class="on">{esc(by[d["item"]])}</span>' if d.get('item') in by else '')
+            + f'</p><p class="why">{esc(d.get("why", ""))}</p></div></div>'
+            for d in sorted(D['decisions'], key=lambda x: x['date'], reverse=True))
+        out.append(fold('정한 것', len(D['decisions']), f'<div class="decs">{ds}</div>'))
     c = D.get('compass')
     if c:
         lines = ''.join(f'<p>{esc(l)}</p>' for l in c['lines'])
@@ -354,7 +428,10 @@ def build_journals(D, venue_index, items_by_venue, nven, narc):
                 iso = v['deadline']
                 facts.append(f'<span><span class="lab">마감</span><b>{iso.replace("-", ".")} · </b>'
                              f'<b class="dday" style="font-size:13.5px;display:inline" data-deadline="{iso}">D-</b></span>')
-            if v.get('cost'):
+            if isinstance(v.get('비용'), dict):
+                for k2, val in v['비용'].items():
+                    facts.append(f'<span><span class="lab">{esc(k2)}</span><b>{esc(val)}</b></span>')
+            elif v.get('cost'):
                 facts.append(f'<span><span class="lab">비용</span><b>{esc(v["cost"])}</b></span>')
             if v.get('review'):
                 facts.append(f'<span><span class="lab">심사</span>{esc(v["review"])}</span>')
@@ -405,6 +482,16 @@ def all_items(D):
             yield it, False
     for it in D.get('archive', []):
         yield it, True
+
+
+def fold(title, count, body):
+    """접어 두는 마디. 읽을 것이지 오늘 할 일이 아니라면 접는다.
+
+    펼쳐 둔 것이 많으면 무엇부터 볼지가 흐려진다.
+    """
+    n = f'<span class="c">{count}</span>' if count else ''
+    return (f'<details class="fold"><summary><h2>{esc(title)}</h2>{n}'
+            f'<span class="arrow">\u25b8</span></summary>{body}</details>')
 
 
 def item_thinkers(item, D):
@@ -498,6 +585,33 @@ def build_materials(D, nven, narc):
 <div class="venue-head"><h3>{name}</h3><span class="sub">{esc(r.get('sub',''))}</span></div>
 {body}</section>""")
 
+    if D.get('reuse'):
+        rs = ''.join(
+            '<div class="reuse"><div><p class="what">' + esc(r['이름'])
+            + '</p><p class="from">' + esc(r.get('어디', '')) + '</p></div><div class="to">'
+            + ''.join(f'<span>{esc(x)}</span>' for x in r.get('쓸 곳', []))
+            + '</div>'
+            + (f'<a class="link file" href="{esc(r["url"])}" target="_blank" rel="noopener">파일</a>'
+               if r.get('url') else '')
+            + '</div>'
+            for r in D['reuse'])
+        out.append(fold('다시 쓸 것', len(D['reuse']),
+                        '<p class="lede">한 번 쓴 글의 어느 대목이 다음 어디로 가는가. '
+                        '지원서를 열 때 여기부터 본다.</p>'
+                        + f'<div class="reuses">{rs}</div>'))
+    if D.get('people'):
+        ps = ''.join(
+            f'<div class="who-row"><span class="nm">{esc(pp["이름"])}</span>'
+            f'<span class="role">{esc(pp.get("몫", ""))}</span>'
+            + (f'<span class="last" data-since="{esc(pp["마지막"])}"></span>'
+               if len(pp.get('마지막', '')) == 10 else
+               f'<span class="last">{esc(pp.get("마지막", ""))}</span>')
+            + f'<p class="n">{esc(pp.get("메모", ""))}</p></div>'
+            for pp in D['people'])
+        out.append(fold('사람', len(D['people']),
+                        '<p class="lede">누구에게 무엇을 언제 부탁했나. '
+                        '같은 사람에게 자주 갈 수는 없다.</p>'
+                        + f'<div class="whos">{ps}</div>'))
     out.append(FOOT.replace('{updated}', D['meta']['updated'].replace('-', '.')))
     return ''.join(out)
 
@@ -537,10 +651,48 @@ def build_archive(D, venue_index, nven, narc):
     return ''.join(out)
 
 
+def waiting_clock(D, venue_index):
+    """냈고 답을 기다리는 것들. 며칠째인지와 언제쯤 물어야 하는지.
+
+    날수는 브라우저가 센다. 그래야 며칠 뒤에 열어도 낡지 않는다.
+    `답까지` 는 그 지면이 대개 며칠 걸리는지다. 넘어가면 붉어진다.
+    모르면 비워 둔다. 지어내지 않는다.
+    """
+    rows = []
+    for sec in D['sections']:
+        for it in sec['items']:
+            d = it.get('dates', {})
+            st = D['statuses'].get(it.get('status'), {})
+            if not d.get('sent') or st.get('tone') != 'wait':
+                continue
+            v = venue_index.get(it.get('venue')) or {}
+            days = v.get('답까지')
+            expect = d.get('expected')
+            side = []
+            if days:
+                side.append(f'<span class="lab">대개</span>{days}일')
+            if expect:
+                side.append(f'<span class="lab">짐작</span>{expect.replace("-", ".")}')
+            rows.append(
+                # 바깥 상자에는 data-since 를 걸지 않는다.
+                # 날수를 적는 손이 그 상자의 안을 통째로 지워 버린다.
+                f'<div class="clock" data-sent="{esc(d["sent"])}"'
+                + (f' data-days="{days}"' if days else '') + '>'
+                f'<span class="el" data-since="{esc(d["sent"])}"></span>'
+                f'<span class="t">{esc(it["title"])}</span>'
+                f'<span class="v">{esc(v.get("name", ""))}</span>'
+                f'<span class="side">{"".join(f"<span>{s}</span>" for s in side)}</span></div>')
+    if not rows:
+        return ''
+    return ('<div class="sec"><h2>답을 기다리는 중</h2><span class="c">%d</span></div>' % len(rows)
+            + '<div class="clocks">' + ''.join(rows) + '</div>')
+
+
 def build_calendar(D, venue_index, nven, narc):
     """달력. 날짜는 페이지가 열릴 때 그린다. 그래야 오늘이 늘 가운데 온다.
 
     연월까지만 아는 날짜는 찍지 않는다. 하루를 지어내야 하기 때문이다.
+    되풀이하는 마감은 브라우저가 그 달에 맞춰 셈한다. 그래야 해가 바뀌어도 이어진다.
     """
     ev = []
     for sec in D['sections']:
@@ -577,20 +729,52 @@ def build_calendar(D, venue_index, nven, narc):
         if k not in key_seen:
             key_seen.add(k); uniq.append(e)
 
+    # 되풀이하는 것들. 날짜는 브라우저가 그 달에 맞춰 짓는다
+    reps = []
+    for r in D.get('repeats', []):
+        v = venue_index.get(r.get('venue')) or {}
+        reps.append({'m': r['months'], 'day': r.get('day', '말일'),
+                     't': r['label'] + (' · ' + v['name'] if v else ''),
+                     'k': r.get('kind', '되풀이'), 'guess': bool(r.get('짐작'))})
+
     out = [HEAD.format(title='달력', css=CSS, updated=D['meta']['updated'].replace('-', '.'),
                        h0='', hc=' here', h1='', h2='', h3='', nven=nven, narc=narc)]
+    out.append(waiting_clock(D, venue_index))
+    if D.get('repeats'):
+        rl = ''.join(
+            f'<div class="rep"><span class="when">{"·".join(str(m) for m in r["months"])}월 '
+            f'{r.get("day", "말일") if isinstance(r.get("day", "말일"), str) else str(r["day"]) + "일"}</span>'
+            f'<span class="t">{esc(r["label"])}</span>'
+            + ('<span class="guess">짐작</span>' if r.get('짐작') else '')
+            + (f'<span class="n">{esc(r["note"])}</span>' if r.get('note') else '')
+            + '</div>' for r in D['repeats'])
+        out.append(fold('해마다 돌아오는 것', len(D['repeats']), f'<div class="reps">{rl}</div>'))
     out.append("""<div class="sec"><h2>한 해</h2><span class="c">오늘 앞뒤 여섯 달</span></div>
 <div class="cal-legend"><span><b>굵은 날</b> 무엇인가 있는 날</span>
 <span><b>붉은 밑줄</b> 이레 안 마감</span><span><b>주황 밑줄</b> 한 달 안 마감</span>
 <span><b>네모</b> 오늘</span></div>
 <div class="cal-grid" id="cal"></div>""")
-    out.append('<script>const EV = ' + json.dumps(uniq, ensure_ascii=False) + ';</script>')
+    out.append('<script>const EV = ' + json.dumps(uniq, ensure_ascii=False)
+               + '; const REP = ' + json.dumps(reps, ensure_ascii=False) + ';</script>')
     out.append("""<script>
 (function () {
   var W = ['일','월','화','수','목','금','토'];
   var today = new Date(); today.setHours(0,0,0,0);
   var byDay = {};
   EV.forEach(function (e) { (byDay[e.d] = byDay[e.d] || []).push(e); });
+
+  // 되풀이하는 것을 그릴 달마다 앉힌다. 해가 바뀌어도 이어진다.
+  function pad0(n) { return (n < 10 ? '0' : '') + n; }
+  for (var o = -18; o <= 18; o++) {
+    var mm = new Date(today.getFullYear(), today.getMonth() + o, 1);
+    var yy = mm.getFullYear(), mn = mm.getMonth() + 1;
+    REP.forEach(function (r) {
+      if (r.m.indexOf(mn) < 0) return;
+      var day = r.day === '말일' ? new Date(yy, mn, 0).getDate() : +r.day;
+      var iso = yy + '-' + pad0(mn) + '-' + pad0(day);
+      (byDay[iso] = byDay[iso] || []).push({ d: iso, k: r.k, t: r.t, rep: true, guess: r.guess });
+    });
+  }
 
   function urg(iso) {
     var p = iso.split('-'), d = new Date(+p[0], +p[1]-1, +p[2]);
@@ -619,7 +803,7 @@ def build_calendar(D, venue_index, nven, narc):
       if (list) {
         cls.push('has');
         var worst = '';
-        list.forEach(function (e) { if (e.k === '마감') { var u = urg(e.d).c; if (u === 'now' || (u === 'soon' && worst !== 'now')) worst = u; } });
+        list.forEach(function (e) { if (e.k === '마감' && !e.rep) { var u = urg(e.d).c; if (u === 'now' || (u === 'soon' && worst !== 'now')) worst = u; } });
         if (worst) cls.push(worst);
         rows.push({ day: day, iso: iso, list: list });
       }
@@ -633,9 +817,10 @@ def build_calendar(D, venue_index, nven, narc):
       h += '<div class="cal-ev">';
       rows.forEach(function (r) {
         r.list.forEach(function (e) {
-          var u = e.k === '마감' ? urg(e.d).c : '';
-          h += '<div class="r ' + u + '"><span class="dd">' + r.day + '</span>'
-             + '<span class="tx">' + e.t + ' <span style="color:var(--ink-3)">' + e.k + '</span></span></div>';
+          var u = (e.k === '마감' && !e.rep) ? urg(e.d).c : '';
+          h += '<div class="r ' + u + (e.rep ? ' rep' : '') + '"><span class="dd">' + r.day + '</span>'
+             + '<span class="tx">' + e.t + ' <span style="color:var(--ink-3)">' + e.k
+             + (e.guess ? ' 짐작' : '') + '</span></span></div>';
         });
       });
       h += '</div>';
