@@ -1,0 +1,40 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "loggia",
+  "main": "worker/src/index.ts",
+  "compatibility_date": "2026-07-01",
+
+  // 판 다섯 장. 워커가 직접 내준다.
+  // 자리를 찾은 요청은 파일이 먼저 나가고, 못 찾은 요청만 워커가 받는다.
+  // 그래서 /send 는 워커에게 닿고 / 는 index.html 이 나간다.
+  "assets": {
+    "directory": "./public"
+  },
+
+  // 클라우드플레어 이메일 서비스. 아침 편지를 부치는 곳
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "remote": true
+    }
+  ],
+
+  // 크론은 UTC 로 돈다. 서울은 서머타임이 없으므로 늘 아홉 시간 앞선다.
+  // 22:00 UTC = 이튿날 07:00 서울.
+  "triggers": {
+    "crons": ["0 22 * * *"]
+  },
+
+  "vars": {
+    // 편지가 읽는 꾸러미는 깃허브에서 받는다.
+    // 워커의 제 살림에서 읽지 않는 이유는, 배포가 어긋나도 편지가 최신을
+    // 읽게 하기 위해서다. 판과 편지는 서로 기대지 않는 편이 낫다.
+    "DIGEST_URL": "https://raw.githubusercontent.com/eeruwang/loggia/main/digest.enc",
+    "MAIL_TO": "moon@ilsunmoon.com",
+    "MAIL_FROM": "moon@mail.ilsunmoon.com"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "loggia",
+  "private": true,
+  "_읽어보기": "type:module 을 두지 않는다. tools/ 의 lock.js 와 seal.js 가 require 를 쓰는 CommonJS 이기 때문이다. 워커는 wrangler 가 따로 묶으므로 여기에 매이지 않는다.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260730.1",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.0.0"
+  }
+}

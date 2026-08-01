@@ -61,6 +61,9 @@ STAMP="$( { for f in index calendar journals materials archive; do
            [ -f "$SITE/digest.json" ] && cat "$SITE/digest.json"
            tree_hash "$ROOT/tools"
            tree_hash "$ROOT/worker"
+           for f in wrangler.jsonc package.json tsconfig.json .gitignore; do
+             [ -f "$ROOT/$f" ] && cat "$ROOT/$f"
+           done
          } | sha256sum | cut -d' ' -f1 )"
 if [ -f "$WORK/repo/.stamp" ] && [ "$(cat "$WORK/repo/.stamp")" = "$STAMP" ]; then
   echo "바뀐 것이 없습니다. 올리지 않았습니다."
@@ -73,6 +76,32 @@ for f in index calendar journals materials archive; do
     node "$HERE/lock.js" "$SITE/$f.html" "$WORK/repo/$f.html" "$PASS" "$SALT"
   fi
 done
+
+# ── 클라우드플레어가 내주는 자리 ────────────────────────────────────────────
+# 워커의 assets 는 public/ 하나만 본다. 저장소 뿌리를 통째로 내주면 도구와
+# 데이터까지 딸려 나가므로, 내줄 것만 여기 모은다.
+#
+# 뿌리의 .html 은 아직 지우지 않는다. 깃허브 페이지가 그것을 보고 있다.
+# 클라우드플레어 쪽이 확인되면 위 고리에서 뿌리로 잠그는 줄을 지우면 된다.
+mkdir -p "$WORK/repo/public"
+for f in index calendar journals materials archive; do
+  [ -f "$WORK/repo/$f.html" ] && cp "$WORK/repo/$f.html" "$WORK/repo/public/$f.html"
+done
+[ -d "$WORK/repo/font" ] && { rm -rf "$WORK/repo/public/font"; cp -r "$WORK/repo/font" "$WORK/repo/public/font"; }
+
+# 글꼴은 한 번 받으면 바뀌지 않는다. 판은 갱신될 때마다 달라진다.
+# 이 파일은 내주지 않고 규칙으로만 읽힌다.
+cat > "$WORK/repo/public/_headers" <<'HDR'
+# 글꼴은 이름에 내용이 박혀 있지 않으나 바뀌지 않는다. 한 해를 재운다.
+/font/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# 판은 갱신될 때마다 달라진다. 늘 물어보게 한다.
+/*.html
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+HDR
 
 if [ -f "$DATA" ]; then
   node "$HERE/seal.js" "$DATA" "$WORK/repo/data.enc" "$PASS"
@@ -92,6 +121,10 @@ fi
 # 도구와 워커를 저장소에 그대로 옮긴다.
 # fetch.sh 가 저장소에서 도구를 받아 쓰므로, 여기서 옮기지 않으면 저장소의
 # 도구가 낡은 채로 남는다. 판은 멀쩡한데 다음 사람이 옛 빌더를 받게 된다.
+for f in wrangler.jsonc package.json tsconfig.json .gitignore; do
+  [ -f "$ROOT/$f" ] && cp "$ROOT/$f" "$WORK/repo/$f"
+done
+
 for d in tools worker; do
   if [ -d "$ROOT/$d" ]; then
     rm -rf "${WORK:?}/repo/$d"
