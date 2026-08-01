@@ -2,11 +2,14 @@
 # =============================================================================
 # fetch.sh — 저장소를 받아 데이터를 풀어 놓는다. 갱신의 첫 걸음이다
 #
-#   bash fetch.sh <암호> <토큰> [<놓을 자리>]
+#   bash fetch.sh <암호> [<놓을 자리>]
 #
 #   보기
 #     curl -sO https://raw.githubusercontent.com/eeruwang/loggia/main/tools/fetch.sh
-#     bash fetch.sh "$PASS" "$TOKEN"        # → /tmp/lg 에 놓인다
+#     bash fetch.sh "$PASS"                 # → /tmp/lg 에 놓인다
+#
+# 토큰은 여기서 쓰지 않는다. 저장소가 공개라 받아 오는 데는 열쇠가 필요 없다.
+# 토큰은 올릴 때만 쓴다.
 #
 # 끝나면 이렇게 놓여 있다.
 #   <자리>/tools/               도구
@@ -19,11 +22,10 @@
 set -euo pipefail
 
 PASS="${1:?암호가 필요합니다}"
-TOKEN="${2:?토큰이 필요합니다}"
-DEST="${3:-/tmp/lg}"
+DEST="${2:-/tmp/lg}"
 
 rm -rf "$DEST"
-git clone --depth 1 -q "https://x-access-token:${TOKEN}@github.com/eeruwang/loggia.git" "$DEST"
+git clone --depth 1 -q "https://github.com/eeruwang/loggia.git" "$DEST"
 
 if [ -f "$DEST/data.enc" ]; then
   node "$DEST/tools/unseal.js" "$DEST/data.enc" "$DEST/loggia-data.json" "$PASS"

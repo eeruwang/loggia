@@ -30,37 +30,58 @@
 
 | 무엇 | 어디 | 규칙 |
 | --- | --- | --- |
-| 데이터 | 드롭박스 `01. Projects/00. Job Search/loggia-data.json` | 손대는 것은 이 파일뿐 |
-| 열쇠 | 같은 폴더 `board_keys.txt` | 저장소에는 두지 않는다 |
+| 데이터 | 이 저장소의 `data.enc` | 잠긴 채로 있다. 풀어서 고치고 다시 잠가 올린다 |
+| 열쇠 | 드롭박스 `01. Projects/00. Job Search/board_keys.txt` | 저장소에는 두지 않는다 |
 | 도구 | 이 저장소의 `tools/` | 사본을 만들지 않는다 |
-| 결과 | 위 네 장 | 늘 함께 올린다 |
+| 결과 | 위 네 장 | 데이터와 늘 함께 올린다 |
 
-데이터가 저장소에 없는 까닭은 이곳이 공개이기 때문이다.
-내용은 잠긴 채로만 이 자리에 놓인다.
+데이터가 잠긴 채로 여기 있는 까닭은 두 가지다.
+하나는 저장소가 공개라 맨몸으로 둘 수 없기 때문이고,
+둘은 도구와 같은 자리에 있어야 받아 오는 걸음이 한 번으로 끝나기 때문이다.
+
+암호 하나가 판 네 장과 데이터를 모두 연다. 그 암호는 저장소에 없다.
 
 ## 갱신하는 순서
 
 ```bash
-git clone https://github.com/eeruwang/loggia.git
-# 드롭박스에서 loggia-data.json 을 받아 고친다
-python3 loggia/tools/build.py loggia-data.json site/
-bash    loggia/tools/publish.sh site/ "<암호>" "<토큰>" "<커밋 말>"
-# 고친 데이터를 드롭박스에 되돌려 놓는다
+curl -sO https://raw.githubusercontent.com/eeruwang/loggia/main/tools/fetch.sh
+bash fetch.sh "<암호>"                 # /tmp/lg 에 도구와 풀린 데이터가 놓인다
+cd /tmp/lg
+# loggia-data.json 을 고친다
+python3 tools/build.py loggia-data.json site/
+bash    tools/publish.sh  site/ "<암호>" "<토큰>" "<커밋 말>"
 ```
+
+마지막 걸음이 네 장과 데이터를 함께 잠가 올린다. 되돌려 놓는 일이 따로 없다.
+받아 오는 데는 토큰이 필요 없다. 저장소가 공개이기 때문이다. 토큰은 올릴 때만 쓴다.
 
 빚어진 HTML은 손으로 고치지 않는다. 다음 갱신에서 그대로 지워진다.
 고칠 곳은 데이터 하나뿐이다.
+
+내용이 그대로면 `publish.sh` 는 아무것도 올리지 않는다.
+암호문은 잠글 때마다 달라 보이므로 알맹이의 지문을 `.stamp` 에 남겨 견준다.
+
+눈으로 훑고 싶으면 `build.py` 가 함께 내는 `site/스냅샷.md` 를 본다.
+전체를 담은 마크다운이고 저장소에는 올리지 않는다.
 
 클로드에서는 `loggia-status-update` 와 `loggia-journal-update` 스킬이 이 순서를 대신 밟는다.
 
 ## 도구
 
 ```
-build.py     loggia-data.json 을 읽어 네 장을 빚는다
-lock.js      한 장을 잠근다.        node lock.js <in> <out> <암호> [<소금>]
+fetch.sh     저장소를 받아 데이터를 풀어 놓는다. 갱신의 첫 걸음
+build.py     loggia-data.json 을 읽어 네 장과 스냅샷을 빚는다
+publish.sh   네 장과 데이터를 한꺼번에 잠가 올린다
+
+lock.js      한 장을 잠근다.        node lock.js   <in> <out> <암호> [<소금>]
 unlock.js    잠긴 장을 도로 푼다.   node unlock.js <in> <out> <암호>
-publish.sh   네 장을 한 소금으로 잠가 한 번에 올린다
+seal.js      데이터를 잠근다.       node seal.js   <in> <out> <암호>
+unseal.js    데이터를 푼다.         node unseal.js <in> <out> <암호>
 ```
+
+`lock` 과 `seal` 은 같은 자물쇠다. 다른 것은 껍데기뿐이다.
+`lock` 은 암호를 묻는 화면을 함께 묶어 브라우저가 열 수 있게 하고,
+`seal` 은 사람이 열 것이 아니므로 덩이만 남긴다.
 
 `unlock.js` 는 확인용이다. 판이 어긋났다 싶을 때 올라간 것을 그 자리에서 풀어
 무엇이 담겼는지, 소금이 같은지 본다.
