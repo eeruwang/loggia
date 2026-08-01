@@ -59,8 +59,8 @@ Workers → 해당 워커 → **설정 → 빌드**.
 ### 2. 메일 길을 연다
 
 **Email Service → Onboard Domain** 에 올릴 것은 뿌리가 아니라
-**`mail.ilsunmoon.com`** 이다. MX, SPF, DKIM, DMARC 넉 줄이 그 아랫가지에만
-들어간다. 뿌리 `ilsunmoon.com` 의 MX 는 손대지 않는다. 그래야 지금 받고 있는
+**`mail.moonilsun.com`** 이다. MX, SPF, DKIM, DMARC 넉 줄이 그 아랫가지에만
+들어간다. 보내는 도메인의 뿌리 MX 는 손대지 않는다. 그래야 지금 받고 있는
 편지가 그대로 산다.
 
 **Email Service → Destination addresses** 에 `moon@ilsunmoon.com` 을 넣고
@@ -68,7 +68,7 @@ Workers → 해당 워커 → **설정 → 빌드**.
 
 | | |
 | --- | --- |
-| 보낸다 | `moon@mail.ilsunmoon.com` · 아랫가지. 클라우드플레어가 서명한다 |
+| 보낸다 | `moon@mail.moonilsun.com` · 아랫가지. 클라우드플레어가 서명한다 |
 | 받는다 | `moon@ilsunmoon.com` · 뿌리. 쓰시던 편지함 그대로 |
 
 확인된 주소로 보내는 편지는 **어느 요금제에서나 값이 없고 하루 한도에도 들지

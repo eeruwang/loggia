@@ -31,7 +31,7 @@
     // 읽게 하기 위해서다. 판과 편지는 서로 기대지 않는 편이 낫다.
     "DIGEST_URL": "https://raw.githubusercontent.com/eeruwang/loggia/main/digest.enc",
     "MAIL_TO": "moon@ilsunmoon.com",
-    "MAIL_FROM": "moon@mail.ilsunmoon.com"
+    "MAIL_FROM": "moon@mail.moonilsun.com"
   },
 
   "observability": {
