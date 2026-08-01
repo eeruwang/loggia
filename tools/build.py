@@ -65,8 +65,15 @@ FOOT = """
     var d = new Date(+p[0], +p[1]-1, +p[2]);
     var n = Math.round((d - today) / 86400000);
     var urg = n < 0 ? 'past' : n <= 7 ? 'now' : n <= 30 ? 'soon' : 'later';
-    el.textContent = n < 0 ? '지남' : n === 0 ? '오늘' : 'D-' + n;
+    // 지난 마감. 좁은 칸에서는 숫자만 크게 두고 아랫줄에 말을 붙인다.
+    // 넓은 자리에서는 「36일 지남」을 통째로 적는다.
+    el.textContent = n < 0 ? (el.dataset.wide ? (-n) + '일 지남' : String(-n))
+                   : n === 0 ? '오늘' : 'D-' + n;
     el.dataset.urgency = urg;
+    if (n < 0 && !el.dataset.wide && el.parentNode) {
+      var dt = el.parentNode.querySelector('.date[data-d]');
+      if (dt) dt.textContent = '일 지남 · ' + dt.dataset.d;
+    }
   });
   // 밝기 단추. 고른 값은 이 기기에 남는다.
   var root = document.documentElement;
@@ -529,8 +536,9 @@ def when_col(item):
     d = item.get('dates', {})
     if d.get('deadline'):
         iso = d['deadline']
+        md_ = iso[5:].replace("-", ".")
         return (f'<div class="when-col"><span class="dday" data-deadline="{iso}">D-</span>'
-                f'<span class="date">{iso[5:].replace("-", ".")}</span></div>')
+                f'<span class="date" data-d="{md_}">{md_}</span></div>')
     if d.get('sent'):
         iso = d['sent']
         return (f'<div class="when-col"><span class="dday none" data-since="{iso}"></span>'
@@ -637,7 +645,7 @@ def build_index(D, venue_index, nven, narc):
         v = venue_index.get(f.get('venue'))
         iso = f['dates']['deadline']
         out.append(f"""<section class="focus"><div class="cap">지금 이것부터</div>
-<div class="line"><span class="dday" data-deadline="{iso}">D-</span>
+<div class="line"><span class="dday" data-wide="1" data-deadline="{iso}">D-</span>
 <span class="who">{esc(f['title'])}{' · ' + esc(v['name']) if v else ''}</span></div>
 <p class="todo">{esc(steps_of(f)[0])}</p>
 <div class="when">마감 {iso[5:7].lstrip('0')}월 {iso[8:].lstrip('0')}일</div></section>""")
@@ -719,7 +727,7 @@ def build_journals(D, venue_index, items_by_venue, nven, narc):
             if v.get('deadline'):
                 iso = v['deadline']
                 facts.append(f'<span><span class="lab">마감</span><b>{iso.replace("-", ".")} · </b>'
-                             f'<b class="dday" style="font-size:13.5px;display:inline" data-deadline="{iso}">D-</b></span>')
+                             f'<b class="dday" style="font-size:13.5px;display:inline" data-wide="1" data-deadline="{iso}">D-</b></span>')
             if isinstance(v.get('비용'), dict):
                 for k2, val in v['비용'].items():
                     facts.append(f'<span><span class="lab">{esc(k2)}</span><b>{esc(val)}</b></span>')

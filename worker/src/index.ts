@@ -173,9 +173,15 @@ type Block = { cap: string; cards: Card[] };
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-/** 판이 쓰는 말 그대로. 지남, 오늘, D-n. */
+/**
+ * 판이 쓰는 말 그대로.
+ *
+ * 넓은 자리에서는 며칠 지났는지를 통째로 적는다. 좁은 칸에서는 숫자만 크게
+ * 두고 아랫줄에 말을 붙인다. 「지남」 한 마디만 던지면 얼마나 지났는지가
+ * 사라지고, 그 숫자가 실은 손을 움직이게 하는 것이다.
+ */
 function dBig(n: number): string {
-  return n < 0 ? '지남' : n === 0 ? '오늘' : `D-${n}`;
+  return n < 0 ? `${-n}일 지남` : n === 0 ? '오늘' : `D-${n}`;
 }
 
 /** 판이 쓰는 빛깔 그대로. 이레 안이면 붉고 한 달 안이면 주황이다. */
@@ -255,8 +261,8 @@ function compose(d: Digest, today: string) {
     blocks.push({
       cap: '지난 마감',
       cards: past.slice(0, 5).map((x) => ({
-        big: '지남', small: md(x.r.due!), tone: 'now' as Tone,
-        title: x.r.t, meta: `${-x.n}일 지났다` + vsep(x.r.v),
+        big: String(-x.n), small: '일 지남', tone: 'now' as Tone,
+        title: x.r.t, meta: `마감 ${md(x.r.due!)}` + vsep(x.r.v),
       })),
     });
   }
