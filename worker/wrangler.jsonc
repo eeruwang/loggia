@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "loggia-morning",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-01",
+
+  // 클라우드플레어 이메일 서비스. 보내는 곳
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "remote": true
+    }
+  ],
+
+  // 크론은 UTC 로 돈다. 서울은 서머타임이 없으므로 늘 아홉 시간 앞선다.
+  // 22:00 UTC = 이튿날 07:00 서울.
+  "triggers": {
+    "crons": ["0 22 * * *"]
+  },
+
+  "vars": {
+    "DIGEST_URL": "https://raw.githubusercontent.com/eeruwang/loggia/main/digest.enc",
+    "MAIL_TO": "eeruwang@gmail.com",
+    "MAIL_FROM": "moon@ilsunmoon.com"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}

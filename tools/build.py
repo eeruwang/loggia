@@ -1344,6 +1344,54 @@ def build_calendar(D, venue_index, nven, narc):
     return ''.join(out)
 
 
+def digest_json(D, venue_index):
+    """워커가 아침에 읽는 작은 꾸러미.
+
+    여기서는 날짜 셈을 하나도 하지 않는다. 오늘이 언제인지는 편지를 부치는
+    그 순간에만 알 수 있다. 판이 몇 주 동안 올라가지 않아도 아침 편지가
+    낡지 않으려면, 담는 것은 날것이어야 하고 며칠 남았는지는 워커가 세야 한다.
+
+    브라우저가 하는 일과 같은 원리다. 다만 손이 하나 더 늘었을 뿐이다.
+    """
+    def vname(vid):
+        return (venue_index.get(vid) or {}).get('name', '')
+
+    due, doing, wait, quiet = [], [], [], []
+    for sec in D['sections']:
+        for it in sec['items']:
+            d = it.get('dates', {})
+            st = D['statuses'].get(it.get('status'), {})
+            ss = steps_of(it)
+            base = {'t': it['title'], 'v': vname(it.get('venue'))}
+            if d.get('deadline'):
+                due.append(dict(base, due=d['deadline'], step=(ss[0] if ss else '')))
+            if sec['id'] == 'now' and ss:
+                doing.append(dict(base, step=ss[0], due=d.get('deadline', ''),
+                                  pum=D.get('efforts', {}).get(it.get('품'), {}).get('label', '')))
+            if d.get('sent') and st.get('tone') == 'wait':
+                v = venue_index.get(it.get('venue')) or {}
+                row = dict(base, sent=d['sent'])
+                if v.get('답까지'):
+                    row['until'] = v['답까지']
+                wait.append(row)
+            elif d.get('touched'):
+                quiet.append(dict(base, touched=d['touched']))
+
+    reps = [{'m': r['months'], 'day': r.get('day', '말일'),
+             't': r['label'], 'v': vname(r.get('venue')), 'guess': bool(r.get('짐작'))}
+            for r in D.get('repeats', [])]
+
+    return {
+        'built': D['meta']['updated'],
+        'site': 'https://eeruwang.github.io/loggia/',
+        'due': sorted(due, key=lambda x: x['due']),
+        'doing': doing,
+        'wait': wait,
+        'quiet': quiet,
+        'repeats': reps,
+    }
+
+
 def snapshot_md(D, venue_index):
     """눈으로 훑는 사본. 드롭박스에 내려놓아 눌러 보는 용도다.
 
@@ -1438,6 +1486,12 @@ def main():
     with open(os.path.join(out_dir, '스냅샷.md'), 'w', encoding='utf-8') as f:
         f.write(md)
     print(f'  스냅샷.md  {len(md.encode())//1024}KB  (드롭박스에 내려놓는 사본)')
+
+    # 아침 편지가 읽을 꾸러미. publish.sh 가 생열쇠로 봉해 digest.enc 로 올린다
+    dg = json.dumps(digest_json(D, venue_index), ensure_ascii=False, separators=(',', ':'))
+    with open(os.path.join(out_dir, 'digest.json'), 'w', encoding='utf-8') as f:
+        f.write(dg)
+    print(f'  digest.json  {len(dg.encode())//1024}KB  (아침 편지가 읽는 것)')
 
 
 if __name__ == '__main__':
