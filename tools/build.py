@@ -146,7 +146,8 @@ html[data-theme=dark]{
 *{box-sizing:border-box}
 body{margin:0;padding:0 20px 140px;background:var(--paper);color:var(--ink);
 font-family:var(--font);font-size:calc(17px*var(--scale));line-height:1.62;
--webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;
+word-break:keep-all;overflow-wrap:anywhere}
 .wrap{max-width:var(--page-max);margin:0 auto}
 
 /* 머리 */
@@ -329,17 +330,17 @@ font-variant-numeric:tabular-nums;align-self:center}
 .sdue[data-urgency=soon]{color:var(--soon)}
 .sdue[data-urgency=past]{color:var(--ink-3)}
 
-/* 새로 추가한 할 일. 아직 데이터에 들어가지 않았다 */
-.pending{list-style:none;margin:12px 0 0;padding:0}
-.pending:empty{margin:0}
-.pending li{display:flex;align-items:center;gap:9px;flex-wrap:wrap;
-padding:9px 13px;margin-bottom:6px;background:var(--sunk);border-radius:9px;
-border-left:3px solid var(--wait);font-size:15px;line-height:1.5;color:var(--ink)}
-.pending .tag{font-size:11px;font-weight:800;letter-spacing:.04em;
-color:var(--wait);white-space:nowrap}
-.pending .drop{margin-left:auto;appearance:none;border:0;background:transparent;
-cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;color:var(--ink-3);padding:2px 4px}
-.pending .drop:hover{color:var(--now)}
+/* 새로 추가한 할 일. 목록에 함께 서되 표를 하나 단다 */
+.rest li.pend .tag{font-size:11px;font-weight:800;letter-spacing:.04em;
+color:var(--wait);white-space:nowrap;align-self:center}
+.rest li.pend .drop{margin-left:auto;appearance:none;border:0;background:transparent;
+cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;color:var(--ink-3);
+padding:2px 4px;align-self:center}
+.rest li.pend .drop:hover{color:var(--now)}
+
+/* 저장한 뒤에는 목록에서 내린다. 다 내려가면 한 줄 남긴다 */
+.entry .cleared{margin:14px 0 0;font-size:15px;font-weight:700;color:var(--live)}
+.entry .cleared::before{content:'✓ '}
 
 /* 오른쪽 아래 단추 하나. 어느 카드에 넣을지는 안에서 고른다 */
 .fab{position:fixed;right:22px;bottom:22px;z-index:40;
@@ -373,7 +374,13 @@ font-size:14px;font-weight:800;padding:11px 18px;border-radius:10px}
 .srow .ok[disabled]{opacity:.5;cursor:default}
 .srow .cancel{background:transparent;color:var(--ink-3)}
 @media(max-width:560px){.sheet{right:12px;left:12px;bottom:12px;width:auto}
-.fab{right:16px;bottom:16px}}
+.fab{right:16px;bottom:16px}
+/* 알약이 오른쪽 끝에 붙어 있으면 글이 밀려 마지막 글자만 다음 줄로 떨어진다.
+   좁은 화면에서는 알약을 아랫줄로 내린다. */
+.step{flex-wrap:wrap;align-items:flex-start}
+.step .todo{flex:1 1 calc(100% - 3em);min-width:0}
+.step .cost{order:3;flex:0 0 auto;margin-left:calc(1.15em + 11px);margin-top:6px;
+align-self:flex-start}}
 .carry .clear{background:transparent;color:var(--paper);opacity:.66;padding:7px 8px}
 .carry .clear:hover{opacity:1}
 .carry .hint{font-size:12px;opacity:.6}
@@ -395,6 +402,8 @@ font-size:14px;color:var(--ink-2)}
 
 /* 다음 걸음. 첫 걸음은 크게, 나머지는 차례로 */
 .step{display:flex;align-items:baseline;gap:11px;margin:14px 0 0}
+/* display 를 적어 두면 hidden 이 먹지 않는다. UA 규칙보다 이쪽이 세다 */
+.step[hidden],.rest li[hidden]{display:none}
 .step .todo{margin:0;cursor:pointer}
 .rest{list-style:none;margin:10px 0 0;padding:0}
 .rest li{display:flex;align-items:baseline;gap:11px;padding:5px 0;font-size:15px;color:var(--ink-2)}
@@ -650,18 +659,6 @@ def steps_html(item, D):
     return ''.join(out)
 
 
-def add_html(item):
-    """새로 추가한 할 일이 설 자리.
-
-    더하는 단추는 카드마다 두지 않는다. 카드가 열이면 단추도 열이 되어
-    눈이 어지럽다. 화면 오른쪽 아래 하나만 두고, 거기서 어느 카드에 넣을지
-    고르게 한다.
-    """
-    if not os.environ.get('LEDGER_TOKEN'):
-        return ''
-    return f'<ol class="pending" data-for="{esc(item["id"])}"></ol>' 
-
-
 def entry_html(item, D, venue_index):
     st = D['statuses'].get(item.get('status'), {'label': item.get('status', ''), 'tone': 'live'})
     v = venue_index.get(item.get('venue'))
@@ -678,7 +675,7 @@ def entry_html(item, D, venue_index):
 <div class="body"><div class="title-line"><h3 class="t">{esc(item['title'])}</h3>
 <span class="state">{esc(st['label'])}</span></div>
 <div class="meta">{venue}<span class="k">{esc(item.get('kind',''))}</span>{touch}</div>
-{steps_html(item, D)}{note}{links_html(item)}{add_html(item)}</div></article>"""
+{steps_html(item, D)}{note}{links_html(item)}</div></article>"""
 
 
 def pick_focus(D):
@@ -949,7 +946,9 @@ BOARD_JS = """<script>
   //
   // 그래서 다리를 놓는다. 누른 것을 한 덩이 글로 베껴 채팅에 붙이면
   // 다음 갱신이 그것을 읽어 데이터에서 걸음을 빼고 손댄 날을 오늘로 고친다.
-  var boxes = document.querySelectorAll('input[data-done]');
+  function allBoxes() {
+    return [].slice.call(document.querySelectorAll('input[data-done]'));
+  }
   var bar = document.getElementById('carry');
   function label(b) {
     var el = document.querySelector('label[for="' + b.id + '"]');
@@ -973,9 +972,33 @@ BOARD_JS = """<script>
     return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0')
          + '-' + String(dt.getDate()).padStart(2, '0');
   }
+  // 저장이 끝난 것은 목록에서 내린다. 끝낸 것이 계속 남아 있으면
+  // 무엇이 남았는지가 흐려진다. 「전체 해제」로 되돌릴 수 있다.
+  function tuck() {
+    document.querySelectorAll('.entry').forEach(function (art) {
+      var bs = [].slice.call(art.querySelectorAll('input[data-done]'));
+      var left = 0;
+      bs.forEach(function (b) {
+        var row = b.closest('.step, li');
+        var gone = b.checked && !!SRV[b.dataset.done];
+        row.hidden = gone;
+        if (!gone) left++;
+      });
+      var note = art.querySelector('.cleared');
+      if (bs.length && left === 0) {
+        if (!note) {
+          note = document.createElement('p');
+          note.className = 'cleared'; note.textContent = '다 끝냈습니다';
+          art.querySelector('.body').appendChild(note);
+        }
+      } else if (note) { note.remove(); }
+    });
+  }
+
   function refresh() {
     if (!bar) return;
-    var on = [].filter.call(boxes, function (b) { return b.checked; });
+    var boxes = allBoxes();
+    var on = boxes.filter(function (b) { return b.checked; });
     bar.hidden = on.length === 0 && !dirty;
     var n = bar.querySelector('.n');
     if (n) n.textContent = on.length;
@@ -988,7 +1011,7 @@ BOARD_JS = """<script>
   // 지금 판의 모습과 장부를 견주어 보낼 것만 추린다
   function diff() {
     var set = {}, del = [], d = iso(new Date());
-    [].forEach.call(boxes, function (b) {
+    allBoxes().forEach(function (b) {
       var k = b.dataset.done;
       if (b.checked && !SRV[k]) set[k] = { t: title(b), s: label(b), at: d };
       if (!b.checked && SRV[k]) del.push(k);
@@ -1014,20 +1037,26 @@ BOARD_JS = """<script>
     if (sv) { sv.disabled = true; sv.textContent = '저장 중'; }
     fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: body })
       .then(function (r) { if (!r.ok) throw 0; return r.json(); })
-      .then(function (j) { SRV = j; dirty = false; refresh(); })
+      .then(function (j) { SRV = j; dirty = false; refresh(); tuck(); })
       .catch(function () {
         if (sv) { sv.disabled = false; sv.textContent = '다시 저장'; }
       });
   }
 
-  boxes.forEach(function (b) {
+  function bind(b) {
+    if (b.dataset.bound) return;
+    b.dataset.bound = '1';
     var key = 'loggia.done.' + b.dataset.done;
     try { b.checked = localStorage.getItem(key) === '1'; } catch (e) {}
     mark(b);
     b.addEventListener('change', function () {
       lset(b); mark(b); dirty = true; refresh();
     });
-  });
+  }
+  allBoxes().forEach(bind);
+
+  // 새로 추가한 할 일도 같은 목록에 서므로, 그것을 그리는 쪽에서 이 손을 부른다
+  window.LG = { bind: bind, refresh: function () { refresh(); tuck(); } };
 
   // 장부를 읽어 이 기기의 표시를 맞춘다. 다른 기기에서 그은 줄이 여기에도 온다.
   // 아직 안 보낸 것이 있으면 건드리지 않는다. 덮어써 버리면 방금 누른 것이 사라진다.
@@ -1037,11 +1066,11 @@ BOARD_JS = """<script>
       .then(function (j) {
         if (!j || dirty) return;
         SRV = j;
-        [].forEach.call(boxes, function (b) {
+        allBoxes().forEach(function (b) {
           var on = !!SRV[b.dataset.done];
           if (on !== b.checked) { b.checked = on; lset(b); mark(b); }
         });
-        refresh();
+        refresh(); tuck();
       })
       .catch(function () {});
     addEventListener('visibilitychange', function () {
@@ -1069,11 +1098,11 @@ BOARD_JS = """<script>
       }
     });
     bar.querySelector('.clear').addEventListener('click', function () {
-      boxes.forEach(function (b) {
+      allBoxes().forEach(function (b) {
         if (!b.checked) return;
         b.checked = false; lset(b); mark(b); dirty = true;
       });
-      refresh();
+      refresh(); tuck();
     });
     refresh();
   }
@@ -1112,16 +1141,41 @@ ADD_JS = """<script>
   }
 
   function draw() {
-    document.querySelectorAll('.pending').forEach(function (ol) {
-      ol.textContent = '';
-      Object.keys(ADD).forEach(function (k) {
+    // 새로 추가한 할 일도 나머지와 같은 목록에 세운다.
+    // 따로 상자를 만들면 눈이 두 번 읽는다.
+    document.querySelectorAll('.entry').forEach(function (art) {
+      var body = art.querySelector('.body');
+      var ol = art.querySelector('.rest');
+      art.querySelectorAll('.rest li.pend').forEach(function (x) { x.remove(); });
+      var mine = Object.keys(ADD).filter(function (k) {
+        return ADD[k].item === art.dataset.id;
+      });
+      if (!mine.length) {
+        if (ol && !ol.children.length) ol.remove();
+        return;
+      }
+      if (!ol) {
+        ol = document.createElement('ol'); ol.className = 'rest';
+        var st = art.querySelector('.step');
+        if (st && st.nextSibling) body.insertBefore(ol, st.nextSibling);
+        else body.appendChild(ol);
+      }
+      mine.forEach(function (k) {
         var a = ADD[k];
-        if (a.item !== ol.dataset.for) return;
         var li = document.createElement('li');
-        li.dataset.k = k;
-        // 손으로 적은 글은 마디로 넣는다. 판을 흔들 틈을 주지 않는다
-        var t = document.createElement('span');
-        t.textContent = a.t; li.appendChild(t);
+        li.className = 'pend'; li.dataset.k = k;
+
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        // 아직 데이터에 없으므로 글의 지문 대신 장부 열쇠를 그대로 쓴다
+        cb.dataset.done = 'add:' + k;
+        cb.id = 's-add-' + k;
+        li.appendChild(cb);
+
+        var lb = document.createElement('label');
+        lb.htmlFor = cb.id; lb.textContent = a.t;   // 손으로 적은 글은 마디로 넣는다
+        li.appendChild(lb);
+
         if (a.due) {
           var d = dlabel(a.due), sp = document.createElement('span');
           sp.className = 'sdue'; sp.dataset.urgency = d.u; sp.textContent = d.t;
@@ -1132,9 +1186,12 @@ ADD_JS = """<script>
         var x = document.createElement('button');
         x.type = 'button'; x.className = 'drop'; x.textContent = '삭제';
         li.appendChild(x);
+
         ol.appendChild(li);
+        if (window.LG) window.LG.bind(cb);
       });
     });
+    if (window.LG) window.LG.refresh();
   }
 
   function post(body) {
@@ -1157,7 +1214,7 @@ ADD_JS = """<script>
     if (e.key === 'Escape' && !sheet.hidden) { form.reset(); open_(false); }
   });
   document.addEventListener('click', function (e) {
-    var d = e.target.closest('.pending .drop');
+    var d = e.target.closest('.rest li.pend .drop');
     if (d) post({ del: [d.closest('li').dataset.k] });
   });
 
