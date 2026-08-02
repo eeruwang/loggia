@@ -452,4 +452,11 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except BrokenPipeError:
+        # head 나 less 로 잘라 볼 때 나는 것이다. 잘못이 아니다.
+        try:
+            sys.stdout.close()
+        except Exception:
+            pass

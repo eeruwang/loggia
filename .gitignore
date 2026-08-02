@@ -4,3 +4,4 @@ node_modules/
 loggia-data.json
 site/
 .ledger-applied
+wrangler.*-test.jsonc

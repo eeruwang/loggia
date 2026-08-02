@@ -77,8 +77,9 @@ var D = null;         // 보드 데이터
 var VEN = {};         // 처 id → 처
 var BYVEN = {};       // 처 id → [[항목, 지난일인가]]
 var NVEN = 0, NARC = 0;
-var ADD = {};         // 손으로 더한 할 일 (기록)
-var SRV = {};         // 해치웠다고 기록에 적힌 것
+var ADD = {};         // 사이트에서 직접 적어 넣은 할 일
+var EDIT = {};        // 사이트에서 고치거나 지운 할 일
+var SRV = {};         // 끝냈다고 표시한 것
 
 function indexData() {
   VEN = {}; BYVEN = {};
@@ -176,7 +177,14 @@ function stepsOf(item) {
   var st = item.steps || (item.next ? [item.next] : []);
   st.forEach(function (x) {
     var o = (typeof x === 'string') ? { t: x } : { t: x.t, due: x.due };
+    // 키는 처음 글로 만든다. 고쳐도 그대로 둔다. 그래야 체크한 것과 고친 것이
+    // 같은 할 일을 가리키고, 반영할 때 원본에서 찾을 수 있다.
     o.key = item.id + '.' + sha1hex(o.t).slice(0, 8);
+    var e = EDIT[o.key];
+    if (e) {
+      if (e.del) return;                       // 지우기로 표시한 것은 안 보인다
+      o.t = e.t; o.due = e.due; o.edited = true;
+    }
     out.push(o);
   });
   Object.keys(ADD).forEach(function (k) {
@@ -197,13 +205,13 @@ function stepsHtml(item) {
 
   function box(st, cls) {
     var due = st.due ? '<span class="sdue" data-deadline="' + esc(st.due) + '">D-</span>' : '';
-    var tail = st.fresh
-      ? '<span class="tag">새로 추가</span>'
-        + '<button type="button" class="drop" data-drop="' + esc(st.addKey) + '">삭제</button>'
-      : '';
+    var tag = st.fresh ? '<span class="tag">새로 추가</span>'
+            : st.edited ? '<span class="tag">고침</span>' : '';
     return '<input type="checkbox" id="s-' + esc(st.key) + '" data-done="' + esc(st.key) + '">'
          + '<label for="s-' + esc(st.key) + '"' + (cls || '') + '>' + esc(st.t) + '</label>'
-         + due + tail;
+         + due + tag
+         + '<button type="button" class="edit" data-edit="' + esc(st.key) + '"'
+         + ' data-item="' + esc(item.id) + '" aria-label="고치기">고침</button>';
   }
 
   var out = ['<div class="step first">' + box(ss[0], ' class="todo"') + cost + '</div>'];
@@ -1111,25 +1119,26 @@ function bindBoard(root) {
 function bindAdd(root, redrawEntry, board) {
   var LT = D.meta.ledger || '';
   if (!LT) return;
-  var U = '/add?k=' + encodeURIComponent(LT);
   var fab = root.querySelector('#fab');
   var sheet = root.querySelector('#sheet');
   if (!fab || !sheet) return;
   var form = sheet.querySelector('.sheetform');
 
-  function post(body) {
-    return fetch(U, { method: 'POST', headers: { 'content-type': 'application/json' },
-                      body: JSON.stringify(body) })
+  // 기록 한 칸에 보내고, 건드린 항목만 다시 그린다.
+  // 화면 전체를 다시 그리면 접어 둔 섹션과 보던 자리가 튄다.
+  function post(slot, body, extraIds) {
+    var url = '/' + slot + '?k=' + encodeURIComponent(LT);
+    return fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify(body) })
       .then(function (r) { if (!r.ok) throw 0; return r.json(); })
       .then(function (j) {
-        var before = ADD;
-        ADD = j;
-        // 건드린 항목만 다시 그린다. 판 전체를 다시 그리면 접어 둔 섹션과
-        // 보던 자리가 튄다.
+        var before = slot === 'add' ? ADD : EDIT;
         var ids = {};
-        [before, ADD].forEach(function (m) {
-          Object.keys(m).forEach(function (k) { ids[m[k].item] = 1; });
+        (extraIds || []).forEach(function (x) { ids[x] = 1; });
+        [before, j].forEach(function (m) {
+          Object.keys(m).forEach(function (k) { if (m[k].item) ids[m[k].item] = 1; });
         });
+        if (slot === 'add') ADD = j; else EDIT = j;
         Object.keys(ids).forEach(redrawEntry);
         board.rebind();
       });
@@ -1147,10 +1156,70 @@ function bindAdd(root, redrawEntry, board) {
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !sheet.hidden) { form.reset(); open_(false); }
   });
+  /* 이미 있는 할 일을 고치거나 지운다.
+
+     고쳐도 키는 처음 글로 만든 그대로 둔다. 그래야 반영할 때 원본에서 그
+     할 일을 찾을 수 있다. 사이트에서 적어 넣은 할 일은 아직 원본에 없으므로
+     그 자리에서 바로 고친다. */
   root.addEventListener('click', function (e) {
-    var d = e.target.closest('[data-drop]');
-    if (d) post({ del: [d.dataset.drop] });
+    var b = e.target.closest('[data-edit]');
+    if (!b) return;
+    var row = b.closest('.step, li');
+    if (!row || row.querySelector('.tedit')) return;
+    openEditor(row, b.dataset.edit, b.dataset.item);
   });
+
+  function openEditor(row, key, itemId) {
+    var fresh = key.indexOf('add:') === 0;
+    var cur = fresh ? (ADD[key.slice(4)] || {})
+                    : (EDIT[key] || { t: row.querySelector('label').textContent,
+                                      due: (row.querySelector('.sdue') || {}).dataset
+                                           ? row.querySelector('.sdue').dataset.deadline : '' });
+    var t = cur.t || row.querySelector('label').textContent;
+    var due = cur.due || '';
+    var form = document.createElement('form');
+    form.className = 'tedit';
+    form.innerHTML =
+      '<input type="text" class="et" maxlength="200" required>'
+      + '<div class="erow"><input type="date" class="ed">'
+      + '<button type="submit" class="ok">저장</button>'
+      + '<button type="button" class="cancel">취소</button>'
+      + '<button type="button" class="rm">삭제</button></div>';
+    row.appendChild(form);
+    form.querySelector('.et').value = t;
+    form.querySelector('.ed').value = due;
+    form.querySelector('.et').focus();
+
+    form.querySelector('.cancel').addEventListener('click', function () { form.remove(); });
+    form.querySelector('.rm').addEventListener('click', function () {
+      if (fresh) post('add', { del: [key.slice(4)] }, [itemId]);
+      else { var set = {}; set[key] = { item: itemId, del: true, at: isoOf(new Date()) };
+             post('edit', { set: set }, [itemId]); }
+    });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var nt = form.querySelector('.et').value.trim();
+      if (!nt) return;
+      var nd = form.querySelector('.ed').value;
+      var ok = form.querySelector('.ok');
+      ok.disabled = true; ok.textContent = '저장 중';
+      var set = {};
+      if (fresh) {
+        var a = ADD[key.slice(4)] || {};
+        set[key.slice(4)] = { item: itemId, t: nt, at: a.at || isoOf(new Date()) };
+        if (nd) set[key.slice(4)].due = nd;
+        post('add', { set: set }, [itemId]).catch(function () {
+          ok.disabled = false; ok.textContent = '다시 시도';
+        });
+      } else {
+        set[key] = { item: itemId, t: nt, at: isoOf(new Date()) };
+        if (nd) set[key].due = nd;
+        post('edit', { set: set }, [itemId]).catch(function () {
+          ok.disabled = false; ok.textContent = '다시 시도';
+        });
+      }
+    });
+  }
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
@@ -1164,7 +1233,7 @@ function bindAdd(root, redrawEntry, board) {
     var set = {}; set[id] = row;
     var ok = form.querySelector('.ok');
     ok.disabled = true; ok.textContent = '저장 중';
-    post({ set: set }).then(function () {
+    post('add', { set: set }).then(function () {
       form.reset(); open_(false); ok.textContent = '추가';
     }, function () { ok.textContent = '다시 시도'; })
       .then(function () { ok.disabled = false; });
@@ -1344,9 +1413,10 @@ function loadLedger() {
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; });
   }
-  return Promise.all([get('/done'), get('/add')]).then(function (r) {
+  return Promise.all([get('/done'), get('/add'), get('/edit')]).then(function (r) {
     if (r[0]) SRV = r[0];
     if (r[1]) ADD = r[1];
+    if (r[2]) EDIT = r[2];
   });
 }
 

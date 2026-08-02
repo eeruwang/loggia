@@ -25,6 +25,8 @@
 //   들지 않는다.
 // =============================================================================
 
+import { flush } from './flush';
+
 interface Env {
   EMAIL: {
     send(m: {
@@ -36,8 +38,14 @@ interface Env {
   MAIL_FROM: string;
   MAIL_TO: string;
   PREVIEW_TOKEN?: string;  // 비밀. 손으로 한 통 부쳐 볼 때 쓴다
-  LEDGER?: KVNamespace;    // 기록. 해치운 할 일과 새로 적은 할 일이 여기 산다
-  LEDGER_TOKEN?: string;   // 비밀. 판 안에 박혀 있다. 판이 암호문이므로 함께 잠긴다
+  LEDGER?: KVNamespace;    // 기록. 체크한 할 일과 새로 적은 할 일이 여기 쌓인다
+  LEDGER_TOKEN?: string;   // 비밀. 데이터 안에 들어 있다. 데이터가 암호문이라 함께 잠긴다
+
+  // 아래 둘이 있으면 10분마다 기록을 데이터에 직접 반영한다. 없으면 건너뛴다.
+  PAGE_PASSPHRASE?: string;  // 비밀. 보드를 여는 그 암호
+  GITHUB_TOKEN?: string;     // 비밀. 저장소에 쓴다
+  GITHUB_REPO?: string;
+  GITHUB_API?: string;
 }
 
 /** 기록 한 칸. 무엇을 언제 해치웠는지. */
@@ -651,8 +659,9 @@ async function send(env: Env): Promise<string> {
 //
 // 키는 판 안에 박혀 있다. 판이 암호문이므로 암호를 푼 사람만 그것을 본다.
 // 지금 보안 모형과 어긋나지 않는다.
-const DONE_KEY = 'board';   // 해치운 할 일
-const ADD_KEY = 'added';    // 새로 적은 할 일
+const DONE_KEY = 'board';   // 끝냈다고 표시한 할 일
+const ADD_KEY = 'added';    // 사이트에서 새로 적은 할 일
+const EDIT_KEY = 'edited';  // 사이트에서 고치거나 지운 할 일
 
 function json(v: unknown, status = 200): Response {
   return new Response(JSON.stringify(v), {
@@ -687,11 +696,19 @@ async function pending(env: Env): Promise<AddRow[]> {
 }
 
 export default {
-  // 하루 한 번. 크론은 UTC 로 돈다. 서울 아침 일곱 시는 전날 22시다.
-  async scheduled(_c: ScheduledController, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(send(env).then(
-      (id) => console.log(`부쳤습니다 ${id}`),
-      (e) => console.error(`부치지 못했습니다 ${e}`)));
+  // 크론이 둘이다. 어느 쪽이 깨웠는지 controller.cron 으로 가른다.
+  //   0 22 * * *     하루 한 번 아침 메일. UTC 라 서울 아침 일곱 시는 전날 22시다
+  //   */10 * * * *   10분마다, 사이트에서 체크한 것을 데이터에 반영한다
+  async scheduled(c: ScheduledController, env: Env, ctx: ExecutionContext) {
+    if (c.cron === '0 22 * * *') {
+      ctx.waitUntil(send(env).then(
+        (id) => console.log(`부쳤습니다 ${id}`),
+        (e) => console.error(`부치지 못했습니다 ${e}`)));
+      return;
+    }
+    ctx.waitUntil(flush(env).then(
+      (msg) => console.log(msg),
+      (e) => console.error(`반영하지 못했습니다 ${e}`)));
   },
 
   // 손으로 한 통 부쳐 보고 싶을 때.
@@ -701,6 +718,18 @@ export default {
     const u = new URL(req.url);
     if (u.pathname === '/done') return ledger(req, env, u.searchParams.get('k'), DONE_KEY);
     if (u.pathname === '/add') return ledger(req, env, u.searchParams.get('k'), ADD_KEY);
+    if (u.pathname === '/edit') return ledger(req, env, u.searchParams.get('k'), EDIT_KEY);
+    // 10분을 기다리지 않고 지금 반영해 보고 싶을 때.  GET /flush?k=<PREVIEW_TOKEN>
+    if (u.pathname === '/flush') {
+      if (!env.PREVIEW_TOKEN || u.searchParams.get('k') !== env.PREVIEW_TOKEN) {
+        return new Response('없습니다', { status: 404 });
+      }
+      try {
+        return new Response(await flush(env));
+      } catch (e) {
+        return new Response(`반영하지 못했습니다 ${e}`, { status: 500 });
+      }
+    }
     if (u.pathname !== '/send' || !env.PREVIEW_TOKEN
         || u.searchParams.get('k') !== env.PREVIEW_TOKEN) {
       return new Response('없습니다', { status: 404 });

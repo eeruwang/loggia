@@ -19,6 +19,11 @@ ledger-apply.py — 사이트에서 직접 체크하거나 추가한 것을 데�
         → 그 항목의 할 일 목록 끝에 넣는다. 날짜가 있으면 같이
       /done 의 키가 add: 로 시작하면 추가하자마자 체크한 것
         → 할 일에 넣지 않고 버린다. 마지막 작업일만 바꾼다
+      /edit 는 사이트에서 고치거나 지운 할 일. 키는 처음 글로 만든 것이다
+        → 글과 날짜를 바꾼다. del 이 있으면 뺀다
+
+    보통은 워커가 10분마다 알아서 한다. 이 도구는 워커가 못 할 때와,
+    무엇이 쌓였는지 눈으로 보고 싶을 때 쓴다.
 
     판단이 필요한 건 하나뿐이다. 할 일이 다 없어진 항목에 다음에 뭘 할지
     정하는 것. 그건 여기서 알려만 주고 사람이 정한다.
@@ -34,6 +39,7 @@ import urllib.request, urllib.error, urllib.parse
 
 DEFAULT = 'loggia-data.json'
 MARK = '.ledger-applied'
+SLOTS = ('done', 'add', 'edit')
 
 
 def die(msg):
@@ -122,7 +128,7 @@ def main():
         if not os.path.exists(MARK):
             die(f'{MARK} 가 없습니다. 먼저 -w 로 반영해 주세요.')
         mark = json.load(open(MARK, encoding='utf-8'))
-        for slot in ('done', 'add'):
+        for slot in SLOTS:
             keys = mark.get(slot) or []
             if keys:
                 left = post(f'{site}/{slot}{q}', {'del': keys})
@@ -137,12 +143,13 @@ def main():
 
     done = get(f'{site}/done{q}')
     add = get(f'{site}/add{q}')
-    if not done and not add:
+    edit = get(f'{site}/edit{q}')
+    if not done and not add and not edit:
         print('사이트에서 체크하거나 추가한 것이 없습니다.')
         return
 
     plan, touched_ids = [], {}
-    clear_done, clear_add = [], []
+    clear_done, clear_add, clear_edit = [], [], []
     used_add = set()
 
     # ── 추가하자마자 체크한 것. 할 일에 넣지 않고 버린다 ──────────────────
@@ -187,6 +194,29 @@ def main():
             continue
         plan.append(('완료', iid, ss[hit[0]]['t'], ''))
 
+    # ── 고치거나 지운 할 일 ───────────────────────────────────────────────
+    # 키는 처음 글로 만든 것이라 원본에서 그대로 찾힌다.
+    # 끝냈다고 표시한 것을 먼저 뺐으므로, 이미 없어진 것은 그냥 넘어간다.
+    for k, e in edit.items():
+        clear_edit.append(k)
+        if '.' not in k:
+            plan.append(('모름', '?', k, '키 형식이 이상해서 그냥 버립니다'))
+            continue
+        iid = e.get('item') or k.rsplit('.', 1)[0]
+        fp = k.rsplit('.', 1)[1]
+        when = e.get('at') or datetime.date.today().isoformat()
+        it = find(d, iid)
+        if it is None:
+            plan.append(('못 찾음', iid, e.get('t', ''), '그런 항목이 없어서 그냥 버립니다'))
+            continue
+        touched_ids[iid] = max(touched_ids.get(iid, ''), when)
+        ss = todos_of(it)
+        if not any(fingerprint(x['t']) == fp for x in ss):
+            plan.append(('건너뜀', iid, e.get('t', ''), '데이터에 이미 없는 할 일이라 날짜만 바꿉니다'))
+            continue
+        plan.append(('지움' if e.get('del') else '고침', iid, e.get('t', ''),
+                     f'{e["due"]}까지' if e.get('due') else ''))
+
     # ── 사이트에서 직접 적어 넣은 할 일 ───────────────────────────────────
     for ak, a in add.items():
         if ak in used_add:
@@ -226,6 +256,28 @@ def main():
         keep = [s for s in ss if fingerprint(s['t']) != fp]
         if len(keep) != len(ss):
             put_todos(it, keep)
+    for k, e in edit.items():
+        if '.' not in k:
+            continue
+        iid = e.get('item') or k.rsplit('.', 1)[0]
+        fp = k.rsplit('.', 1)[1]
+        it = find(d, iid)
+        if it is None:
+            continue
+        out, hit = [], False
+        for x in todos_of(it):
+            if not hit and fingerprint(x['t']) == fp:
+                hit = True
+                if e.get('del'):
+                    continue
+                row = {'t': e.get('t', x['t'])}
+                if e.get('due'):
+                    row['due'] = e['due']
+                out.append(row)
+                continue
+            out.append(x)
+        if hit:
+            put_todos(it, out)
     for ak, a in add.items():
         if ak in used_add:
             continue
@@ -254,7 +306,8 @@ def main():
               + '\n    다음에 뭘 할지 사용자에게 물어봐야 합니다.')
 
     with open(MARK, 'w', encoding='utf-8') as f:
-        json.dump({'done': clear_done, 'add': clear_add}, f, ensure_ascii=False)
+        json.dump({'done': clear_done, 'add': clear_add, 'edit': clear_edit},
+                  f, ensure_ascii=False)
     print(f'  옮긴 키를 {MARK} 에 적어 두었습니다.')
     print('  사이트에 올린 다음 --clear 로 기록을 비워 주세요.')
 

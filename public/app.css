@@ -505,3 +505,24 @@ color:var(--wait);white-space:nowrap;align-self:center}
 cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;color:var(--ink-3);
 padding:2px 4px;align-self:center}
 .step.first .drop:hover{color:var(--now)}
+
+/* 이미 있는 할 일을 고치는 자리. 「고침」을 누르면 그 줄 아래에 펼쳐진다. */
+.step .edit,.rest li .edit{margin-left:auto;appearance:none;border:0;background:transparent;
+cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;color:var(--rule-2);
+padding:2px 4px;align-self:center;flex:none}
+.step:hover .edit,.rest li:hover .edit,.edit:focus{color:var(--ink-3)}
+.step .edit:hover,.rest li .edit:hover{color:var(--ink)}
+.rest li.pend .edit{margin-left:0}
+.tedit{flex-basis:100%;margin:8px 0 4px;display:flex;flex-direction:column;gap:8px}
+.tedit .et{width:100%;font-family:inherit;font-size:15px;color:var(--ink);
+background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;padding:9px 11px}
+.tedit .erow{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.tedit .ed{font-family:inherit;font-size:13.5px;color:var(--ink-2);background:var(--paper);
+border:1px solid var(--rule-2);border-radius:8px;padding:7px 9px}
+.tedit button{appearance:none;border:0;cursor:pointer;font-family:inherit;
+font-size:13px;font-weight:800;padding:8px 14px;border-radius:8px}
+.tedit .ok{background:var(--ink);color:var(--paper)}
+.tedit .ok[disabled]{opacity:.5;cursor:default}
+.tedit .cancel{background:transparent;color:var(--ink-3)}
+.tedit .rm{background:transparent;color:var(--now);margin-left:auto}
+.tedit .et:focus,.tedit .ed:focus{outline:2px solid var(--ink);outline-offset:1px}
