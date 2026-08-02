@@ -52,8 +52,24 @@ type Any = Record<string, any>;
 
 /* ── 바이트와 글자 ─────────────────────────────────────────────────────────── */
 
-function toBytes(b64: string): Uint8Array {
-  const raw = atob(b64);
+/** base64 를 바이트로. 어디가 잘못됐는지 말해 주려고 이름을 함께 받는다. */
+function toBytes(b64: string, what = '값'): Uint8Array {
+  const clean = String(b64).trim().replace(/\s+/g, '')
+    .replace(/-/g, '+').replace(/_/g, '/');
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(clean)) {
+    const bad = (clean.match(/[^A-Za-z0-9+/=]/g) || []).slice(0, 5).join(' ');
+    throw new Error(
+      `${what} 이(가) base64 가 아닙니다. 쓸 수 없는 글자: ${bad}\n`
+      + '보드 암호를 그대로 넣으신 것은 아닌지 보세요. '
+      + 'PAGE_KEY 는 암호가 아니라 암호에서 뽑은 44글자 base64 입니다. '
+      + 'node tools/pagekey.js public/data.enc "<암호>" 로 뽑습니다.');
+  }
+  let raw: string;
+  try {
+    raw = atob(clean);
+  } catch (e) {
+    throw new Error(`${what} 을(를) base64 로 읽지 못했습니다 (길이 ${clean.length}).`);
+  }
   const out = new Uint8Array(raw.length);
   for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
   return out;
@@ -79,11 +95,12 @@ async function fingerprint(text: string): Promise<string> {
 async function unseal(text: string, key: CryptoKey) {
   const p = text.trim().split('.');
   if (p[0] !== 'loggia1' || p.length !== 4) throw new Error('data.enc 형식이 낯섭니다');
-  const salt = toBytes(p[1]);
+  const salt = toBytes(p[1], 'data.enc 의 솔트');
   let plain: ArrayBuffer;
   try {
     plain = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: toBytes(p[2]) }, key, toBytes(p[3]));
+      { name: 'AES-GCM', iv: toBytes(p[2], 'data.enc 의 초기값') },
+      key, toBytes(p[3], 'data.enc 의 본문'));
   } catch (e) {
     throw new Error('PAGE_KEY 로 열리지 않습니다. 솔트가 바뀌었거나 키가 틀렸습니다. '
       + 'node tools/pagekey.js public/data.enc "<암호>" 로 다시 뽑아 주세요.');
@@ -102,7 +119,7 @@ async function seal(obj: Any, key: CryptoKey, salt: Uint8Array): Promise<string>
 /** 아침 메일 요약. 원본 키로 봉하므로 반복 계산이 없다. */
 async function rawSeal(obj: Any, keyB64: string): Promise<string> {
   const key = await crypto.subtle.importKey(
-    'raw', toBytes(keyB64), { name: 'AES-GCM' }, false, ['encrypt']);
+    'raw', toBytes(keyB64, 'DIGEST_KEY'), { name: 'AES-GCM' }, false, ['encrypt']);
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const body = new TextEncoder().encode(JSON.stringify(obj));
   const blob = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, body);
@@ -246,6 +263,13 @@ export async function flush(env: FlushEnv): Promise<string> {
   }
   const repo = env.GITHUB_REPO || 'eeruwang/loggia';
 
+  // 잘못 넣은 값은 여기서 잡는다. 깃허브를 부르기 전에 알아야 헛걸음이 없다.
+  const rawKey = toBytes(env.PAGE_KEY, 'PAGE_KEY');
+  if (rawKey.length !== 32) {
+    throw new Error(`PAGE_KEY 는 32바이트여야 하는데 ${rawKey.length}바이트입니다. `
+      + '앞뒤에 딴 글자가 붙지 않았는지 보세요. 제대로 된 값은 44글자이고 = 로 끝납니다.');
+  }
+
   const done: Any = (await env.LEDGER.get(DONE_KEY, 'json')) ?? {};
   const add: Any = (await env.LEDGER.get(ADD_KEY, 'json')) ?? {};
   const edit: Any = (await env.LEDGER.get(EDIT_KEY, 'json')) ?? {};
@@ -255,9 +279,9 @@ export async function flush(env: FlushEnv): Promise<string> {
 
   // 데이터를 받아 푼다. 커밋에 붙일 부모는 commitFiles 가 그때 다시 읽는다
   const meta = await gh(env, `/repos/${repo}/contents/${DATA_PATH}?ref=${BRANCH}`);
-  const text = atob(String(meta.content).replace(/\n/g, ''));
+  const text = new TextDecoder().decode(toBytes(String(meta.content), '깃허브가 준 파일'));
   const key = await crypto.subtle.importKey(
-    'raw', toBytes(env.PAGE_KEY), { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+    'raw', rawKey, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
   const { data, salt } = await unseal(text, key);
 
   const today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
