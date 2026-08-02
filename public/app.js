@@ -1072,7 +1072,21 @@ function bindBoard(root) {
     b.addEventListener('change', function () { lset(b); mark(b); dirty = true; refresh(); });
   }
 
-  function rebind() { allBoxes().forEach(bind); refresh(); tuck(); }
+  /* 데이터에 이미 없는 할 일의 표시는 지운다.
+     반영이 끝나면 그 할 일이 데이터에서 빠지므로, 이 기기에 남은 표시가
+     갈 곳을 잃는다. 그대로 두면 「끝낸 일 1」이 영영 붙어 있다. */
+  function prune() {
+    var live = {};
+    allBoxes().forEach(function (b) { live['loggia.done.' + b.dataset.done] = 1; });
+    try {
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf('loggia.done.') === 0 && !live[k]) localStorage.removeItem(k);
+      }
+    } catch (e) {}
+  }
+
+  function rebind() { allBoxes().forEach(bind); prune(); refresh(); tuck(); }
   rebind();
 
   if (LT) {
@@ -1108,7 +1122,7 @@ function bindBoard(root) {
     });
     refresh();
   }
-  return { rebind: rebind };
+  return { rebind: rebind, isDirty: function () { return dirty; } };
 }
 
 /* 할 일을 직접 추가하는 자리.
@@ -1319,6 +1333,89 @@ function paintCalendar(root, EV, REP) {
   }
 }
 
+/* ── 반영되었는지 지켜보기 ───────────────────────────────────────────────
+
+   워커가 10분마다 체크 기록을 데이터에 반영하고 기록을 비운다. 그때 화면이
+   가만히 있으면 「끝낸 일 1 · 저장됨」이 계속 붙어 있어, 반영이 됐는지 안 됐는지
+   알 수가 없다.
+
+   그래서 data.enc 가 바뀌었는지 이따금 들여다본다. 기록이 비었는지를 보지
+   않는다. 워커가 깃허브에 쓴 다음 클라우드플레어가 다시 배포하기까지 1~2분이
+   걸리는데, 그 사이에는 기록만 비어 있고 사이트가 내주는 데이터는 아직 옛
+   것이다. 그때 화면을 다시 그리면 끝낸 할 일이 되살아나 보인다.
+
+   파일이 실제로 바뀌었을 때에만 다시 그린다. 그러면 어긋날 일이 없다.
+   `_headers` 가 data.enc 에 no-cache 를 걸어 두어서, 안 바뀌었으면 브라우저와
+   서버가 304 한 번으로 끝낸다.
+
+   아직 저장하지 않은 것이 있으면 건드리지 않는다. 덮어써 버리면 방금 누른
+   것이 사라진다. */
+
+var WATCH = null;
+
+/** 화면 위쪽에 잠깐 뜨는 한 줄. 무슨 일이 일어났는지 알린다. */
+function flash(msg) {
+  var el = document.getElementById('flash');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'flash'; el.className = 'flash';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(flash.t);
+  flash.t = setTimeout(function () { el.hidden = true; }, 4000);
+}
+
+/** 바뀐 data.enc 를 풀어 처음부터 다시 그린다. 키는 이미 손에 있다. */
+function reloadAndRender(text, note) {
+  var y = window.scrollY;
+  var was = [];
+  document.querySelectorAll('#app input[data-done]').forEach(function (b) {
+    if (b.checked) was.push(b.dataset.done);
+  });
+  BLOBTEXT = text;
+  BLOB = text.trim().split('.');
+  return keyFromCache().then(function (k) {
+    if (!k) throw new Error('키가 없습니다');
+    return decryptWith(k);
+  }).then(function (plain) {
+    D = JSON.parse(plain);
+    indexData();
+    return loadLedger();
+  }).then(function () {
+    var app = document.getElementById('app');
+    render(document.body.dataset.page || 'index', app);
+    window.scrollTo(0, y);
+    var left = {};
+    app.querySelectorAll('input[data-done]').forEach(function (b) { left[b.dataset.done] = 1; });
+    var gone = was.filter(function (k) { return !left[k]; }).length;
+    flash(note || (gone ? '끝낸 일 ' + gone + '개가 데이터에 반영되었습니다'
+                        : '새 내용을 받았습니다'));
+  });
+}
+
+function watchData(page, board) {
+  if (WATCH) { clearInterval(WATCH); WATCH = null; }
+  if (page !== 'index') return;
+  function tick() {
+    if (document.visibilityState !== 'visible') return;
+    if (board && board.isDirty()) return;
+    fetch('data.enc', { cache: 'no-cache' })
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (t) {
+        if (!t || t === BLOBTEXT) return;
+        return reloadAndRender(t);
+      })
+      .catch(function () {});
+  }
+  WATCH = setInterval(tick, 30000);
+  // visibilitychange 는 document 에서 난다. window 에 걸면 못 받는 경우가 있다.
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') tick();
+  });
+}
+
 /* ── 화면 만들기 ─────────────────────────────────────────────────────────── */
 
 var BUILD = {
@@ -1351,6 +1448,7 @@ function render(page, app) {
       art.replaceWith(tmp.firstElementChild);
       paintDates(app);
     }, board);
+    watchData(page, board);
   }
   if (page === 'calendar') paintCalendar(app, r.ev, r.rep);
 }
@@ -1364,7 +1462,8 @@ var PASS_KEY = 'loggia.pass';
 var $ = function (id) { return document.getElementById(id); };
 function b64(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
 
-var BLOB = null;   // ['loggia1', 솔트, 초기값, 덩이]
+var BLOB = null;       // ['loggia1', 솔트, 초기값, 덩이]
+var BLOBTEXT = '';     // 받아 온 그대로. 바뀌었는지 견주는 데 쓴다
 
 function loadBlob() {
   return fetch('data.enc', { cache: 'no-cache' }).then(function (r) {
@@ -1372,8 +1471,9 @@ function loadBlob() {
     return r.text();
   }).then(function (t) {
     var p = t.trim().split('.');
-    if (p[0] !== 'loggia1' || p.length !== 4) throw new Error('알아볼 수 없는 꼴입니다');
+    if (p[0] !== 'loggia1' || p.length !== 4) throw new Error('알아볼 수 없는 형식입니다');
     BLOB = p;
+    BLOBTEXT = t;
   });
 }
 

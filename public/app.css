@@ -526,3 +526,11 @@ font-size:13px;font-weight:800;padding:8px 14px;border-radius:8px}
 .tedit .cancel{background:transparent;color:var(--ink-3)}
 .tedit .rm{background:transparent;color:var(--now);margin-left:auto}
 .tedit .et:focus,.tedit .ed:focus{outline:2px solid var(--ink);outline-offset:1px}
+
+/* 무슨 일이 일어났는지 잠깐 알리는 한 줄.
+   「끝낸 일」 막대가 있던 자리에 뜬다. 눈이 그리 가 있기 때문이다. */
+.flash{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:50;
+background:var(--live);color:#fff;font-size:14px;font-weight:700;
+padding:10px 18px;border-radius:99px;box-shadow:0 6px 20px rgba(0,0,0,.18);
+max-width:calc(100vw - 32px)}
+.flash[hidden]{display:none}
