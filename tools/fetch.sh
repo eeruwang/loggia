@@ -22,6 +22,9 @@
 #
 # 기록 토큰은 잠긴 데이터 안에 들어 있다. 풀면서 빼 둔다. 다시 잠글 때
 # publish.sh 가 환경에서 받아 도로 넣는다. 그래야 이 파일에 비밀이 남지 않는다.
+#
+# 받아 온 data.enc 의 지문을 .fetched-from 에 남긴다. 올릴 때 저장소가 그 사이에
+# 바뀌었으면 publish.sh 가 멈춘다. 워커가 10분마다 data.enc 를 고치기 때문이다.
 # =============================================================================
 set -euo pipefail
 
@@ -34,6 +37,10 @@ git clone --depth 1 -q "https://github.com/eeruwang/loggia.git" "$DEST"
 if [ -f "$DEST/public/data.enc" ]; then
   node "$DEST/tools/unseal.js" "$DEST/public/data.enc" "$DEST/loggia-data.json" "$PASS"
   node "$DEST/tools/ledger.js" "$DEST/loggia-data.json" "$DEST/loggia-data.json"
+  # 받아 온 원본의 지문을 남긴다. 올릴 때 저장소가 그 사이에 바뀌었는지 본다.
+  # 워커가 10분마다 data.enc 를 고치므로, 오래 들고 있다가 올리면 그 사이에
+  # 사이트에서 체크한 것을 덮어쓴다.
+  sha256sum "$DEST/public/data.enc" | cut -d' ' -f1 > "$DEST/.fetched-from"
 else
   echo "저장소에 public/data.enc 가 없습니다. 데이터를 따로 구해 $DEST/loggia-data.json 에 두세요."
 fi

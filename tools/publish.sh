@@ -41,6 +41,29 @@ WORK="$(mktemp -d)"
 
 git clone --depth 1 -q "https://x-access-token:${TOKEN}@github.com/${REPO}.git" "$WORK/repo"
 
+# 받아 온 뒤에 저장소가 바뀌었는지 본다.
+# 워커가 10분마다 data.enc 를 고치므로, 받아 놓고 한참 뒤에 올리면 그 사이에
+# 사이트에서 체크하거나 수정한 것을 조용히 덮어쓴다. 그러면 사용자는 자기가
+# 누른 것이 왜 사라졌는지 알 길이 없다. 그래서 멈추고 다시 받으라고 한다.
+if [ -f "$ROOT/.fetched-from" ] && [ -f "$WORK/repo/public/data.enc" ]; then
+  NOW="$(sha256sum "$WORK/repo/public/data.enc" | cut -d' ' -f1)"
+  WAS="$(cat "$ROOT/.fetched-from")"
+  if [ "$NOW" != "$WAS" ] && [ "${FORCE:-}" != "1" ]; then
+    rm -rf "$WORK"
+    cat >&2 <<'MSG'
+받아 온 뒤에 저장소의 data.enc 가 바뀌었습니다. 올리지 않았습니다.
+
+워커가 10분마다 사이트에서 체크하거나 수정한 것을 반영합니다. 지금 올리면
+그것을 덮어씁니다. 다시 받아서 고친 것을 옮긴 뒤에 올려 주세요.
+
+  bash tools/fetch.sh "<암호>" /tmp/lg
+
+정말 덮어써야 한다면 FORCE=1 을 앞에 붙입니다.
+MSG
+    exit 1
+  fi
+fi
+
 # 잠글 때마다 솔트와 초기값이 새로 나므로 암호문은 늘 달라 보인다.
 # 그래서 내용 지문을 따로 남긴다. 지문이 같으면 올릴 것이 없다.
 #
