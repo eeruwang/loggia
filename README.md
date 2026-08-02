@@ -100,7 +100,8 @@ ledger-apply.py 사이트에서 직접 체크하거나 추가한 것을 데이�
 build.py        아침 메일 요약과 스냅샷을 만든다. 화면은 만들지 않는다
 publish.sh      데이터를 암호화해 올린다
 
-seal.js         데이터를 암호화한다.   node seal.js    <in> <out> <암호>
+seal.js         데이터를 암호화한다.   node seal.js    <in> <out> <암호> [<솔트>]
+pagekey.js      워커에 넣을 키를 뽑는다. node pagekey.js <data.enc> <암호>
 unseal.js       다시 푼다.             node unseal.js  <in> <out> <암호>
 ledger.js       장부 토큰을 넣고 뺀다. node ledger.js  <in> <out> [<토큰>]
 rawseal.js      아침 메일 요약을 암호화한다. 원본 키를 쓰므로 PBKDF2 를 돌리지 않는다

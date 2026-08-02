@@ -17,9 +17,15 @@
    체크한 게 사라진다. 나중에 비우면 최악의 경우 다음 번에 한 번 더 반영할 뿐이고,
    같은 걸 두 번 반영해도 결과는 같다.
 
-   솔트는 그대로 둔다. 새로 만들면 브라우저가 세션에 넣어 둔 키가 무효가 되어
-   10분마다 암호를 다시 계산해야 한다. 솔트는 비밀이 아니고 암호가 길기 때문에
-   같은 값을 계속 써도 안전하다.
+   워커는 암호를 모른다. 암호에서 뽑아 놓은 키를 그대로 받는다.
+   까닭이 둘이다. 하나, 클라우드플레어 Workers 는 PBKDF2 반복을 10만 번까지만
+   허용하는데 이 보드는 60만 번을 쓴다. 둘, 그래야 사람이 기억하는 암호가
+   클라우드플레어에 남지 않는다.
+
+   그 대신 솔트를 고정한다. 솔트가 바뀌면 뽑아 둔 키가 안 맞기 때문이다.
+   publish.sh 도 다시 암호화할 때 있던 솔트를 그대로 쓴다. 솔트는 비밀이 아니고
+   암호가 길기 때문에 같은 값을 계속 써도 안전하다. 덤으로 브라우저가 세션에
+   넣어 둔 키가 갱신 뒤에도 살아 있어 다시 열 때 기다림이 없다.
 
    설정이 하나라도 없으면 조용히 건너뛴다. 그래서 시크릿을 넣기 전에 배포해도
    아무 일도 일어나지 않는다.
@@ -27,7 +33,7 @@
 
 export interface FlushEnv {
   LEDGER?: KVNamespace;
-  PAGE_PASSPHRASE?: string;   // 비밀. 보드를 여는 그 암호
+  PAGE_KEY?: string;          // 비밀. 암호에서 뽑은 32바이트 키를 base64 로
   GITHUB_TOKEN?: string;      // 비밀. 저장소에 쓴다
   GITHUB_REPO?: string;       // "eeruwang/loggia"
   GITHUB_API?: string;        // 시험할 때만 바꾼다. 평소에는 비워 둔다
@@ -37,7 +43,6 @@ export interface FlushEnv {
 const DATA_PATH = 'public/data.enc';
 const DIGEST_PATH = 'digest.enc';
 const BRANCH = 'main';
-const ITER = 600000;
 
 const DONE_KEY = 'board';
 const ADD_KEY = 'added';
@@ -70,23 +75,20 @@ async function fingerprint(text: string): Promise<string> {
 
 /* ── 자물쇠 ────────────────────────────────────────────────────────────────── */
 
-async function deriveKey(pass: string, salt: Uint8Array): Promise<CryptoKey> {
-  const km = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: ITER, hash: 'SHA-256' },
-    km, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-}
-
-/** loggia1.<솔트>.<초기값>.<암호문+태그> 를 푼다. 솔트와 키를 함께 돌려준다. */
-async function unseal(text: string, pass: string) {
+/** loggia1.<솔트>.<초기값>.<암호문+태그> 를 푼다. 솔트를 함께 돌려준다. */
+async function unseal(text: string, key: CryptoKey) {
   const p = text.trim().split('.');
   if (p[0] !== 'loggia1' || p.length !== 4) throw new Error('data.enc 형식이 낯섭니다');
   const salt = toBytes(p[1]);
-  const key = await deriveKey(pass, salt);
-  const plain = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: toBytes(p[2]) }, key, toBytes(p[3]));
-  return { data: JSON.parse(new TextDecoder().decode(plain)) as Any, salt, key };
+  let plain: ArrayBuffer;
+  try {
+    plain = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: toBytes(p[2]) }, key, toBytes(p[3]));
+  } catch (e) {
+    throw new Error('PAGE_KEY 로 열리지 않습니다. 솔트가 바뀌었거나 키가 틀렸습니다. '
+      + 'node tools/pagekey.js public/data.enc "<암호>" 로 다시 뽑아 주세요.');
+  }
+  return { data: JSON.parse(new TextDecoder().decode(plain)) as Any, salt };
 }
 
 /** 같은 솔트, 새 초기값으로 다시 암호화한다. */
@@ -239,8 +241,8 @@ async function commitFiles(env: FlushEnv, repo: string, files: { path: string; t
 /* ── 반영하기 ──────────────────────────────────────────────────────────────── */
 
 export async function flush(env: FlushEnv): Promise<string> {
-  if (!env.LEDGER || !env.PAGE_PASSPHRASE || !env.GITHUB_TOKEN) {
-    return '설정이 없어 건너뜁니다 (PAGE_PASSPHRASE 와 GITHUB_TOKEN 이 필요합니다)';
+  if (!env.LEDGER || !env.PAGE_KEY || !env.GITHUB_TOKEN) {
+    return '설정이 없어 건너뜁니다 (PAGE_KEY 와 GITHUB_TOKEN 이 필요합니다)';
   }
   const repo = env.GITHUB_REPO || 'eeruwang/loggia';
 
@@ -254,7 +256,9 @@ export async function flush(env: FlushEnv): Promise<string> {
   // 데이터를 받아 푼다. 커밋에 붙일 부모는 commitFiles 가 그때 다시 읽는다
   const meta = await gh(env, `/repos/${repo}/contents/${DATA_PATH}?ref=${BRANCH}`);
   const text = atob(String(meta.content).replace(/\n/g, ''));
-  const { data, salt, key } = await unseal(text, env.PAGE_PASSPHRASE);
+  const key = await crypto.subtle.importKey(
+    'raw', toBytes(env.PAGE_KEY), { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+  const { data, salt } = await unseal(text, key);
 
   const today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
   const touched: Record<string, string> = {};

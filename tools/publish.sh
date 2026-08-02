@@ -130,7 +130,13 @@ if [ -f "$DATA" ]; then
   else
     echo "LEDGER_TOKEN 이 없습니다. 판에서 체크와 할 일 추가가 사라집니다."
   fi
-  node "$HERE/seal.js" "$SEALME" "$WORK/repo/public/data.enc" "$PASS"
+  # 있던 솔트를 이어받는다. 워커에 넣어 둔 PAGE_KEY 가 솔트에 매여 있어서
+  # 새로 만들면 워커가 data.enc 를 못 연다.
+  OLDSALT=""
+  if [ -f "$WORK/repo/public/data.enc" ]; then
+    OLDSALT="$(cut -d. -f2 < "$WORK/repo/public/data.enc")"
+  fi
+  node "$HERE/seal.js" "$SEALME" "$WORK/repo/public/data.enc" "$PASS" "$OLDSALT"
   rm -f "$WORK/data-with-ledger.json"
 else
   echo "데이터 파일을 찾지 못했습니다 ($DATA). HTML 틀만 올립니다."

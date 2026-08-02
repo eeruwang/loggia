@@ -12,6 +12,7 @@ build.py          아침 메일 요약과 스냅샷을 만든다. 화면은 만�
 publish.sh        데이터를 암호화해 올린다
 
 seal.js           데이터를 AES-256 으로 암호화한다
+pagekey.js        워커 시크릿 PAGE_KEY 를 뽑는다
 unseal.js         다시 푼다
 ledger.js         장부 토큰을 데이터에 넣고 뺀다
 rawseal.js        아침 메일 요약을 원본 키로 암호화한다

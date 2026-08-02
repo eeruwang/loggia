@@ -42,7 +42,7 @@ interface Env {
   LEDGER_TOKEN?: string;   // 비밀. 데이터 안에 들어 있다. 데이터가 암호문이라 함께 잠긴다
 
   // 아래 둘이 있으면 10분마다 기록을 데이터에 직접 반영한다. 없으면 건너뛴다.
-  PAGE_PASSPHRASE?: string;  // 비밀. 보드를 여는 그 암호
+  PAGE_KEY?: string;         // 비밀. 암호에서 뽑은 32바이트 키를 base64 로
   GITHUB_TOKEN?: string;     // 비밀. 저장소에 쓴다
   GITHUB_REPO?: string;
   GITHUB_API?: string;
