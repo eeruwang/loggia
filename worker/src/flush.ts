@@ -8,7 +8,7 @@
    순서
      KV 를 읽는다 → 비었으면 아무것도 안 한다
      깃허브에서 public/data.enc 를 받아 푼다
-     체크한 할 일을 빼고, 추가한 할 일을 넣고, 마지막 작업일을 고친다
+     끝낸 할 일을 빼고, 수정과 삭제를 적용하고, 추가한 할 일을 넣는다
      다시 암호화하고 아침 메일 요약도 새로 만든다
      둘을 한 커밋으로 올린다
      그 다음에 KV 를 비운다
@@ -273,7 +273,7 @@ export async function flush(env: FlushEnv): Promise<string> {
     const when = (done[k] || {}).at || (add[ak] || {}).at || today;
     if (id && findItem(data, id)) {
       touched[id] = touched[id] > when ? touched[id] : when;
-      note.push(`버림 ${id}`);
+      note.push(`제외 ${id}`);
     }
   }
 
@@ -297,7 +297,7 @@ export async function flush(env: FlushEnv): Promise<string> {
     else note.push(`건너뜀 ${id}`);
   }
 
-  // 고치거나 지운 할 일. 키는 처음 글로 만든 것이라 원본에서 그대로 찾힌다.
+  // 수정하거나 삭제한 할 일. 키는 처음 글로 만든 것이라 원본에서 그대로 찾힌다.
   // 끝냈다고 표시한 것을 먼저 뺐으므로, 이미 없어진 것은 그냥 넘어간다.
   const editKeys = Object.keys(edit);
   for (const k of editKeys) {
@@ -315,13 +315,13 @@ export async function flush(env: FlushEnv): Promise<string> {
     for (const s of ss) {
       if (!hit && (await fingerprint(s.t)) === fp) {
         hit = true;
-        if (e.del) continue;                       // 지운다
+        if (e.del) continue;                       // 삭제
         out.push(e.due ? { t: e.t, due: e.due } : { t: e.t });
         continue;
       }
       out.push(s);
     }
-    if (hit) { putTodos(it, out); note.push(`${e.del ? '지움' : '고침'} ${id}`); }
+    if (hit) { putTodos(it, out); note.push(`${e.del ? '삭제' : '수정'} ${id}`); }
     else note.push(`건너뜀 ${id}`);
   }
 

@@ -19,7 +19,7 @@ ledger-apply.py — 사이트에서 직접 체크하거나 추가한 것을 데�
         → 그 항목의 할 일 목록 끝에 넣는다. 날짜가 있으면 같이
       /done 의 키가 add: 로 시작하면 추가하자마자 체크한 것
         → 할 일에 넣지 않고 버린다. 마지막 작업일만 바꾼다
-      /edit 는 사이트에서 고치거나 지운 할 일. 키는 처음 글로 만든 것이다
+      /edit 는 사이트에서 수정하거나 삭제한 할 일. 키는 처음 글로 만든 것이다
         → 글과 날짜를 바꾼다. del 이 있으면 뺀다
 
     보통은 워커가 10분마다 알아서 한다. 이 도구는 워커가 못 할 때와,
@@ -167,10 +167,10 @@ def main():
             clear_add.append(ak)
         it = find(d, iid) if iid else None
         if it is None:
-            plan.append(('버림', iid or '?', txt, '추가하자마자 체크한 것인데 항목을 못 찾아 그냥 버립니다'))
+            plan.append(('제외', iid or '?', txt, '추가하자마자 체크한 것인데 항목을 못 찾아 그냥 버립니다'))
             continue
         touched_ids[iid] = max(touched_ids.get(iid, ''), when)
-        plan.append(('버림', iid, txt, '추가하자마자 체크해서 할 일에 넣지 않습니다'))
+        plan.append(('제외', iid, txt, '추가하자마자 체크해서 할 일에 넣지 않습니다'))
 
     # ── 체크해서 끝냈다고 표시한 할 일 ────────────────────────────────────
     for k, row in done.items():
@@ -178,7 +178,7 @@ def main():
             continue
         clear_done.append(k)
         if '.' not in k:
-            plan.append(('모름', '?', k, '키 형식이 이상해서 그냥 버립니다'))
+            plan.append(('알 수 없음', '?', k, '키 형식이 이상해서 그냥 버립니다'))
             continue
         iid, fp = k.rsplit('.', 1)
         when = row.get('at') or datetime.date.today().isoformat()
@@ -194,13 +194,13 @@ def main():
             continue
         plan.append(('완료', iid, ss[hit[0]]['t'], ''))
 
-    # ── 고치거나 지운 할 일 ───────────────────────────────────────────────
+    # ── 수정하거나 삭제한 할 일 ──────────────────────────────────────────
     # 키는 처음 글로 만든 것이라 원본에서 그대로 찾힌다.
     # 끝냈다고 표시한 것을 먼저 뺐으므로, 이미 없어진 것은 그냥 넘어간다.
     for k, e in edit.items():
         clear_edit.append(k)
         if '.' not in k:
-            plan.append(('모름', '?', k, '키 형식이 이상해서 그냥 버립니다'))
+            plan.append(('알 수 없음', '?', k, '키 형식이 이상해서 그냥 버립니다'))
             continue
         iid = e.get('item') or k.rsplit('.', 1)[0]
         fp = k.rsplit('.', 1)[1]
@@ -214,7 +214,7 @@ def main():
         if not any(fingerprint(x['t']) == fp for x in ss):
             plan.append(('건너뜀', iid, e.get('t', ''), '데이터에 이미 없는 할 일이라 날짜만 바꿉니다'))
             continue
-        plan.append(('지움' if e.get('del') else '고침', iid, e.get('t', ''),
+        plan.append(('삭제' if e.get('del') else '수정', iid, e.get('t', ''),
                      f'{e["due"]}까지' if e.get('due') else ''))
 
     # ── 사이트에서 직접 적어 넣은 할 일 ───────────────────────────────────

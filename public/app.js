@@ -182,7 +182,7 @@ function stepsOf(item) {
     o.key = item.id + '.' + sha1hex(o.t).slice(0, 8);
     var e = EDIT[o.key];
     if (e) {
-      if (e.del) return;                       // 지우기로 표시한 것은 안 보인다
+      if (e.del) return;                       // 삭제로 표시한 것은 안 보인다
       o.t = e.t; o.due = e.due; o.edited = true;
     }
     out.push(o);
@@ -206,12 +206,12 @@ function stepsHtml(item) {
   function box(st, cls) {
     var due = st.due ? '<span class="sdue" data-deadline="' + esc(st.due) + '">D-</span>' : '';
     var tag = st.fresh ? '<span class="tag">새로 추가</span>'
-            : st.edited ? '<span class="tag">고침</span>' : '';
+            : st.edited ? '<span class="tag">수정됨</span>' : '';
     return '<input type="checkbox" id="s-' + esc(st.key) + '" data-done="' + esc(st.key) + '">'
          + '<label for="s-' + esc(st.key) + '"' + (cls || '') + '>' + esc(st.t) + '</label>'
          + due + tag
          + '<button type="button" class="edit" data-edit="' + esc(st.key) + '"'
-         + ' data-item="' + esc(item.id) + '" aria-label="고치기">고침</button>';
+         + ' data-item="' + esc(item.id) + '" aria-label="이 할 일 수정">수정</button>';
   }
 
   var out = ['<div class="step first">' + box(ss[0], ' class="todo"') + cost + '</div>'];
@@ -1156,9 +1156,9 @@ function bindAdd(root, redrawEntry, board) {
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !sheet.hidden) { form.reset(); open_(false); }
   });
-  /* 이미 있는 할 일을 고치거나 지운다.
+  /* 이미 있는 할 일을 수정하거나 삭제한다.
 
-     고쳐도 키는 처음 글로 만든 그대로 둔다. 그래야 반영할 때 원본에서 그
+     수정해도 키는 처음 글로 만든 그대로 둔다. 그래야 반영할 때 원본에서 그
      할 일을 찾을 수 있다. 사이트에서 적어 넣은 할 일은 아직 원본에 없으므로
      그 자리에서 바로 고친다. */
   root.addEventListener('click', function (e) {
