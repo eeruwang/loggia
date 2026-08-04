@@ -949,17 +949,48 @@ function paintTally(root, done) {
   var box = root.querySelector('#tally');
   if (!box) return;
   var today = today0();
-  var n = { '냈다': 0, '끝났다': 0, '손댔다': 0 };
+  var groups = { '냈다': [], '끝났다': [], '손댔다': [] };
   done.forEach(function (x) {
     var days = Math.round((today - fromIso(x.d)) / 86400000);
-    if (days <= 30 && days >= 0) n[x.k]++;
+    if (days <= 30 && days >= 0) groups[x.k].push(x);
   });
+  var names = { '냈다': '낸 것', '끝났다': '끝난 것', '손댔다': '작업한 것' };
   var bits = [];
-  if (n['냈다']) bits.push('낸 것 <b>' + n['냈다'] + '</b>');
-  if (n['끝났다']) bits.push('끝난 것 <b>' + n['끝났다'] + '</b>');
-  if (n['손댔다']) bits.push('작업한 것 <b>' + n['손댔다'] + '</b>');
+  ['냈다', '끝났다', '손댔다'].forEach(function (k) {
+    if (groups[k].length) bits.push('<button type="button" class="tt" data-k="' + k + '">'
+      + names[k] + ' <b>' + groups[k].length + '</b></button>');
+  });
   box.innerHTML = bits.length
     ? '<span class="cap">지난 30일</span>' + bits.join('<span class="dot">·</span>') : '';
+  if (!bits.length) return;
+
+  /* 숫자를 누르면 그 숫자를 이루는 목록이 뜬다. 셈만 보이면
+     무엇을 했는지는 여전히 기억에 기대게 되기 때문이다. */
+  var wrap = document.createElement('div');
+  wrap.className = 'tmodal'; wrap.hidden = true;
+  wrap.innerHTML = '<div class="tm-back"></div>'
+    + '<div class="tm-box" role="dialog" aria-modal="true">'
+    + '<div class="tm-head"><span class="tm-title"></span>'
+    + '<button type="button" class="tm-x" aria-label="닫기">&times;</button></div>'
+    + '<ul class="tm-list"></ul></div>';
+  root.appendChild(wrap);
+  function open(k) {
+    var rows = groups[k].slice().sort(function (a, b) { return a.d < b.d ? 1 : -1; });
+    wrap.querySelector('.tm-title').textContent = names[k] + ' · 지난 30일 · ' + rows.length + '건';
+    wrap.querySelector('.tm-list').innerHTML = rows.map(function (x) {
+      return '<li><span class="tm-d">' + x.d.slice(5).replace('-', '.') + '</span>'
+        + '<span class="tm-t">' + esc(x.t || '') + '</span></li>';
+    }).join('');
+    wrap.hidden = false;
+  }
+  function shut() { wrap.hidden = true; }
+  box.addEventListener('click', function (e) {
+    var b = e.target.closest('.tt');
+    if (b) open(b.dataset.k);
+  });
+  wrap.querySelector('.tm-back').addEventListener('click', shut);
+  wrap.querySelector('.tm-x').addEventListener('click', shut);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') shut(); });
 }
 
 /* 완료 표시.
