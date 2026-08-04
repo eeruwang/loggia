@@ -337,6 +337,7 @@ font-size:14px;color:var(--ink-2)}
 .step{display:flex;align-items:baseline;gap:11px;margin:14px 0 0}
 /* display 를 적어 두면 hidden 이 먹지 않는다. UA 규칙보다 이쪽이 세다 */
 .step[hidden],.rest li[hidden]{display:none}
+.entry[hidden],.venue-block[hidden]{display:none}
 .step .todo{margin:0;cursor:pointer}
 .rest{list-style:none;margin:10px 0 0;padding:0}
 .rest li{display:flex;align-items:baseline;gap:11px;padding:5px 0;font-size:15px;color:var(--ink-2)}
