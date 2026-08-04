@@ -334,14 +334,14 @@ font-size:14px;color:var(--ink-2)}
 .touch.none{font-style:normal;opacity:.7}
 
 /* 다음 할 일. 첫 할 일은 크게, 나머지는 차례로 */
-.step{display:flex;align-items:baseline;gap:11px;margin:14px 0 0}
+.step{display:flex;flex-wrap:wrap;align-items:baseline;gap:11px;margin:14px 0 0}
 /* display 를 적어 두면 hidden 이 먹지 않는다. UA 규칙보다 이쪽이 세다 */
 .step[hidden],.rest li[hidden]{display:none}
-.entry[hidden],.venue-block[hidden]{display:none}
-.step .todo{margin:0;cursor:pointer}
+.step .todo{margin:0;cursor:pointer;flex:1 1 0;min-width:0}
 .rest{list-style:none;margin:10px 0 0;padding:0}
-.rest li{display:flex;align-items:baseline;gap:11px;padding:5px 0;font-size:15px;color:var(--ink-2)}
-.rest li label{cursor:pointer}
+.rest li{display:flex;flex-wrap:wrap;align-items:baseline;gap:11px;padding:5px 0;
+font-size:15px;color:var(--ink-2)}
+.rest li label{cursor:pointer;flex:1 1 0;min-width:0}
 input[data-done]{appearance:none;flex:none;width:1.05em;height:1.05em;margin:0;
 border:2px solid var(--rule-2);border-radius:5px;background:var(--surface);cursor:pointer;
 align-self:baseline;transform:translateY(0.12em)}
@@ -514,7 +514,7 @@ padding:2px 4px;align-self:center;flex:none}
 .step:hover .edit,.rest li:hover .edit,.edit:focus{color:var(--ink-3)}
 .step .edit:hover,.rest li .edit:hover{color:var(--ink)}
 .rest li.pend .edit{margin-left:0}
-.tedit{flex-basis:100%;margin:8px 0 4px;display:flex;flex-direction:column;gap:8px}
+.tedit{flex:1 0 100%;width:100%;margin:8px 0 4px;display:flex;flex-direction:column;gap:8px}
 .tedit .et{width:100%;font-family:inherit;font-size:15px;color:var(--ink);
 background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;padding:9px 11px}
 .tedit .erow{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
@@ -525,7 +525,7 @@ font-size:13px;font-weight:800;padding:8px 14px;border-radius:8px}
 .tedit .ok{background:var(--ink);color:var(--paper)}
 .tedit .ok[disabled]{opacity:.5;cursor:default}
 .tedit .cancel{background:transparent;color:var(--ink-3)}
-.tedit .rm{background:transparent;color:var(--now);margin-left:auto}
+.tedit .rm{background:transparent;color:var(--now);margin-left:14px}
 .tedit .et:focus,.tedit .ed:focus{outline:2px solid var(--ink);outline-offset:1px}
 
 /* 무슨 일이 일어났는지 잠깐 알리는 한 줄.
@@ -536,20 +536,43 @@ padding:10px 18px;border-radius:99px;box-shadow:0 6px 20px rgba(0,0,0,.18);
 max-width:calc(100vw - 32px)}
 .flash[hidden]{display:none}
 
-/* 지난 30일 숫자를 누르면 뜨는 목록 */
-.tally .tt{font:inherit;background:none;border:0;padding:0;cursor:pointer;color:inherit}
-.tally .tt:hover b,.tally .tt:focus-visible b{text-decoration:underline}
-.tmodal[hidden]{display:none}
-.tm-back{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:60}
-.tm-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:61;
- width:min(440px,calc(100vw - 44px));max-height:70vh;overflow:auto;
- background:var(--surface);border:1px solid var(--rule);border-radius:18px;
- padding:18px 20px;box-shadow:0 18px 50px rgba(0,0,0,.24)}
-.tm-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px}
-.tm-title{font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--ink-3)}
-.tm-x{font:inherit;font-size:19px;line-height:1;background:none;border:0;cursor:pointer;color:var(--ink-3)}
-.tm-list{list-style:none;margin:0;padding:0}
-.tm-list li{display:flex;gap:12px;align-items:baseline;padding:8px 0;border-top:1px solid var(--rule);
- font-size:14.5px;color:var(--ink)}
-.tm-list li:first-child{border-top:0}
-.tm-d{font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-3);flex:none}
+/* 재료 장의 이름표. 이론가 상자 밑에는 개념이, 읽기 묶음 밑에는 이론가와
+   개념이 붙는다. 떨어져 있던 세 목록을 한자리에서 잇는 실이다. */
+.chips{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;margin:12px 0 2px}
+.chips .ck{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--ink-3);
+flex:none;min-width:34px}
+.chip{appearance:none;cursor:pointer;font-family:var(--font);font-size:12.5px;
+font-weight:700;color:var(--ink-2);background:var(--sunk);border:1px solid transparent;
+border-radius:99px;padding:5px 11px;display:inline-flex;align-items:baseline;gap:6px}
+.chip:hover{border-color:var(--ink-3);color:var(--ink)}
+.chip b{font-size:11px;font-weight:700;color:var(--ink-3)}
+.chip.t{background:transparent;border-color:var(--rule-2)}
+.chip.r{background:transparent;border-color:var(--rule-2)}
+.chip[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.chip[aria-pressed=true] b{color:var(--paper);opacity:.6}
+
+/* 건너뛴 자리를 잠깐 밝힌다. 어디로 왔는지 눈이 놓치지 않게 */
+.venue-block.lit{border-color:var(--ink-3);box-shadow:0 0 0 3px var(--sunk)}
+.venue-block.loose{border-left:6px solid var(--rule-2)}
+.lede.loose-cap{margin-top:26px}
+.hrow[hidden]{display:none}
+
+/* 일하는 기간. 할 일 하나가 아니라 항목에 붙는 값이라 고르는 자리도 따로 둔다. */
+.tedit .ef{display:flex;align-items:center;gap:9px}
+.tedit .ef span{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--ink-3);flex:none}
+.tedit .ef select{font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);
+background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;padding:7px 9px}
+.tedit .ef select:focus{outline:2px solid var(--ink);outline-offset:1px}
+
+/* 손가락으로 여는 화면. 마우스가 없으면 「수정」이 뜨는 순간이 오지 않는다.
+   그래서 아이패드에서는 처음부터 보이게 하고 누를 자리도 넓힌다. */
+@media (hover:none){
+  .step .edit,.rest li .edit{color:var(--ink-3);font-size:13px;padding:8px 10px;margin:-6px 0}
+  .step.first .drop{color:var(--ink-3);padding:6px 8px}
+}
+
+/* 할 일을 누를 때 글자가 잡히면 아이패드가 「복사」 딱지를 띄운다.
+   누르는 자리에서만 글자 집기를 끈다. 메모와 본문은 그대로 집힌다. */
+.step label,.rest li label,.step .edit,.rest li .edit,.step.first .drop,
+.step .tag,.filters button,.chip,.jump a,.mode button{
+-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}

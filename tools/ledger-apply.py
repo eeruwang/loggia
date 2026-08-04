@@ -199,6 +199,18 @@ def main():
     # 끝냈다고 표시한 것을 먼저 뺐으므로, 이미 없어진 것은 그냥 넘어간다.
     for k, e in edit.items():
         clear_edit.append(k)
+        # 일하는 기간은 할 일이 아니라 항목에 붙는다. 키가 `item:<아이디>` 다.
+        if k.startswith('item:'):
+            iid = e.get('item') or k[5:]
+            when = e.get('at') or datetime.date.today().isoformat()
+            it = find(d, iid)
+            if it is None:
+                plan.append(('못 찾음', iid, e.get('품', ''), '그런 항목이 없어서 그냥 버립니다'))
+                continue
+            touched_ids[iid] = max(touched_ids.get(iid, ''), when)
+            lab = (d.get('efforts', {}).get(e.get('품'), {}) or {}).get('label', '안 정함')
+            plan.append(('기간', iid, lab, ''))
+            continue
         if '.' not in k:
             plan.append(('알 수 없음', '?', k, '키 형식이 이상해서 그냥 버립니다'))
             continue
@@ -257,6 +269,15 @@ def main():
         if len(keep) != len(ss):
             put_todos(it, keep)
     for k, e in edit.items():
+        if k.startswith('item:'):
+            it = find(d, e.get('item') or k[5:])
+            if it is None:
+                continue
+            if e.get('품'):
+                it['품'] = e['품']
+            else:
+                it.pop('품', None)
+            continue
         if '.' not in k:
             continue
         iid = e.get('item') or k.rsplit('.', 1)[0]

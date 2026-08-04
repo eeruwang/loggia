@@ -172,6 +172,14 @@ function whenCol(item) {
    여기에 기록에서 온 것을 이어 붙인다. 손으로 더한 할 일도 같은 목록에 선다.
    따로 상자를 만들면 눈이 두 번 읽는다. 아직 데이터에 없으므로 글의 지문
    대신 기록 토큰을 그대로 쓰고, 표를 하나 달아 아직 참이 아님을 밝힌다. */
+/* 이 항목의 일하는 기간. 사이트에서 고쳐 두었으면 그것이 먼저다.
+   기간은 할 일 하나가 아니라 항목에 붙는 값이라 기록의 키도 다르다.
+   `item:<항목 아이디>` 로 적어 두면 할 일 키(`<아이디>.<지문>`)와 섞이지 않는다. */
+function pumOf(item) {
+  var e = EDIT['item:' + item.id];
+  return (e && e['품'] !== undefined) ? e['품'] : item['품'];
+}
+
 function stepsOf(item) {
   var out = [];
   var st = item.steps || (item.next ? [item.next] : []);
@@ -200,7 +208,7 @@ function stepsOf(item) {
 function stepsHtml(item) {
   var ss = stepsOf(item);
   if (!ss.length) return '<p class="todo none">지금 할 일 없음</p>';
-  var eff = (D.efforts || {})[item['품']];
+  var eff = (D.efforts || {})[pumOf(item)];
   var cost = eff ? '<span class="cost">' + esc(eff.label) + '</span>' : '';
 
   function box(st, cls) {
@@ -289,9 +297,10 @@ function filtersHtml(buttons, label) {
 }
 
 /* 몇 편이 무슨 상태로 이 처(또는 이 이론가)에 걸려 있나 */
-function historyRows(entries, conceptsInstead) {
+function historyRows(entries, conceptsInstead, tagOf) {
   return entries.map(function (pair) {
     var it = pair[0];
+    var tg = tagOf ? tagOf(pair) : '';
     var st = statusOf(it);
     var cls = { live: 'live', wait: '', stop: 'stop', done: '' }[st.tone] || '';
     var right;
@@ -303,7 +312,8 @@ function historyRows(entries, conceptsInstead) {
       var tail = d.decided ? '결정' : d.sent ? '냄' : d.deadline ? '마감' : '';
       right = dots(when) + ' ' + tail;
     }
-    return '<div class="hrow"><span class="mark ' + cls + '">' + esc(st.label) + '</span>'
+    return '<div class="hrow"' + (tagOf ? ' data-rowtags="' + esc(tg) + '"' : '')
+         + '><span class="mark ' + cls + '">' + esc(st.label) + '</span>'
          + '<span class="t">' + esc(it.title) + '</span>'
          + '<span class="d">' + right + '</span>'
          + (!conceptsInstead && it.review
@@ -413,30 +423,21 @@ function buildIndex() {
   var shown = (D.sections || []).filter(function (x) { return x.id !== 'waiting'; });
 
   // 필터. 지금 지금 실제로 있는 상태만 단추로 낸다
-  var seen = {}, total = 0;
+  var seen = {}, total = 0, pum = {};
   shown.forEach(function (x) {
     (x.items || []).forEach(function (it) {
       seen[it.status] = (seen[it.status] || 0) + 1; total++;
+      if (it['품']) pum[it['품']] = (pum[it['품']] || 0) + 1;
     });
   });
-  /* 상태 하나마다 단추 하나를 세우면 아홉 항목에 단추 열둘이 선다.
-     큰 갈래 셋이면 족하다. 걸리는 시간은 카드가 이미 말한다. */
-  var BUCKETS = [
-    ['집필 교정 구조', '쓰는 중'],
-    ['조사 준비 선정', '조사와 준비'],
-    ['미착수', '시작 전']
-  ];
   var buttons = [['*', '전체', total]];
-  var used = {};
-  BUCKETS.forEach(function (b) {
-    var n = 0;
-    b[0].split(' ').forEach(function (k) { n += seen[k] || 0; used[k] = 1; });
-    if (n) buttons.push([b[0], b[1], n]);
+  Object.keys(D.statuses || {}).forEach(function (k) {
+    if (seen[k]) buttons.push([k, D.statuses[k].label, seen[k]]);
   });
-  Object.keys(seen).forEach(function (k) {
-    if (!used[k]) buttons.push([k, (D.statuses[k] || {}).label || k, seen[k]]);
+  Object.keys(D.efforts || {}).forEach(function (k) {
+    if (pum[k]) buttons.push([k, D.efforts[k].label, pum[k]]);
   });
-  out.push(filtersHtml(buttons, '상태로 골라 보기'));
+  out.push(filtersHtml(buttons, '상태와 걸리는 시간으로 골라 보기'));
 
   shown.forEach(function (x) {
     var items = (x.items || []).slice().sort(function (a, b) {
@@ -570,6 +571,39 @@ function itemThinkers(item) {
   return found;
 }
 
+/* 읽기 묶음 하나가 누구를 담고 있나. 묶음 이름과 딸린 줄에서 이름을 찾는다.
+   항목의 글에서 이론가를 찾는 방식과 같다. 묶음에 `이론가` 를 손으로 적어
+   두었으면 그것도 더한다. */
+function readingThinkers(r) {
+  var hay = [r.name, r.sub].filter(Boolean).join(' ');
+  var found = [];
+  var th = D.thinkers || {};
+  Object.keys(th).forEach(function (tid) {
+    var ws = th[tid]['말'] || [];
+    for (var i = 0; i < ws.length; i++) {
+      if (ws[i] && hay.indexOf(ws[i]) >= 0) { found.push(tid); return; }
+    }
+  });
+  (r['이론가'] || []).forEach(function (tid) {
+    if (found.indexOf(tid) < 0) found.push(tid);
+  });
+  return found;
+}
+
+/* 이름표 하나. 눌러서 개념을 고르거나 다른 상자로 건너간다. */
+function chip(kind, label, count, attr) {
+  return '<button type="button" class="chip ' + kind + '" ' + attr + '>' + esc(label)
+       + (count === null || count === undefined ? '' : '<b>' + count + '</b>') + '</button>';
+}
+
+/* 이름표 줄. 무엇의 이름표인지 왼쪽에 한 번만 적는다.
+   이름표마다 「이론가」를 붙이면 글자가 이름을 덮는다. */
+function chipRows(rows) {
+  return rows.filter(function (r) { return r[1]; }).map(function (r) {
+    return '<div class="chips"><span class="ck">' + esc(r[0]) + '</span>' + r[1] + '</div>';
+  }).join('');
+}
+
 function buildMaterials() {
   var thinkers = D.thinkers || {}, readings = D.readings || {};
   var byThinker = {}, byConcept = {}, byReading = {};
@@ -578,74 +612,164 @@ function buildMaterials() {
     if (!map[k]) { map[k] = []; order.push(k); }
     map[k].push(v);
   }
+  // 이어짐은 한 항목 안에서 생긴다. 같은 글에 벤야민과 아우라가 함께 적혀
+  // 있으면 그 둘은 이어져 있다. 그 셈을 여기서 미리 해 둔다.
+  var tCon = {}, tRead = {}, rCon = {}, rThink = {};
+  function bump(map, a, b) {
+    if (!map[a]) map[a] = {};
+    map[a][b] = (map[a][b] || 0) + 1;
+  }
   allItems().forEach(function (pair) {
     var it = pair[0], u = it.uses || {};
-    itemThinkers(it).forEach(function (t) { push(byThinker, tOrder, t, pair); });
-    (u['개념'] || []).forEach(function (c) { push(byConcept, cOrder, c, pair); });
-    (u['읽기'] || []).forEach(function (r) { push(byReading, rOrder, r, pair); });
+    var ts = itemThinkers(it), cs = u['개념'] || [], rs = u['읽기'] || [];
+    ts.forEach(function (t) { push(byThinker, tOrder, t, pair); });
+    cs.forEach(function (c) { push(byConcept, cOrder, c, pair); });
+    rs.forEach(function (r) { push(byReading, rOrder, r, pair); });
+    ts.forEach(function (t) {
+      cs.forEach(function (c) { bump(tCon, t, c); });
+      rs.forEach(function (r) { bump(tRead, t, r); bump(rThink, r, t); });
+    });
+    rs.forEach(function (r) { cs.forEach(function (c) { bump(rCon, r, c); }); });
   });
+  // 읽기 묶음이 스스로 담고 있는 이론가. 항목을 거치지 않고 묶음 이름에서 바로 온다.
+  // 아직 어느 글에도 쓰지 않은 묶음이 여기서 이론가와 이어진다. 정독노트가
+  // 쌓여 있는데 글이 없다는 사실이 화면에서 사라지지 않게 하는 자리다.
+  var reading0 = [];
+  Object.keys(readings).forEach(function (rid) {
+    readingThinkers(readings[rid]).forEach(function (tid) {
+      if (!rThink[rid]) rThink[rid] = {};
+      if (!rThink[rid][tid]) rThink[rid][tid] = 0;
+      if (!tRead[tid]) tRead[tid] = {};
+      if (!tRead[tid][rid]) tRead[tid][rid] = 0;
+      if (!byThinker[tid] && reading0.indexOf(tid) < 0) reading0.push(tid);
+    });
+  });
+
   function ranked(map, order) {
     return order.slice().sort(function (a, b) {
       return cmp(-map[a].length, -map[b].length) || cmp(a, b);
     });
   }
 
+  // 개념의 키는 이름이 아니라 번호다. 이름에 띄어쓰기가 있으면
+  // (「일기적 실천」) 띄어쓰기로 가르는 견줌이 무너진다.
+  var co = ranked(byConcept, cOrder);
+  var ckey = {};
+  co.forEach(function (c, i) { ckey[c] = 'c' + i; });
+  function conKeys(list) {
+    return (list || []).map(function (c) { return ckey[c]; })
+      .filter(Boolean).join(' ');
+  }
+  // 상자 안의 각 줄에도 개념을 달아 둔다. 개념을 고르면 상자만 남기는 것이
+  // 아니라 그 개념과 상관없는 줄까지 함께 접힌다.
+  function rowTags(pair) { return conKeys((pair[0].uses || {})['개념']); }
+  // 개념 하나를 세어 큰 것부터 늘어놓는다
+  function conChips(counts) {
+    return Object.keys(counts || {}).sort(function (a, b) {
+      return cmp(-counts[a], -counts[b]) || cmp(a, b);
+    }).map(function (c) {
+      return chip('c', c, counts[c], 'data-pick="' + esc(ckey[c] || '') + '"');
+    }).join('');
+  }
+
   var out = [headHtml('materials', '재료')];
-  out.push('<p class="lede">무엇으로 썼나. 항목에 적어 둔 이론가와 개념과 읽기를 거꾸로 모은 것이다. '
-    + '읽기는 파일 하나가 아니라 읽기 묶음을 가리킨다. 글은 드롭박스에 있다.</p>');
-  // 이 장은 길다. 맨 위에 바로 가는 길을 낸다
+  out.push('<p class="lede">무엇으로 썼나. 읽은 것이 먼저 있고 거기서 이론가와 개념이 나온다. '
+    + '읽기 묶음은 파일 하나가 아니라 드롭박스에 쌓인 정독노트 한 뭉치를 가리킨다. '
+    + '아래에서 개념을 하나 고르면 그 개념이 지나간 자리만 남는다.</p>');
   out.push('<div class="jump">'
-    + '<a href="#thinkers">이론가</a><a href="#concepts">개념</a>'
-    + '<a href="#readings">읽기</a>'
+    + '<a href="#readings">읽기</a><a href="#thinkers">이론가와 개념</a>'
     + '<a href="#reuse" class="hot">다시 쓸 것 · CV와 지원서</a>'
     + '<a href="#people">사람</a></div>');
 
-  // 이론가. 많이 받치는 순서
-  var to = ranked(byThinker, tOrder);
-  out.push(secbox('이론가', to.length, to.map(function (tid) {
-    var t = thinkers[tid] || { name: tid };
-    var e = byThinker[tid];
-    return '<section class="venue-block" id="t-' + esc(tid) + '">\n'
-      + '<div class="venue-head"><h3>' + esc(t.name) + '</h3><span class="sub">'
-      + esc(t.sub || '') + '</span></div>\n'
-      + '<div class="history"><div class="cap">참고한 글 · ' + e.length + '편</div>'
-      + historyRows(e, true) + '</div></section>';
-  }).join(''), 'thinkers'));
+  // 개념 고르는 줄. 어느 섹션에도 들어 있지 않으므로 읽기와 이론가를 함께 거른다.
+  out.push(filtersHtml(
+    [['*', '전체', co.length]].concat(co.map(function (c) {
+      return [ckey[c], c, byConcept[c].length];
+    })), '개념으로 골라 보기'));
 
-  // 개념. 종류가 많으므로 눌러서 이동하는 대신 눌러서 걸러 낸다.
-  // 앵커로 뛰면 화면 위치를 잃는다. 걸러 내면 자리는 그대로 있고 목록만 바뀐다.
-  //
-  // 필터의 키는 개념 이름이 아니라 번호다. 이름에 띄어쓰기가 있으면
-  // (「일기적 실천」) 띄어쓰기로 가르는 견줌이 무너진다.
-  var co = ranked(byConcept, cOrder);
-  var cbody = [filtersHtml(
-    [['*', '전체', co.length]].concat(co.map(function (c, i) {
-      return ['c' + i, c, byConcept[c].length];
-    })), '개념으로 골라 보기')];
-  co.forEach(function (cid, i) {
-    var e = byConcept[cid];
-    cbody.push('<section class="venue-block" id="c-' + esc(cid) + '" data-tags="c' + i + '">\n'
-      + '<div class="venue-head"><h3>' + esc(cid) + '</h3><span class="sub">'
-      + e.length + '편</span></div>\n'
-      + '<div class="history">' + historyRows(e, true) + '</div></section>');
-  });
-  out.push(secbox('개념', co.length, cbody.join(''), 'concepts'));
-
-  // 읽기. 아직 어디에도 안 쓴 묶음도 함께 보인다
-  var rbody = Object.keys(readings).map(function (rid) {
+  // 읽기. 여기가 시작이다. 아직 어느 글에도 안 쓴 묶음도 자리를 지킨다.
+  var ro = Object.keys(readings);
+  var rbody = ro.map(function (rid) {
     var r = readings[rid], e = byReading[rid] || [];
     var name = r.url
       ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.name) + '</a>'
       : esc(r.name);
+    var ths = readingThinkers(r);
+    Object.keys(rThink[rid] || {}).forEach(function (t) {
+      if (ths.indexOf(t) < 0) ths.push(t);
+    });
+    var chips = chipRows([
+      ['이론가', ths.map(function (tid) {
+        var t = thinkers[tid] || { name: tid };
+        return chip('t', t.name, (rThink[rid] || {})[tid] || null,
+          'data-goto="t-' + esc(tid) + '"');
+      }).join('')],
+      ['개념', conChips(rCon[rid])]
+    ]);
     var inner = e.length
-      ? '<div class="history"><div class="cap">여기서 이어진 글 · ' + e.length + '편</div>'
-        + historyRows(e, true) + '</div>'
-      : '<p class="note">아직 어느 글에도 쓰지 않았다.</p>';
-    return '<section class="venue-block" id="r-' + esc(rid) + '">\n'
+      ? '<div class="history"><div class="cap">여기서 이어진 글 · <b>' + e.length + '</b>편</div>'
+        + historyRows(e, true, rowTags) + '</div>'
+      : '<p class="note">읽고 적어 두었으나 아직 어느 글에도 쓰지 않았다.</p>';
+    return '<section class="venue-block" id="r-' + esc(rid) + '"'
+      + ' data-tags="' + esc(Object.keys(rCon[rid] || {}).map(function (c) {
+          return ckey[c];
+        }).filter(Boolean).join(' ')) + '">\n'
       + '<div class="venue-head"><h3>' + name + '</h3><span class="sub">'
-      + esc(r.sub || '') + '</span></div>\n' + inner + '</section>';
+      + esc(r.sub || '') + '</span></div>\n'
+      + chips + '\n' + inner + '</section>';
   }).join('');
-  out.push(secbox('읽기', Object.keys(readings).length, rbody, 'readings'));
+  out.push(secbox('읽기', ro.length,
+    '<p class="lede">읽은 것을 묶음으로 둔다. 묶음마다 그 안에서 나온 이론가와 개념이 붙어 '
+    + '있고, 이름을 누르면 드롭박스의 노트로 간다.</p>' + rbody, 'readings'));
+
+  // 이론가와 개념을 한 상자에 둔다. 이론가가 기둥이고 개념이 그 아래 붙는다.
+  var to = ranked(byThinker, tOrder);
+  function thinkerCard(tid) {
+    var t = thinkers[tid] || { name: tid };
+    var e = byThinker[tid];
+    var chips = chipRows([
+      ['개념', conChips(tCon[tid])],
+      ['읽기', Object.keys(tRead[tid] || {}).map(function (rid) {
+        var r = readings[rid] || { name: rid };
+        return chip('r', r.name, null, 'data-goto="r-' + esc(rid) + '"');
+      }).join('')]
+    ]);
+    return '<section class="venue-block' + (e ? '' : ' loose') + '" id="t-' + esc(tid) + '"'
+      + ' data-tags="' + esc(Object.keys(tCon[tid] || {}).map(function (c) {
+          return ckey[c];
+        }).filter(Boolean).join(' ')) + '">\n'
+      + '<div class="venue-head"><h3>' + esc(t.name) + '</h3><span class="sub">'
+      + esc(t.sub || '') + '</span></div>\n'
+      + chips + '\n'
+      + (e
+         ? '<div class="history"><div class="cap">참고한 글 · <b>' + e.length + '</b>편</div>'
+           + historyRows(e, true, rowTags) + '</div>'
+         : '<p class="note">읽는 중이다. 아직 어느 글에도 쓰지 않았다.</p>')
+      + '</section>';
+  }
+  var tbody = to.map(thinkerCard).join('')
+    + (reading0.length
+       ? '<p class="lede loose-cap">아래는 읽고 있으나 아직 글로 옮기지 않은 이론가다.</p>'
+         + reading0.map(thinkerCard).join('')
+       : '');
+
+  // 아직 사람과 묶이지 않은 개념. 여기 오래 남아 있으면 읽을 것이 하나 밀려 있다는 뜻이다.
+  var loose = co.filter(function (c) { return !Object.keys(tCon).some(function (t) { return tCon[t][c]; }); });
+  var lbody = loose.map(function (c) {
+    var e = byConcept[c];
+    return '<section class="venue-block loose" id="c-' + esc(ckey[c]) + '"'
+      + ' data-tags="' + esc(ckey[c]) + '">\n'
+      + '<div class="venue-head"><h3>' + esc(c) + '</h3><span class="sub">이론가 없이 쓴 개념</span></div>\n'
+      + '<div class="history"><div class="cap">쓴 글 · <b>' + e.length + '</b>편</div>'
+      + historyRows(e, true, rowTags) + '</div></section>';
+  }).join('');
+
+  out.push(secbox('이론가와 개념', to.length + reading0.length,
+    '<p class="lede">이론가마다 그 사람과 같은 글에 적힌 개념이 붙어 있다. '
+    + '개념을 누르면 위의 고르는 줄이 함께 움직인다.</p>'
+    + tbody
+    + (lbody ? '<p class="lede loose-cap">아래 개념은 아직 어느 이론가와도 같은 글에 놓이지 않았다.</p>'
+        + lbody : ''), 'thinkers'));
 
   if (D.reuse && D.reuse.length) {
     var rs = D.reuse.map(function (r) {
@@ -907,9 +1031,9 @@ function bindSections(root, page) {
 /* 필터. 누른 단추의 키를 가진 상자만 남긴다.
 
    필터는 두 군데에 놓일 수 있다. 섹션 밖에 있으면 페이지의 모든 섹션을 거르고,
-   섹션 안에 있으면 자기가 속한 섹션 안만 거른다. 재료 페이지의 개념 필터가
-   후자다. 그렇게 하지 않으면 개념 하나를 고를 때 이론가와 읽기 섹션까지
-   통째로 사라진다. */
+   섹션 안에 있으면 자기가 속한 섹션 안만 거른다. 재료 페이지의 개념 필터는
+   섹션 밖에 있다. 개념 하나를 고르면 읽기 묶음과 이론가가 함께 걸러져야
+   이어짐이 보이기 때문이다. */
 function bindFilters(root) {
   root.querySelectorAll('.filters').forEach(function (bar) {
     var own = bar.closest('details.group');
@@ -933,12 +1057,25 @@ function bindFilters(root) {
         if (!taggable.length) return;
         var seen = 0;
         taggable.forEach(function (el) {
-          var hay = ' ' + el.dataset.tags + ' ';
-          var on = k === '*' || k.split(' ').some(function (kk) {
-            return hay.indexOf(' ' + kk + ' ') >= 0;
-          });
+          var on = k === '*' || (' ' + el.dataset.tags + ' ').indexOf(' ' + k + ' ') >= 0;
           el.hidden = !on;
           if (on) seen++;
+          // 상자를 남기는 데서 그치지 않고 그 안의 줄도 함께 줄인다. 상자만
+          // 남기면 벤야민 밑에 아우라와 상관없는 글이 그대로 남아 이어짐이
+          // 있는 것처럼 보인다.
+          var rows = el.querySelectorAll('[data-rowtags]');
+          if (!rows.length) return;
+          var n = 0;
+          rows.forEach(function (r) {
+            var ok = k === '*' || (' ' + r.dataset.rowtags + ' ').indexOf(' ' + k + ' ') >= 0;
+            r.hidden = !ok;
+            if (ok) n++;
+          });
+          var cap = el.querySelector('.history .cap b');
+          if (cap) {
+            if (cap.dataset.all === undefined) cap.dataset.all = cap.textContent;
+            cap.textContent = k === '*' ? cap.dataset.all : n;
+          }
         });
         // 제 필터가 든 섹션은 감추지 않는다. 감추면 필터도 함께 사라진다.
         if (g !== own) g.hidden = seen === 0;
@@ -956,53 +1093,65 @@ function bindFilters(root) {
   });
 }
 
+/* 상자 안에 붙은 이름표. 개념을 누르면 위의 고르는 줄이 함께 눌리고,
+   이론가나 읽기 묶음을 누르면 그 상자로 건너간다. 재료 페이지에서
+   이론가와 개념과 읽기가 서로 이어져 있다는 것을 손으로 확인하는 자리다. */
+function bindChips(root) {
+  function bar() { return root.querySelector('.filters'); }
+  function press(key) {
+    var f = bar();
+    if (!f) return;
+    var b = f.querySelector('button[data-filter="' + key + '"]');
+    if (!b) return;
+    b.click();
+    var r = f.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > innerHeight) f.scrollIntoView({ block: 'center' });
+  }
+  // 고르는 줄에서 무엇을 눌렀는지 상자 안의 이름표에도 표시한다.
+  // 그래야 지금 보고 있는 것이 어느 개념으로 걸러진 것인지 잊지 않는다.
+  var f0 = bar();
+  if (f0) f0.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    var k = b.dataset.filter;
+    root.querySelectorAll('.chip.c').forEach(function (c) {
+      c.setAttribute('aria-pressed', k !== '*' && c.dataset.pick === k);
+    });
+  });
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('.chip');
+    if (!b) return;
+    if (b.dataset.pick) { press(b.dataset.pick); return; }
+    var id = b.dataset.goto;
+    if (!id) return;
+    // 걸러 놓은 채로 건너가면 가려는 상자가 접혀 있을 수 있다. 먼저 전체로 돌린다.
+    press('*');
+    var el = root.querySelector('#' + id.replace(/([^\w-])/g, '\\$1'));
+    if (!el) return;
+    var d = el.closest('details');
+    if (d && !d.open) d.open = true;
+    el.scrollIntoView({ block: 'start' });
+    el.classList.add('lit');
+    setTimeout(function () { el.classList.remove('lit'); }, 1400);
+  });
+}
+
 /* 지난 서른 날에 한 일. 보드를 열면 먼저 눈에 든다 */
 function paintTally(root, done) {
   var box = root.querySelector('#tally');
   if (!box) return;
   var today = today0();
-  var groups = { '냈다': [], '끝났다': [], '손댔다': [] };
+  var n = { '냈다': 0, '끝났다': 0, '손댔다': 0 };
   done.forEach(function (x) {
     var days = Math.round((today - fromIso(x.d)) / 86400000);
-    if (days <= 30 && days >= 0) groups[x.k].push(x);
+    if (days <= 30 && days >= 0) n[x.k]++;
   });
-  var names = { '냈다': '낸 것', '끝났다': '끝난 것', '손댔다': '작업한 것' };
   var bits = [];
-  ['냈다', '끝났다', '손댔다'].forEach(function (k) {
-    if (groups[k].length) bits.push('<button type="button" class="tt" data-k="' + k + '">'
-      + names[k] + ' <b>' + groups[k].length + '</b></button>');
-  });
+  if (n['냈다']) bits.push('낸 것 <b>' + n['냈다'] + '</b>');
+  if (n['끝났다']) bits.push('끝난 것 <b>' + n['끝났다'] + '</b>');
+  if (n['손댔다']) bits.push('작업한 것 <b>' + n['손댔다'] + '</b>');
   box.innerHTML = bits.length
     ? '<span class="cap">지난 30일</span>' + bits.join('<span class="dot">·</span>') : '';
-  if (!bits.length) return;
-
-  /* 숫자를 누르면 그 숫자를 이루는 목록이 뜬다. 셈만 보이면
-     무엇을 했는지는 여전히 기억에 기대게 되기 때문이다. */
-  var wrap = document.createElement('div');
-  wrap.className = 'tmodal'; wrap.hidden = true;
-  wrap.innerHTML = '<div class="tm-back"></div>'
-    + '<div class="tm-box" role="dialog" aria-modal="true">'
-    + '<div class="tm-head"><span class="tm-title"></span>'
-    + '<button type="button" class="tm-x" aria-label="닫기">&times;</button></div>'
-    + '<ul class="tm-list"></ul></div>';
-  root.appendChild(wrap);
-  function open(k) {
-    var rows = groups[k].slice().sort(function (a, b) { return a.d < b.d ? 1 : -1; });
-    wrap.querySelector('.tm-title').textContent = names[k] + ' · 지난 30일 · ' + rows.length + '건';
-    wrap.querySelector('.tm-list').innerHTML = rows.map(function (x) {
-      return '<li><span class="tm-d">' + x.d.slice(5).replace('-', '.') + '</span>'
-        + '<span class="tm-t">' + esc(x.t || '') + '</span></li>';
-    }).join('');
-    wrap.hidden = false;
-  }
-  function shut() { wrap.hidden = true; }
-  box.addEventListener('click', function (e) {
-    var b = e.target.closest('.tt');
-    if (b) open(b.dataset.k);
-  });
-  wrap.querySelector('.tm-back').addEventListener('click', shut);
-  wrap.querySelector('.tm-x').addEventListener('click', shut);
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') shut(); });
 }
 
 /* 완료 표시.
@@ -1228,6 +1377,12 @@ function bindAdd(root, redrawEntry, board) {
 
   function openEditor(row, key, itemId) {
     var fresh = key.indexOf('add:') === 0;
+    // 일하는 기간은 할 일이 아니라 항목에 붙는다. 같은 자리에서 함께 고친다.
+    var it0 = null;
+    allItems().forEach(function (pr) { if (pr[0].id === itemId) it0 = pr[0]; });
+    var effs = D.efforts || {};
+    var pum0 = it0 ? (it0['품'] || '') : '';
+    var pumNow = it0 ? (pumOf(it0) || '') : '';
     var cur = fresh ? (ADD[key.slice(4)] || {})
                     : (EDIT[key] || { t: row.querySelector('label').textContent,
                                       due: (row.querySelector('.sdue') || {}).dataset
@@ -1236,8 +1391,17 @@ function bindAdd(root, redrawEntry, board) {
     var due = cur.due || '';
     var form = document.createElement('form');
     form.className = 'tedit';
+    var pumSel = it0 && Object.keys(effs).length
+      ? '<label class="ef"><span>일하는 기간</span><select>'
+        + '<option value="">안 정함</option>'
+        + Object.keys(effs).map(function (k) {
+            return '<option value="' + esc(k) + '">' + esc(effs[k].label) + '</option>';
+          }).join('')
+        + '</select></label>'
+      : '';
     form.innerHTML =
       '<input type="text" class="et" maxlength="200" required>'
+      + pumSel
       + '<div class="erow"><input type="date" class="ed">'
       + '<button type="submit" class="ok">저장</button>'
       + '<button type="button" class="cancel">취소</button>'
@@ -1245,6 +1409,7 @@ function bindAdd(root, redrawEntry, board) {
     row.appendChild(form);
     form.querySelector('.et').value = t;
     form.querySelector('.ed').value = due;
+    if (pumSel) form.querySelector('.ef select').value = pumNow;
     form.querySelector('.et').focus();
 
     form.querySelector('.cancel').addEventListener('click', function () { form.remove(); });
@@ -1258,22 +1423,37 @@ function bindAdd(root, redrawEntry, board) {
       var nt = form.querySelector('.et').value.trim();
       if (!nt) return;
       var nd = form.querySelector('.ed').value;
+      var np = pumSel ? form.querySelector('.ef select').value : pumNow;
       var ok = form.querySelector('.ok');
       ok.disabled = true; ok.textContent = '저장 중';
+      var fail = function () { ok.disabled = false; ok.textContent = '다시 시도'; };
+      // 기간이 원본과 같아지면 기록에서 지운다. 같은 값을 두 군데 두지 않는다.
+      var pumBody = null;
+      if (it0 && np !== pumNow) {
+        pumBody = np === pum0
+          ? { del: ['item:' + itemId] }
+          : { set: (function () { var m = {};
+                m['item:' + itemId] = { item: itemId, '품': np, at: isoOf(new Date()) };
+                return m; })() };
+      }
       var set = {};
       if (fresh) {
         var a = ADD[key.slice(4)] || {};
         set[key.slice(4)] = { item: itemId, t: nt, at: a.at || isoOf(new Date()) };
         if (nd) set[key.slice(4)].due = nd;
-        post('add', { set: set }, [itemId]).catch(function () {
-          ok.disabled = false; ok.textContent = '다시 시도';
-        });
+        post('add', { set: set }, [itemId])
+          .then(function () { return pumBody ? post('edit', pumBody, [itemId]) : null; })
+          .catch(fail);
       } else {
         set[key] = { item: itemId, t: nt, at: isoOf(new Date()) };
         if (nd) set[key].due = nd;
-        post('edit', { set: set }, [itemId]).catch(function () {
-          ok.disabled = false; ok.textContent = '다시 시도';
-        });
+        var body = { set: set };
+        if (pumBody && pumBody.set) {
+          Object.keys(pumBody.set).forEach(function (k2) { set[k2] = pumBody.set[k2]; });
+        } else if (pumBody && pumBody.del) {
+          body.del = pumBody.del;
+        }
+        post('edit', body, [itemId]).catch(fail);
       }
     });
   }
@@ -1474,6 +1654,7 @@ function render(page, app) {
   paintDates(app);
   bindTheme(app);
   bindFilters(app);
+  bindChips(app);
   bindSections(app, page);
   if (page === 'index') {
     paintTally(app, r.done);

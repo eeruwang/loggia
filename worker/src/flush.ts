@@ -330,6 +330,17 @@ export async function flush(env: FlushEnv): Promise<string> {
   const editKeys = Object.keys(edit);
   for (const k of editKeys) {
     const e = edit[k];
+    // 일하는 기간은 할 일이 아니라 항목에 붙는다. 키가 `item:<아이디>` 다.
+    if (k.startsWith('item:')) {
+      const iid = e.item || k.slice(5);
+      const it2 = findItem(data, iid);
+      const w2 = e.at || today;
+      if (!it2) { note.push(`못 찾음 ${iid}`); continue; }
+      touched[iid] = touched[iid] > w2 ? touched[iid] : w2;
+      if (e['품']) it2['품'] = e['품']; else delete it2['품'];
+      note.push(`기간 ${iid}`);
+      continue;
+    }
     const i = k.lastIndexOf('.');
     if (i < 0) continue;
     const id = e.item || k.slice(0, i), fp = k.slice(i + 1);
