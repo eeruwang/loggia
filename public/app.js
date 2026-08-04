@@ -413,21 +413,30 @@ function buildIndex() {
   var shown = (D.sections || []).filter(function (x) { return x.id !== 'waiting'; });
 
   // 필터. 지금 지금 실제로 있는 상태만 단추로 낸다
-  var seen = {}, total = 0, pum = {};
+  var seen = {}, total = 0;
   shown.forEach(function (x) {
     (x.items || []).forEach(function (it) {
       seen[it.status] = (seen[it.status] || 0) + 1; total++;
-      if (it['품']) pum[it['품']] = (pum[it['품']] || 0) + 1;
     });
   });
+  /* 상태 하나마다 단추 하나를 세우면 아홉 항목에 단추 열둘이 선다.
+     큰 갈래 셋이면 족하다. 걸리는 시간은 카드가 이미 말한다. */
+  var BUCKETS = [
+    ['집필 교정 구조', '쓰는 중'],
+    ['조사 준비 선정', '조사와 준비'],
+    ['미착수', '시작 전']
+  ];
   var buttons = [['*', '전체', total]];
-  Object.keys(D.statuses || {}).forEach(function (k) {
-    if (seen[k]) buttons.push([k, D.statuses[k].label, seen[k]]);
+  var used = {};
+  BUCKETS.forEach(function (b) {
+    var n = 0;
+    b[0].split(' ').forEach(function (k) { n += seen[k] || 0; used[k] = 1; });
+    if (n) buttons.push([b[0], b[1], n]);
   });
-  Object.keys(D.efforts || {}).forEach(function (k) {
-    if (pum[k]) buttons.push([k, D.efforts[k].label, pum[k]]);
+  Object.keys(seen).forEach(function (k) {
+    if (!used[k]) buttons.push([k, (D.statuses[k] || {}).label || k, seen[k]]);
   });
-  out.push(filtersHtml(buttons, '상태와 걸리는 시간으로 골라 보기'));
+  out.push(filtersHtml(buttons, '상태로 골라 보기'));
 
   shown.forEach(function (x) {
     var items = (x.items || []).slice().sort(function (a, b) {
@@ -924,7 +933,10 @@ function bindFilters(root) {
         if (!taggable.length) return;
         var seen = 0;
         taggable.forEach(function (el) {
-          var on = k === '*' || (' ' + el.dataset.tags + ' ').indexOf(' ' + k + ' ') >= 0;
+          var hay = ' ' + el.dataset.tags + ' ';
+          var on = k === '*' || k.split(' ').some(function (kk) {
+            return hay.indexOf(' ' + kk + ' ') >= 0;
+          });
           el.hidden = !on;
           if (on) seen++;
         });
