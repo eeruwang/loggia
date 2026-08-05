@@ -48,8 +48,9 @@ def die(msg):
 
 
 def get(url):
+    req = urllib.request.Request(url, headers={'user-agent': 'loggia-tools/1.0'})
     try:
-        with urllib.request.urlopen(url, timeout=20) as r:
+        with urllib.request.urlopen(req, timeout=20) as r:
             return json.loads(r.read().decode('utf-8'))
     except urllib.error.HTTPError as e:
         die(f'기록을 읽지 못했습니다 ({e.code}). LEDGER_TOKEN 을 확인해 주세요.')
@@ -59,7 +60,8 @@ def get(url):
 
 def post(url, body):
     req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'),
-                                 headers={'content-type': 'application/json'}, method='POST')
+                                 headers={'content-type': 'application/json',
+                                          'user-agent': 'loggia-tools/1.0'}, method='POST')
     try:
         with urllib.request.urlopen(req, timeout=20) as r:
             return json.loads(r.read().decode('utf-8'))
