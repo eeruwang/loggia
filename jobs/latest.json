@@ -1,1 +1,12 @@
-{"set": {"__soak-test": {"id": "__soak-test", "strand": "연구소", "region": "한국", "title": "저장소 경유 시험", "posted": "2026-08-08", "note": "워커가 jobs/latest.json 을 걷어 판으로 옮기는지 보는 항목. 확인 뒤 지운다"}}}
+{"set": {
+  "knu-inmun-2026-1": {
+    "id": "knu-inmun-2026-1",
+    "strand": "연구소",
+    "region": "한국",
+    "title": "경북대 경북인문사회연구원 학술연구교수(비전임) 채용 1차",
+    "url": "https://knu.ac.kr/wbbs/wbbs/bbs/btin/viewBtin.action?btin.bbs_cde=8&btin.doc_no=1336348&btin.appl_no=000000&btin.page=1&btin.search_type=search_subject&btin.search_text=&popupDeco=&btin.note_div=row&menu_idx=220",
+    "posted": "2026-07-29",
+    "deadline": "2026-08-12",
+    "note": "미확인. 신설 경북인문사회연구원, 지역문화·포용사회·첨단융합 3분야 20~30명 규모. 연구계획서 1부 10pt 5쪽 이내. 검색과 KADH 게시판만 확인, 원문 열람 전면 차단."
+  }
+}}
