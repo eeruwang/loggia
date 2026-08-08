@@ -35,6 +35,7 @@ interface Env {
   };
   DIGEST_KEY: string;      // 비밀. base64 로 적은 32바이트
   DIGEST_URL: string;
+  JOBS_URL?: string;       // 공고 루틴이 저장소에 써 둔 파일. 열 분마다 이것을 훑는다
   MAIL_FROM: string;
   MAIL_TO: string;
   PREVIEW_TOKEN?: string;  // 비밀. 손으로 한 통 부쳐 볼 때 쓴다
@@ -696,6 +697,50 @@ async function pending(env: Env): Promise<AddRow[]> {
   return Object.values(m ?? {});
 }
 
+// ── 공고 걷어 들이기 ─────────────────────────────────────────────────────────
+//
+// 하루 두 번 도는 공고 루틴이 저장소의 jobs/latest.json 에 그 회차 결과를 쓴다.
+// 워커는 열 분마다 그 파일을 보고 판의 KV 로 옮긴다. 루틴이 판에 직접 넣지 못하는
+// 까닭은 예약 작업에 바깥으로 글을 보낼 손이 없기 때문이다. 저장소를 사이에 둔다.
+//
+// 같은 파일을 되풀이해 옮기지 않도록 마지막으로 본 것의 자취를 남긴다. 사람이
+// 판에서 버린 항목이 이튿날 되살아나는 일을 이 자취가 막는다.
+
+const JOBS_SEEN = 'jobs-seen';
+
+function trace(t: string): string {
+  let h = 0;
+  for (let i = 0; i < t.length; i++) { h = (h * 31 + t.charCodeAt(i)) | 0; }
+  return String(t.length) + '.' + ((h >>> 0).toString(16));
+}
+
+async function soakJobs(env: Env): Promise<string> {
+  if (!env.LEDGER || !env.JOBS_URL) return '공고 자리가 없습니다';
+  const res = await fetch(env.JOBS_URL, { cf: { cacheTtl: 0 } });
+  if (res.status === 404) return '공고 파일이 아직 없습니다';
+  if (!res.ok) return `공고 파일을 받지 못했습니다 (${res.status})`;
+
+  const text = await res.text();
+  const mark = trace(text);
+  const seen = await env.LEDGER.get(JOBS_SEEN);
+  if (seen === mark) return '공고 파일이 그대로입니다';
+
+  let rows: Record<string, unknown> = {};
+  try {
+    const body = JSON.parse(text) as { set?: Record<string, unknown> };
+    rows = body.set ?? {};
+  } catch {
+    return '공고 파일의 꼴이 낯섭니다';
+  }
+
+  const now = ((await env.LEDGER.get(JOBS_KEY, 'json')) ?? {}) as Record<string, unknown>;
+  let n = 0;
+  for (const [id, row] of Object.entries(rows)) { now[id] = row; n++; }
+  await env.LEDGER.put(JOBS_KEY, JSON.stringify(now));
+  await env.LEDGER.put(JOBS_SEEN, mark);
+  return `공고 ${n} 건을 옮겼습니다`;
+}
+
 export default {
   // 크론이 둘이다. 어느 쪽이 깨웠는지 controller.cron 으로 가른다.
   //   0 22 * * *     하루 한 번 아침 메일. UTC 라 서울 아침 일곱 시는 전날 22시다
@@ -710,6 +755,9 @@ export default {
     ctx.waitUntil(flush(env).then(
       (msg) => console.log(msg),
       (e) => console.error(`반영하지 못했습니다 ${e}`)));
+    ctx.waitUntil(soakJobs(env).then(
+      (msg) => console.log(msg),
+      (e) => console.error(`공고를 옮기지 못했습니다 ${e}`)));
   },
 
   // 손으로 한 통 부쳐 보고 싶을 때.
@@ -725,6 +773,17 @@ export default {
     // 이름이 /jobs 가 아닌 까닭. public/jobs.html 이 있으면 자산이 먼저 나가
     // 워커까지 닿지 않는다. 판 이름과 겹치지 않는 자리를 쓴다.
     if (u.pathname === '/gongo') return ledger(req, env, u.searchParams.get('k'), JOBS_KEY);
+    // 열 분을 기다리지 않고 지금 공고를 걷어 보고 싶을 때.  GET /soak?k=<PREVIEW_TOKEN>
+    if (u.pathname === '/soak') {
+      if (!env.PREVIEW_TOKEN || u.searchParams.get('k') !== env.PREVIEW_TOKEN) {
+        return new Response('없습니다', { status: 404 });
+      }
+      try {
+        return new Response(await soakJobs(env));
+      } catch (e) {
+        return new Response(`공고를 옮기지 못했습니다 ${e}`, { status: 500 });
+      }
+    }
     // 10분을 기다리지 않고 지금 반영해 보고 싶을 때.  GET /flush?k=<PREVIEW_TOKEN>
     if (u.pathname === '/flush') {
       if (!env.PREVIEW_TOKEN || u.searchParams.get('k') !== env.PREVIEW_TOKEN) {

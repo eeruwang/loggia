@@ -38,6 +38,10 @@
     // 워커의 제 살림에서 읽지 않는 이유는, 배포가 어긋나도 편지가 최신을
     // 읽게 하기 위해서다. 판과 편지는 서로 기대지 않는 편이 낫다.
     "DIGEST_URL": "https://raw.githubusercontent.com/eeruwang/loggia/main/digest.enc",
+
+    // 공고 루틴이 저장소에 써 두는 자리. 워커가 열 분마다 훑어 판으로 옮긴다.
+    // 예약 작업에는 바깥으로 글을 보낼 손이 없으므로 저장소를 사이에 둔다.
+    "JOBS_URL": "https://raw.githubusercontent.com/eeruwang/loggia/main/jobs/latest.json",
     "MAIL_TO": "moon@ilsunmoon.com",
     "MAIL_FROM": "info@loggia.moonilsun.com"
   },
