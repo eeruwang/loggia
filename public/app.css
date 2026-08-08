@@ -594,3 +594,13 @@ background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;padding
  font-size:14.5px;color:var(--ink)}
 .tm-list li:first-child{border-top:0}
 .tm-d{font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-3);flex:none}
+
+/* 공고 판의 두 단추. 카드 아래에 조용히 붙는다. */
+.jobacts { display:flex; gap:8px; margin-top:10px }
+.jobacts button {
+  font: inherit; font-size:12px; line-height:1.6;
+  padding:3px 10px; border:1px solid var(--rule); background:transparent;
+  color: var(--ink-2); border-radius:2px; cursor:pointer;
+}
+.jobacts button:hover { border-color: var(--ink); color: var(--ink) }
+.jobacts .jkeep[disabled], .jobacts .jdrop[disabled] { opacity:.5; cursor:default }

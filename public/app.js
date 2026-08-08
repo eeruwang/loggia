@@ -80,6 +80,7 @@ var NVEN = 0, NARC = 0, NJOB = 0;
 var ADD = {};         // 사이트에서 직접 적어 넣은 할 일
 var EDIT = {};        // 사이트에서 고치거나 지운 할 일
 var SRV = {};         // 끝냈다고 표시한 것
+var JOB = {};         // 공고. 판이 아니라 워커에 산다
 
 function indexData() {
   VEN = {}; BYVEN = {};
@@ -96,7 +97,6 @@ function indexData() {
   });
   NVEN = (D.venueGroups || []).reduce(function (n, g) { return n + g.venues.length; }, 0);
   NARC = (D.archive || []).length;
-  NJOB = (D.jobs || []).length;
 }
 
 function allItems() {
@@ -816,47 +816,52 @@ function buildMaterials() {
 /* ── 지난 일 ─────────────────────────────────────────────────────────────── */
 
 /* ── 공고 ────────────────────────────────────────────────────────────────
-   하루 두 번 도는 공고 루틴이 채워 넣는 자리. 새로 올라온 것을 위에 둔다.
-   마감이 지난 지 이레가 넘으면 그리지 않는다. 담아 둔 것은 남긴다. */
+   하루 두 번 도는 루틴이 워커의 /jobs 에 밀어 넣는다. 판에 들어가지 않으므로
+   세션을 열지 않아도 쌓이고, 이 화면이 그때그때 읽어 온다.
+   담아 두면 kept 가 서고, 버리면 지워져 다음 회차에 다시 오지 않는다. */
+
+function jobsLive() {
+  return Object.keys(JOB).map(function (k) {
+    var j = JOB[k] || {}; j.id = j.id || k; return j;
+  }).filter(function (j) { return !jobDead(j); });
+}
 
 function jobFresh(j) {
   if (!j.posted) return false;
-  var d = new Date(j.posted + 'T00:00:00');
-  return (Date.now() - d.getTime()) < 7 * 864e5;
+  return (Date.now() - fromIso(j.posted)) < 7 * 864e5;
 }
 
 function jobDead(j) {
   if (j.kept) return false;
   if (!j.deadline) return false;
-  var d = new Date(j.deadline + 'T23:59:59');
-  return (Date.now() - d.getTime()) > 7 * 864e5;
+  return (Date.now() - fromIso(j.deadline)) > 8 * 864e5;
 }
 
 function buildJobs() {
   var out = [headHtml('jobs', '공고')];
-  var all = (D.jobs || []).filter(function (j) { return !jobDead(j); });
+  var all = jobsLive();
+  NJOB = all.length;
 
   var kept = all.filter(function (j) { return j.kept; });
-  var strands = [['연구소', '연구소'], ['강의', '영국 강의직']];
-
   if (kept.length) {
     out.push(secbox('담아 둔 것', kept.length, kept.map(jobCard).join(''), 'jobkept', true));
   }
 
-  strands.forEach(function (st) {
-    var rows = all.filter(function (j) { return !j.kept && (j.strand || '연구소') === st[0]; });
+  [['연구소', '연구소'], ['강의', '영국 강의직']].forEach(function (st) {
+    var rows = all.filter(function (j) {
+      return !j.kept && (j.strand || '연구소') === st[0];
+    });
     if (!rows.length) return;
     rows.sort(function (a, b) {
       var fa = jobFresh(a) ? 0 : 1, fb = jobFresh(b) ? 0 : 1;
       if (fa !== fb) return fa - fb;
-      var da = a.deadline || '9999', db = b.deadline || '9999';
-      return cmp(da, db);
+      return cmp(a.deadline || '9999', b.deadline || '9999');
     });
     out.push(secbox(st[1], rows.length, rows.map(jobCard).join(''), 'job' + st[0], true));
   });
 
   if (!all.length) {
-    out.push('<p class="lede" style="padding:16px 0">열려 있는 공고가 없습니다. '
+    out.push('<p class="lede" style="padding:18px 2px">열려 있는 공고가 없습니다. '
       + '루틴은 아침 아홉 시와 저녁 여섯 시에 돕니다.</p>');
   }
 
@@ -867,18 +872,51 @@ function buildJobs() {
 function jobCard(j) {
   var facts = [];
   if (j.posted) facts.push('<span><span class="lab">올라온 날</span><b>' + dots(j.posted) + '</b></span>');
-  if (j.deadline) facts.push('<span><span class="lab">마감</span><b class="d" data-deadline="'
-    + esc(j.deadline) + '"></b></span>');
+  if (j.deadline) facts.push('<span><span class="lab">마감</span><b data-deadline="'
+    + esc(j.deadline) + '" data-wide="1"></b></span>');
   var tag = j.region ? '<span class="sub">[' + esc(j.region) + ']</span>' : '';
   var fresh = jobFresh(j) ? '<span class="mark live">새로 올라옴</span>' : '';
   var title = j.url
     ? '<a href="' + esc(j.url) + '" target="_blank" rel="noopener">' + esc(j.title) + '</a>'
     : esc(j.title);
-  return '<section class="venue-block">\n'
+  var acts = '<div class="jobacts">'
+    + '<button type="button" class="jkeep" data-id="' + esc(j.id) + '">'
+    + (j.kept ? '담아 둠' : '담아두기') + '</button>'
+    + '<button type="button" class="jdrop" data-id="' + esc(j.id) + '">버리기</button>'
+    + '</div>';
+  return '<section class="venue-block" data-job="' + esc(j.id) + '">\n'
     + '<div class="venue-head"><h3>' + title + '</h3>' + tag + fresh + '</div>\n'
     + (facts.length ? '<div class="venue-facts">' + facts.join('') + '</div>' : '') + '\n'
     + (j.note ? '<p class="note">' + esc(j.note) + '</p>' : '') + '\n'
-    + '</section>';
+    + acts + '</section>';
+}
+
+/* 두 단추. 누르면 워커에 바로 보낸다. 모아 두었다 보내지 않는다. 수가 적다. */
+function bindJobs(app) {
+  var lt = (D.meta && D.meta.ledger) || '';
+  if (!lt) return;
+  var q = '?k=' + encodeURIComponent(lt);
+  function send(body, el) {
+    el.disabled = true;
+    return fetch('/jobs' + q, { method: 'POST',
+        headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (m) { JOB = m; render('jobs', app); })
+      .catch(function () { el.disabled = false; el.textContent = '안 됐습니다'; });
+  }
+  app.querySelectorAll('.jkeep').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var id = b.dataset.id, j = JOB[id];
+      if (!j) return;
+      var row = {}; for (var k in j) row[k] = j[k];
+      row.kept = !j.kept;
+      var set = {}; set[id] = row;
+      send({ set: set }, b);
+    });
+  });
+  app.querySelectorAll('.jdrop').forEach(function (b) {
+    b.addEventListener('click', function () { send({ del: [b.dataset.id] }, b); });
+  });
 }
 
 function buildArchive() {
@@ -1767,6 +1805,7 @@ function render(page, app) {
   bindFilters(app);
   bindChips(app);
   bindSections(app, page);
+  if (page === 'jobs') bindJobs(app);
   if (page === 'index') {
     paintTally(app, r.done);
     var itemById = {};
@@ -1841,12 +1880,16 @@ function cache(k) {
 /* 기록 두 개를 먼저 읽어 데이터와 합친다. 그려 놓고 끼워 넣지 않는다. */
 function loadLedger() {
   var lt = D.meta.ledger;
-  if (!lt || document.body.dataset.page !== 'index') return Promise.resolve();
+  var page = document.body.dataset.page || 'index';
+  if (!lt || (page !== 'index' && page !== 'jobs')) return Promise.resolve();
   var q = '?k=' + encodeURIComponent(lt);
   function get(path) {
     return fetch(path + q, { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; });
+  }
+  if (page === 'jobs') {
+    return get('/jobs').then(function (j) { if (j) JOB = j; NJOB = jobsLive().length; });
   }
   return Promise.all([get('/done'), get('/add'), get('/edit')]).then(function (r) {
     if (r[0]) SRV = r[0];

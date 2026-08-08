@@ -662,6 +662,7 @@ async function send(env: Env): Promise<string> {
 const DONE_KEY = 'board';   // 끝냈다고 표시한 할 일
 const ADD_KEY = 'added';    // 사이트에서 새로 적은 할 일
 const EDIT_KEY = 'edited';  // 사이트에서 고치거나 지운 할 일
+const JOBS_KEY = 'jobs';    // 공고 루틴이 밀어 넣은 것. 판에 들어가지 않고 여기 산다
 
 function json(v: unknown, status = 200): Response {
   return new Response(JSON.stringify(v), {
@@ -719,6 +720,9 @@ export default {
     if (u.pathname === '/done') return ledger(req, env, u.searchParams.get('k'), DONE_KEY);
     if (u.pathname === '/add') return ledger(req, env, u.searchParams.get('k'), ADD_KEY);
     if (u.pathname === '/edit') return ledger(req, env, u.searchParams.get('k'), EDIT_KEY);
+    // 공고. 하루 두 번 도는 루틴이 POST 로 넣고, 공고 판이 GET 으로 읽는다.
+    //   POST /jobs?k=<LEDGER_TOKEN>  {"set": {"<id>": {...}}, "del": ["<id>"]}
+    if (u.pathname === '/jobs') return ledger(req, env, u.searchParams.get('k'), JOBS_KEY);
     // 10분을 기다리지 않고 지금 반영해 보고 싶을 때.  GET /flush?k=<PREVIEW_TOKEN>
     if (u.pathname === '/flush') {
       if (!env.PREVIEW_TOKEN || u.searchParams.get('k') !== env.PREVIEW_TOKEN) {
