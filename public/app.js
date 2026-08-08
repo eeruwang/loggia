@@ -898,7 +898,7 @@ function bindJobs(app) {
   var q = '?k=' + encodeURIComponent(lt);
   function send(body, el) {
     el.disabled = true;
-    return fetch('/jobs' + q, { method: 'POST',
+    return fetch('/gongo' + q, { method: 'POST',
         headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { if (!r.ok) throw 0; return r.json(); })
       .then(function (m) { JOB = m; render('jobs', app); })
@@ -1889,7 +1889,7 @@ function loadLedger() {
       .catch(function () { return null; });
   }
   if (page === 'jobs') {
-    return get('/jobs').then(function (j) { if (j) JOB = j; NJOB = jobsLive().length; });
+    return get('/gongo').then(function (j) { if (j) JOB = j; NJOB = jobsLive().length; });
   }
   return Promise.all([get('/done'), get('/add'), get('/edit')]).then(function (r) {
     if (r[0]) SRV = r[0];

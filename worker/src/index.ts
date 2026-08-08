@@ -721,8 +721,10 @@ export default {
     if (u.pathname === '/add') return ledger(req, env, u.searchParams.get('k'), ADD_KEY);
     if (u.pathname === '/edit') return ledger(req, env, u.searchParams.get('k'), EDIT_KEY);
     // 공고. 하루 두 번 도는 루틴이 POST 로 넣고, 공고 판이 GET 으로 읽는다.
-    //   POST /jobs?k=<LEDGER_TOKEN>  {"set": {"<id>": {...}}, "del": ["<id>"]}
-    if (u.pathname === '/jobs') return ledger(req, env, u.searchParams.get('k'), JOBS_KEY);
+    //   POST /gongo?k=<LEDGER_TOKEN>  {"set": {"<id>": {...}}, "del": ["<id>"]}
+    // 이름이 /jobs 가 아닌 까닭. public/jobs.html 이 있으면 자산이 먼저 나가
+    // 워커까지 닿지 않는다. 판 이름과 겹치지 않는 자리를 쓴다.
+    if (u.pathname === '/gongo') return ledger(req, env, u.searchParams.get('k'), JOBS_KEY);
     // 10분을 기다리지 않고 지금 반영해 보고 싶을 때.  GET /flush?k=<PREVIEW_TOKEN>
     if (u.pathname === '/flush') {
       if (!env.PREVIEW_TOKEN || u.searchParams.get('k') !== env.PREVIEW_TOKEN) {
