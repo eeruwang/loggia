@@ -76,7 +76,7 @@ function cmp(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
 var D = null;         // 보드 데이터
 var VEN = {};         // 처 id → 처
 var BYVEN = {};       // 처 id → [[항목, 지난일인가]]
-var NVEN = 0, NARC = 0;
+var NVEN = 0, NARC = 0, NJOB = 0;
 var ADD = {};         // 사이트에서 직접 적어 넣은 할 일
 var EDIT = {};        // 사이트에서 고치거나 지운 할 일
 var SRV = {};         // 끝냈다고 표시한 것
@@ -96,6 +96,7 @@ function indexData() {
   });
   NVEN = (D.venueGroups || []).reduce(function (n, g) { return n + g.venues.length; }, 0);
   NARC = (D.archive || []).length;
+  NJOB = (D.jobs || []).length;
 }
 
 function allItems() {
@@ -329,6 +330,7 @@ var TABS = [
   ['index',     'index.html',     '현황판',  null],
   ['calendar',  'calendar.html',  '달력',    null],
   ['journals',  'journals.html',  '낼 곳',   'ven'],
+  ['jobs',      'jobs.html',      '공고',    'job'],
   ['materials', 'materials.html', '재료',    null],
   ['archive',   'archive.html',   '지난 일', 'arc']
 ];
@@ -336,7 +338,7 @@ var TABS = [
 function headHtml(page, title) {
   var updated = dots(D.meta.updated);
   var tabs = TABS.map(function (t) {
-    var n = t[3] === 'ven' ? NVEN : t[3] === 'arc' ? NARC : null;
+    var n = t[3] === 'ven' ? NVEN : t[3] === 'arc' ? NARC : t[3] === 'job' ? NJOB : null;
     return '<a class="tab' + (t[0] === page ? ' here' : '') + '" href="' + t[1] + '">'
          + t[2] + (n === null ? '' : ' <span class="n">' + n + '</span>') + '</a>';
   }).join('\n  ');
@@ -812,6 +814,72 @@ function buildMaterials() {
 }
 
 /* ── 지난 일 ─────────────────────────────────────────────────────────────── */
+
+/* ── 공고 ────────────────────────────────────────────────────────────────
+   하루 두 번 도는 공고 루틴이 채워 넣는 자리. 새로 올라온 것을 위에 둔다.
+   마감이 지난 지 이레가 넘으면 그리지 않는다. 담아 둔 것은 남긴다. */
+
+function jobFresh(j) {
+  if (!j.posted) return false;
+  var d = new Date(j.posted + 'T00:00:00');
+  return (Date.now() - d.getTime()) < 7 * 864e5;
+}
+
+function jobDead(j) {
+  if (j.kept) return false;
+  if (!j.deadline) return false;
+  var d = new Date(j.deadline + 'T23:59:59');
+  return (Date.now() - d.getTime()) > 7 * 864e5;
+}
+
+function buildJobs() {
+  var out = [headHtml('jobs', '공고')];
+  var all = (D.jobs || []).filter(function (j) { return !jobDead(j); });
+
+  var kept = all.filter(function (j) { return j.kept; });
+  var strands = [['연구소', '연구소'], ['강의', '영국 강의직']];
+
+  if (kept.length) {
+    out.push(secbox('담아 둔 것', kept.length, kept.map(jobCard).join(''), 'jobkept', true));
+  }
+
+  strands.forEach(function (st) {
+    var rows = all.filter(function (j) { return !j.kept && (j.strand || '연구소') === st[0]; });
+    if (!rows.length) return;
+    rows.sort(function (a, b) {
+      var fa = jobFresh(a) ? 0 : 1, fb = jobFresh(b) ? 0 : 1;
+      if (fa !== fb) return fa - fb;
+      var da = a.deadline || '9999', db = b.deadline || '9999';
+      return cmp(da, db);
+    });
+    out.push(secbox(st[1], rows.length, rows.map(jobCard).join(''), 'job' + st[0], true));
+  });
+
+  if (!all.length) {
+    out.push('<p class="lede" style="padding:16px 0">열려 있는 공고가 없습니다. '
+      + '루틴은 아침 아홉 시와 저녁 여섯 시에 돕니다.</p>');
+  }
+
+  out.push(footHtml());
+  return { html: out.join('') };
+}
+
+function jobCard(j) {
+  var facts = [];
+  if (j.posted) facts.push('<span><span class="lab">올라온 날</span><b>' + dots(j.posted) + '</b></span>');
+  if (j.deadline) facts.push('<span><span class="lab">마감</span><b class="d" data-deadline="'
+    + esc(j.deadline) + '"></b></span>');
+  var tag = j.region ? '<span class="sub">[' + esc(j.region) + ']</span>' : '';
+  var fresh = jobFresh(j) ? '<span class="mark live">새로 올라옴</span>' : '';
+  var title = j.url
+    ? '<a href="' + esc(j.url) + '" target="_blank" rel="noopener">' + esc(j.title) + '</a>'
+    : esc(j.title);
+  return '<section class="venue-block">\n'
+    + '<div class="venue-head"><h3>' + title + '</h3>' + tag + fresh + '</div>\n'
+    + (facts.length ? '<div class="venue-facts">' + facts.join('') + '</div>' : '') + '\n'
+    + (j.note ? '<p class="note">' + esc(j.note) + '</p>' : '') + '\n'
+    + '</section>';
+}
 
 function buildArchive() {
   var out = [headHtml('archive', '지난 일')];
@@ -1686,14 +1754,14 @@ function watchData(page, board) {
 
 var BUILD = {
   index: buildIndex, calendar: buildCalendar, journals: buildJournals,
-  materials: buildMaterials, archive: buildArchive
+  materials: buildMaterials, archive: buildArchive, jobs: buildJobs
 };
 
 function render(page, app) {
   var r = BUILD[page]();
   app.innerHTML = r.html;
   document.title = 'LOGGIA — ' + (page === 'index' ? D.meta.title
-    : { calendar: '달력', journals: '낼 곳', materials: '재료', archive: '지난 일' }[page]);
+    : { calendar: '달력', journals: '낼 곳', materials: '재료', archive: '지난 일', jobs: '공고' }[page]);
   paintDates(app);
   bindTheme(app);
   bindFilters(app);

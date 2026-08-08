@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loggia</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preload" href="font/Pretendard-subset.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="app.css">
+<script>
+/* 화면이 그려지기 전에 밝기를 정한다. 늦게 정하면 한 번 번쩍인다. */
+(function(){try{document.documentElement.dataset.theme=localStorage.getItem('loggia.theme')||'auto'}catch(e){}})();
+</script>
+</head>
+<!-- 다섯 페이지가 같은 HTML 틀이다. 다른 것은 이 한 낱말뿐이고, 무엇을 그릴지는
+     app.js 가 여기를 보고 정한다. HTML 틀은 내용이 바뀌어도 그대로이므로
+     저장소에 한 번만 쌓인다. -->
+<body data-page="jobs">
+<div class="gate" id="gate">
+  <div class="box">
+    <div class="name">Loggia</div>
+    <h1>잠긴 보드입니다</h1>
+    <p class="lede">암호를 넣으면 이 브라우저에서 바로 풀립니다.<br>내용이 서버로 오가지 않습니다.</p>
+    <form id="f">
+      <input type="password" id="pw" placeholder="암호" autocomplete="current-password" autofocus>
+      <button type="submit" id="go">열기</button>
+      <label class="remember"><input type="checkbox" id="rm"> 이 기기에서 기억하기</label>
+    </form>
+    <div class="msg" id="m"></div>
+  </div>
+</div>
+<div id="app" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>

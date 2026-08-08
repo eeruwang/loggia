@@ -20,7 +20,7 @@ const app = require(path.join(__dirname, '..', 'public', 'app.js'));
 const D = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
 fs.mkdirSync(outDir, { recursive: true });
 
-for (const page of ['index', 'calendar', 'journals', 'materials', 'archive']) {
+for (const page of ['index', 'calendar', 'journals', 'materials', 'archive', 'jobs']) {
   const r = app.build(JSON.parse(JSON.stringify(D)), page);
   fs.writeFileSync(path.join(outDir, page + '.html'), r.html);
   console.log('  ' + page + '.html  ' + Math.round(r.html.length / 1024) + 'KB');

@@ -101,7 +101,7 @@ echo "$STAMP" > "$WORK/repo/.stamp"
 # 워커의 assets 는 public/ 하나만 본다. HTML 다섯 페이지와 스타일과 화면 만드는 코드와
 # 잠긴 데이터가 모두 여기 있다.
 mkdir -p "$WORK/repo/public"
-for f in index calendar journals materials archive; do
+for f in index calendar journals materials archive jobs; do
   [ -f "$ROOT/public/$f.html" ] && cp "$ROOT/public/$f.html" "$WORK/repo/public/$f.html" || true
 done
 cp "$ROOT/public/app.css" "$WORK/repo/public/app.css"
@@ -116,7 +116,7 @@ fi
 # 두 자리에 같은 판이 있으면 언젠가 한쪽이 낡는다. 그것이 이 판을 한 번 갈라놓았다.
 rm -rf "$WORK/repo/font"
 rm -f "$WORK/repo/CNAME" "$WORK/repo/.nojekyll" "$WORK/repo/data.enc"
-for f in index calendar journals materials archive; do
+for f in index calendar journals materials archive jobs; do
   rm -f "$WORK/repo/$f.html"
 done
 
