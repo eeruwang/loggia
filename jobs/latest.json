@@ -1,42 +1,32 @@
 {"set": {
-  "knu-inmun-2026-1": {
-    "id": "knu-inmun-2026-1",
-    "strand": "연구소",
-    "region": "한국",
-    "title": "경북대 경북인문사회연구원 학술연구교수(비전임) 채용 1차",
-    "url": "https://www.knu.ac.kr/wbbs/wbbs/bbs/btin/viewBtin.action?btin.bbs_cde=8&btin.doc_no=1336348&btin.appl_no=000000&btin.page=1&btin.search_type=search_subject&btin.search_text=&popupDeco=&btin.note_div=row&menu_idx=220",
-    "posted": "2026-07-29",
-    "deadline": "2026-08-12",
-    "note": "곧 마감. 지역문화·포용사회·첨단융합 3분야 학술연구교수 다수 채용, 대구 근무. 문학 포함이나 영상 분야 명시 없음. 원문 전면 차단, 검색 스니펫과 KADH 교차확인, 미확인."
+  "ual-csm-narrenv-2026-1": {
+    "id": "ual-csm-narrenv-2026-1",
+    "strand": "강의",
+    "region": "영국",
+    "title": "Lecturer in Hybrid Environments and Speculative Practice (MA Narrative Environments, Central Saint Martins)",
+    "url": "https://jobs.arts.ac.uk/job/12622-lecturer-in-hybrid-environments-and-speculative-practice/",
+    "posted": "",
+    "deadline": "2026-08-19",
+    "note": "내러티브 인바이런먼트 석사과정 0.6 FTE 영구직 강의. 마감일이 검색결과마다 8월19일 21일 27일로 엇갈려 원문에서 재확인 필요. 스폰서십과 박사요건 불명. 미확인."
   },
-  "khu-smarttourism-2026-1": {
-    "id": "khu-smarttourism-2026-1",
-    "strand": "연구소",
-    "region": "한국",
-    "title": "경희대 스마트관광연구소 학술연구교수 모집",
-    "url": "https://step.khu.ac.kr/",
-    "posted": "2026-08-07",
-    "deadline": "2026-08-14",
-    "note": "관광 분야 NRF 학술연구교수. 하이브레인넷 스니펫으로만 확인, 근무지와 정주요건 등 세부사항 미상. 개별 원문 못 찾아 기관 홈페이지 목록에서 제목으로 찾을 것. 미확인."
-  },
-  "chosun-humandata-2026-1": {
-    "id": "chosun-humandata-2026-1",
-    "strand": "연구소",
-    "region": "한국",
-    "title": "조선대 인문데이터과학연구센터 전임 HK연구교수 채용",
-    "url": "https://cds.chosun.ac.kr/%EC%B0%B8%EC%97%AC%EA%B8%B0%ED%9A%8C/%EC%B1%84%EC%9A%A9",
+  "mdx-filmtheory-2026-1": {
+    "id": "mdx-filmtheory-2026-1",
+    "strand": "강의",
+    "region": "영국",
+    "title": "Middlesex University 필름 씨어리 준강사(Associate Lecturer, 0.8 FTE 기간제)",
+    "url": "https://jobs.mdx.ac.uk/Upload/vacancies/files/864/ACI22-Associate%20Lecturer%20in%20Film_Fixed%20Term.pdf",
     "posted": "",
     "deadline": "",
-    "note": "언어·인지·사회 생애발달 연구, 전임 HK연구교수. 적격자 충원 시까지 상시모집이라 마감일 없음. 원문 전면 차단, 기관 자체 채용란 검색 스니펫만 확인, 미확인."
+    "note": "필름 씨어리 담당 준강사, 급여 3만1210~3만5792파운드 pro rata. 마감일 원문 검색으로 못 찾음, 박사 HEA 스폰서십 모두 불명. 미확인, 마감일 미상."
   },
-  "hufs-africa-2026-1": {
-    "id": "hufs-africa-2026-1",
-    "strand": "연구소",
-    "region": "한국",
-    "title": "한국외국어대 아프리카연구소 HK3.0사업단 HK연구교수(비전임) 채용",
-    "url": "http://www.afstudy.org/bbs/board.php?bo_table=6_1&wr_id=174",
+  "ugm-digitalmedia-2026-1": {
+    "id": "ugm-digitalmedia-2026-1",
+    "strand": "강의",
+    "region": "영국",
+    "title": "University of Greater Manchester Digital Media Practice Lecturer (ACT-201A, Photography Senior Lecturer와 병기 공고)",
+    "url": "https://www.jobs.ac.uk/job/DQL997/photography-senior-lecturer-or-digital-media-practice-lecturer-act-201a",
     "posted": "",
     "deadline": "",
-    "note": "개발학·사회문화·아프리카지역학, 인문학 전공 우대, 박사학위 필수, 상시모집. 용인 글로벌캠퍼스 근무, 최근 5년 실적 자유양식 제출. 원문 전면 차단, 검색 스니펫만 확인, 미확인."
+    "note": "디지털 미디어 프랙티스 강사직, 경력 초기 지원자 환영, 포트폴리오 제출 요구. 마감일과 스폰서십 여부 확인 안 됨. 미확인, 마감일 미상."
   }
 }}
