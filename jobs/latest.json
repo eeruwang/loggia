@@ -1,42 +1,142 @@
 {"set": {
-  "knu-inmun-2026-2": {
-    "id": "knu-inmun-2026-2",
-    "strand": "연구소",
-    "region": "한국",
-    "title": "경북대 경북인문사회연구원 학술연구교수 (2026년 9월 라운드)",
-    "url": "https://www.kadh.org/%EC%B1%84%EC%9A%A9-%EB%B9%84%EC%A0%84%EC%9E%84-%EA%B2%BD%EB%B6%81%EB%8C%80-%EA%B2%BD%EB%B6%81%EC%9D%B8%EB%AC%B8%EC%82%AC%ED%9A%8C%EC%97%B0%EA%B5%AC%EC%9B%90-2026%EB%85%84-9%EC%9B%94/",
-    "posted": "2026-08-17",
-    "deadline": "",
-    "note": "마감일 미상. 인문사회대학기초연구소지원사업 2차로 추정, 1차(마감 8월12일)와 별개. 연 6천만원 인건비, 비수도권 이전시 정착지원금. KADH 게시판 제목만 확인, 원문 열람 차단."
+  "csm-2026-1": {
+    "id": "csm-2026-1",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "UAL 센트럴 세인트마틴스, Lecturer in Hybrid Environments and Speculative Practice (MA Narrative Environments)",
+    "url": "https://jobs.arts.ac.uk/job/12622-lecturer-in-hybrid-environments-and-speculative-practice/",
+    "posted": "",
+    "deadline": "2026-08-19",
+    "note": "곧 마감. 오늘 23시55분 영국시간 마감. 0.6FTE, 급여 4만4375~5만2977파운드 비례. 스폰서십과 박사요건 미상. 스니펫만 확인, 원문 열람 차단."
   },
-  "hallym-hk3-2026-1": {
-    "id": "hallym-hk3-2026-1",
-    "strand": "연구소",
-    "region": "한국",
-    "title": "한림대 글로벌사회공헌연구소 HK3.0 아프리카넥서스연구단 HK연구교수(비전임)",
-    "url": "https://www.jinhakpro.com/recruit/26687",
-    "posted": "2026-08-15",
+  "sussex-2026-1": {
+    "id": "sussex-2026-1",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "University of Sussex, Assistant Professor in Digital Media (Fixed Term)",
+    "url": "https://www.jobs.ac.uk/job/CHN823/assistant-professor-in-digital-media",
+    "posted": "2026-08-10",
     "deadline": "2026-08-23",
-    "note": "곧 마감. 아프리카학·국제관계·개발학·디지털혁신 분야로 프로필과 어긋남. 진학프로 스니펫만 확인, 원문 열람 차단. 검색 결과에 2025년 접수기간을 언급하는 자료도 있어 마감일 재확인 필요."
+    "note": "곧 마감. Grade7.4, 급여 4만2254~4만4746파운드, 파트타임 비례 가능 문구 있음. 스폰서십 미상. 스니펫만 확인, 원문 열람 차단."
   },
-  "snu-iia-2026-1": {
-    "id": "snu-iia-2026-1",
-    "strand": "연구소",
-    "region": "한국",
-    "title": "서울대 국제학연구소 연구교원 채용(한국외교사·한국현대사·한국문화사)",
-    "url": "https://www.snu.ac.kr/snunow/notice/job-openings?md=v&bbsidx=129122",
-    "posted": "2026-08-15",
-    "deadline": "2026-08-25",
-    "note": "곧 마감. 전공이 프로필과 어긋남, 1명 모집, 계약 1년 1회 재계약 가능, 임용예정일 11월1일. 스니펫만 확인, 원문 열람 차단."
-  },
-  "yonsei-ima-2026-1": {
-    "id": "yonsei-ima-2026-1",
-    "strand": "연구소",
-    "region": "한국",
-    "title": "연세대 매체와예술연구소 학술연구교수 초빙",
-    "url": "https://ima.yonsei.ac.kr/matd/m_board.do",
+  "ual-lcc-2026-1": {
+    "id": "ual-lcc-2026-1",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "UAL 런던 커뮤니케이션 칼리지, Associate Lecturer, BA(Hons) Immersive Media and Mixed Reality",
+    "url": "https://jobs.arts.ac.uk/",
     "posted": "",
     "deadline": "",
-    "note": "미확인. 감시 목록 1순위, 실기 작품 성과 인정 기관. 검색 스니펫에서 초빙 사실만 확인, 모집분야와 마감일 확인 못함. 원문 열람 전면 차단, 목록에서 제목으로 찾을 것."
+    "note": "미확인. 몰입형 미디어 시간강사직, UK 정주 요건 명시. 마감일 미상. 스니펫만 확인, 원문 열람 차단, 목록에서 제목으로 찾을 것."
+  },
+  "ual-lcc-2026-2": {
+    "id": "ual-lcc-2026-2",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "UAL 런던 커뮤니케이션 칼리지, Lecturer in Immersive Media and 3D Computer Animation",
+    "url": "https://ual.tal.net/vx/mobile-0/appcentre-1/brand-1/candidate/so/pm/6/pl/1/opp/10071-Lecturer-in-Immersive-Media-and-3D-Computer-Animation/en-GB",
+    "posted": "",
+    "deadline": "",
+    "note": "미확인. BA몰입형미디어·MA3D컴퓨터애니메이션 담당. 계약형태와 마감일 미상. 스니펫만 확인, 원문 열람 차단."
+  },
+  "ual-lcc-2026-4": {
+    "id": "ual-lcc-2026-4",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "UAL 런던 커뮤니케이션 칼리지, Senior Lecturer in Communications and Media (Digital Media Production)",
+    "url": "https://ual.tal.net/vx/lang-en-GB/appcentre-1/candidate/postings/9018",
+    "posted": "",
+    "deadline": "",
+    "note": "미확인. 시니어 렉처러급. 계약형태와 마감일 미상. 스니펫만 확인, 원문 열람 차단."
+  },
+  "keele-2026-1": {
+    "id": "keele-2026-1",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Keele University, Lecturer in Digital Media",
+    "url": "https://www.jobs.ac.uk/job/DNX238/lecturer-in-digital-media",
+    "posted": "",
+    "deadline": "",
+    "note": "미확인. 세부 요건과 마감일 미상. 스니펫만 확인, 원문 열람 차단."
+  },
+  "uca-2026-1": {
+    "id": "uca-2026-1",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "University for the Creative Arts, Lecturer/Senior Lecturer in Digital Media Arts",
+    "url": "https://www.jobs.ac.uk/job/DPQ606/lecturer-senior-lecturer-digital-media-arts",
+    "posted": "",
+    "deadline": "",
+    "note": "미확인. 런던 밖 캠퍼스(파넘 등). 마감일 미상. 스니펫만 확인, 원문 열람 차단."
+  },
+  "mmu-2026-1": {
+    "id": "mmu-2026-1",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Manchester Metropolitan University, Lecturer in Film and Media Studies",
+    "url": "https://www.jobs.ac.uk/job/DBW252/lecturer-film-and-media-studies",
+    "posted": "",
+    "deadline": "",
+    "note": "미확인. 스크린스터디스 연구그룹 소속 학과. 마감일 미상. 스니펫만 확인, 원문 열람 차단."
+  },
+  "aub-2026-1": {
+    "id": "aub-2026-1",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Arts University Bournemouth, Lecturer/Senior Lecturer, BA(Hons) Film Production (2명)",
+    "url": "https://www.jobs.ac.uk/job/DBR221/lecturer-senior-lecturer-ba-hons-film-production-x2-posts",
+    "posted": "",
+    "deadline": "",
+    "note": "미확인. 실무 경력 있는 실기 교원 선호 문구. 마감일 미상. 스니펫만 확인, 원문 열람 차단."
+  },
+  "bu-2026-1": {
+    "id": "bu-2026-1",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Bournemouth University, Lecturer (Academic) in Film Production",
+    "url": "https://www.bournemouth.ac.uk/lecturer-academic-film-production",
+    "posted": "",
+    "deadline": "",
+    "note": "미확인. 마감일 미상. 스니펫만 확인, 원문 열람 차단."
+  },
+  "bu-2026-2": {
+    "id": "bu-2026-2",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Bournemouth University, Lecturer (Academic) in Media and Film Theory (Fixed-Term)",
+    "url": "https://www.bournemouth.ac.uk/lecturer-academic-media-film-theory-fixed-term",
+    "posted": "",
+    "deadline": "",
+    "note": "미확인. 기간제. 마감일 미상. 스니펫만 확인, 원문 열람 차단."
+  },
+  "brighton-2026-1": {
+    "id": "brighton-2026-1",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "University of Brighton, Senior Lecturer, BA(Hons) Film & Screen Media Production",
+    "url": "https://jobs.brighton.ac.uk/Vacancy.aspx?id=3977&forced=2",
+    "posted": "",
+    "deadline": "",
+    "note": "미확인. 업계 경력과 연계 선호 명시. 마감일 미상. 스니펫만 확인, 원문 열람 차단."
+  },
+  "ucl-2026-1": {
+    "id": "ucl-2026-1",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "UCL, Lecturer in Moving Image Practice and Theory",
+    "url": "https://www.jobs.ac.uk/job/DML926/lecturer-in-moving-image-practice-and-theory",
+    "posted": "",
+    "deadline": "",
+    "note": "미확인, 근거 얇음. 무빙이미지 분야 정면 일치하나 세부요건 확인 못함. 스니펫만 확인, 원문 열람 차단."
+  },
+  "mdx-2026-3": {
+    "id": "mdx-2026-3",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Middlesex University, Associate Lecturer in Film Theory (0.8FTE, Ref ACI22)",
+    "url": "https://jobs.mdx.ac.uk/Upload/vacancies/files/864/ACI22-Associate%20Lecturer%20in%20Film_Fixed%20Term.pdf",
+    "posted": "",
+    "deadline": "",
+    "note": "미확인. 헨던캠퍼스, Grade6, 급여 3만1210~3만5792파운드 비례, 산휴대체 9개월 기간제. 시작일이 10월초 귀국 전일 가능성. 스니펫만 확인, 원문 열람 차단."
   }
 }}
