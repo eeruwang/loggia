@@ -276,6 +276,19 @@ def cmd_set(d, args):
                 + '가능한 값: ' + ' '.join(d.get('efforts', {})))
         it[f] = val
         msg = f'{args.id} {f}: {old or "비어 있음"} → {val}'
+        # 제출·심사·대기가 되면 보낸 것으로 따라 옮긴다.
+        # 상태만 바꾸고 이동을 빠뜨리는 일이 잦아서 묶었다 (2026-08-19).
+        if f == 'status' and val in ('제출', '심사', '대기'):
+            _, sec = find(d, args.id)
+            if sec.get('id') in ('now', 'later'):
+                dest = None
+                for s in sections(d):
+                    if s['id'] == 'waiting':
+                        dest = s
+                if dest is not None:
+                    sec['items'].remove(it)
+                    dest['items'].append(it)
+                    msg += f'\n{args.id} 을(를) {sec["label"]} 에서 {dest["label"]} 으로 함께 옮깁니다'
     else:
         die(f'고칠 수 없는 항목입니다: {f}\n'
             + '날짜: ' + ' '.join(DATE_KEYS) + '\n그 외: ' + ' '.join(FLAT_KEYS))
