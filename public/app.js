@@ -424,31 +424,8 @@ function buildIndex() {
   // 답을 기다리는 것은 달력의 응답 시계가 맡는다. 여기서 또 보이면 두 번 읽게 된다
   var shown = (D.sections || []).filter(function (x) { return x.id !== 'waiting'; });
 
-  // 필터. 지금 지금 실제로 있는 상태만 단추로 낸다
-  var seen = {}, total = 0;
-  shown.forEach(function (x) {
-    (x.items || []).forEach(function (it) {
-      seen[it.status] = (seen[it.status] || 0) + 1; total++;
-    });
-  });
-  /* 상태 하나마다 단추 하나를 세우면 아홉 항목에 단추 열둘이 선다.
-     큰 갈래 셋이면 족하다. 걸리는 시간은 카드가 이미 말한다. */
-  var BUCKETS = [
-    ['집필 교정 구조', '쓰는 중'],
-    ['조사 준비 선정', '조사와 준비'],
-    ['미착수', '시작 전']
-  ];
-  var buttons = [['*', '전체', total]];
-  var used = {};
-  BUCKETS.forEach(function (b) {
-    var n = 0;
-    b[0].split(' ').forEach(function (k) { n += seen[k] || 0; used[k] = 1; });
-    if (n) buttons.push([b[0], b[1], n]);
-  });
-  Object.keys(seen).forEach(function (k) {
-    if (!used[k]) buttons.push([k, (D.statuses[k] || {}).label || k, seen[k]]);
-  });
-  out.push(filtersHtml(buttons, '상태로 골라 보기'));
+  // 상태 필터는 뺐다(2026-08-19). 보낸 것이 현황판에 없어 반쪽이었다.
+
 
   shown.forEach(function (x) {
     var items = (x.items || []).slice().sort(function (a, b) {
