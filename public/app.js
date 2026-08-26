@@ -502,6 +502,7 @@ function buildJournals() {
       }
       if (v.review) facts.push('<span><span class="lab">심사</span>' + esc(v.review) + '</span>');
       if (v.clarivate) facts.push('<span><span class="lab">색인</span>클래리베이트 대조 완료</span>');
+      if (v['라이선스']) facts.push('<span><span class="lab">라이선스</span>' + esc(v['라이선스']) + '</span>');
 
       var rows = BYVEN[v.id] || [];
       var hist = rows.length
