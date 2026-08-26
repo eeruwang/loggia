@@ -1,14 +1,4 @@
 {"set": {
-  "salford-filmprod-2026-1": {
-    "id": "salford-filmprod-2026-1",
-    "strand": "영국강의직",
-    "region": "영국",
-    "title": "University of Salford, Lecturer in Film Production",
-    "url": "https://www.jobs.ac.uk/job/DRU646/lecturer-in-film-production",
-    "posted": "",
-    "deadline": "",
-    "note": "미확인, 검색 스니펫만 확인. 맨체스터 미디어시티 소재 영화 제작 강의직. 현업 영화 실무 경력과 고등교육 강의 경력을 필수로 요구하고 연구 실적도 봄. 스폰서십과 마감일 불명."
-  },
   "uallcc-filmscreen-2026-1": {
     "id": "uallcc-filmscreen-2026-1",
     "strand": "영국강의직",
@@ -16,37 +6,27 @@
     "title": "UAL London College of Communication, Associate Lecturer Film & Screen Studies",
     "url": "https://jobs.arts.ac.uk/job/12686-associate-lecturer-film-and-screen-studies/",
     "posted": "",
-    "deadline": "",
-    "note": "미확인, 검색 스니펫만 확인. BA 영화와 스크린 스터디즈 2학년 유닛(배급과 네트워크) 강의. 영화 배급, 페스티벌 프로그래밍 등 현업 경력을 요구, 박사는 조건 아님. 시급제, 마감일 미상."
+    "deadline": "2026-09-07",
+    "note": "미확인, 검색 스니펫 기준 마감 9월7일 23시55분. 스크리닝 큐레이팅과 배급 실무 경력을 요구, 박사는 조건 아님. 시급 61.88파운드, 영국 거주자만 지원 가능해 스폰서십은 어려워 보임."
   },
-  "brighton-filmscreen-2026-1": {
-    "id": "brighton-filmscreen-2026-1",
+  "csm-courseleader-2026-1": {
+    "id": "csm-courseleader-2026-1",
     "strand": "영국강의직",
     "region": "영국",
-    "title": "University of Brighton, Senior Lecturer BA (Hons) Film & Screen Media Production",
-    "url": "https://jobs.brighton.ac.uk/Vacancy.aspx?id=3977&forced=2",
+    "title": "UAL Central Saint Martins, Interim Course Leader, MA Performance: Screen",
+    "url": "https://jobs.arts.ac.uk/job/12635-interim-course-leader/",
     "posted": "",
     "deadline": "",
-    "note": "미확인, 검색 스니펫만 확인. 영화 텔레비전 미디어 제작 전반을 가르치는 시니어 렉처러직. 현업 경력에 더해 박사 소지나 취득 임박을 요구, 실기 기반 연구에 관심 기대. 마감일 미상."
+    "note": "미확인, 검색 스니펫만 확인. 스크린 기반 퍼포먼스 실기 석사과정의 임시 코스 리더직. 마감일과 계약 조건을 찾지 못해 원문 확인이 필요함."
   },
-  "mdx-uiux-hpl-2026-1": {
-    "id": "mdx-uiux-hpl-2026-1",
+  "glasgow-digitalmedia-2026-1": {
+    "id": "glasgow-digitalmedia-2026-1",
     "strand": "영국강의직",
     "region": "영국",
-    "title": "Middlesex University, Hourly Paid Lecturer in UI/UX and Digital Product",
-    "url": "https://www.jobs.ac.uk/job/DSD341/hourly-paid-lecturer-in-ui-ux-and-digital-product",
-    "posted": "2026-07-03",
-    "deadline": "",
-    "note": "미확인, 검색 스니펫만 확인. 시간당 59.33파운드 시간강사직, UI/UX와 디지털 프로덕트 디자인 강의. 실무 겸 연구자 선호, 2026년 7월3일 게시, 마감일 불명."
-  },
-  "aub-filmprod-2026-1": {
-    "id": "aub-filmprod-2026-1",
-    "strand": "영국강의직",
-    "region": "영국",
-    "title": "Arts University Bournemouth, Lecturer/Senior Lecturer BA (Hons) Film Production (2 posts)",
-    "url": "https://www.jobs.ac.uk/job/DBR221/lecturer-senior-lecturer-ba-hons-film-production-x2-posts",
+    "title": "University of Glasgow, Lecturer in Digital Media and Culture (Teaching and Scholarship)",
+    "url": "https://www.jobs.ac.uk/job/DFK409/lecturer-in-digital-media-and-culture-teaching-and-scholarship",
     "posted": "",
     "deadline": "",
-    "note": "미확인, 검색 스니펫만 확인. 본머스 필름스쿨 영화 제작 강의 2자리, 경력에 따라 렉처러 또는 시니어 렉처러로 임용. 프로듀싱 촬영 연출 등 현업 실무와 강의 경력 요구. 마감일 미상."
+    "note": "미확인, 검색 결과에서 게시일과 마감일이 서로 다른 두 시기로 엇갈려 나와 신뢰도 낮음. 강의 분야는 디지털 미디어와 문화로 전공과 잘 맞음. 원문 확인 필요."
   }
 }}
