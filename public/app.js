@@ -1052,6 +1052,60 @@ function waitingClock() {
 
 /* 달력. 날짜는 페이지가 열릴 때 그린다. 그래야 오늘이 늘 가운데 온다.
    연월까지만 아는 날짜는 찍지 않는다. 하루를 지어내야 하기 때문이다. */
+/* 짐작으로 적어 둔 되풀이는 그 날이 오기 전에 확인해야 한다. 지금은 달력에
+   「짐작」이라는 글자만 붙어 있고 확인하라는 말이 어디에도 없다. 예순 날 앞에서부터
+   여기 세운다. 그 낼 곳에 올해 마감이 이미 확정돼 있으면 세우지 않는다. */
+function guessChecks() {
+  var today = today0(), rows = [];
+  (D.repeats || []).forEach(function (r) {
+    if (!r['짐작']) return;
+
+    var fixed = VEN[r.venue] && VEN[r.venue].deadline
+      && VEN[r.venue].deadline >= isoOf(today);
+    (D.sections || []).forEach(function (sec) {
+      (sec.items || []).forEach(function (it) {
+        var dl = (it.dates || {}).deadline;
+        if (it.venue === r.venue && dl && dl >= isoOf(today)) fixed = true;
+      });
+    });
+    if (fixed) return;
+
+    var next = null;
+    for (var o = 0; o <= 14 && !next; o++) {
+      var m = new Date(today.getFullYear(), today.getMonth() + o, 1);
+      var yy = m.getFullYear(), mn = m.getMonth() + 1;
+      if ((r.months || []).indexOf(mn) < 0) continue;
+      var last = new Date(yy, mn, 0).getDate();
+      var day = (typeof r.day === 'number') ? Math.min(r.day, last) : last;
+      var dt = new Date(yy, mn - 1, day);
+      if (dt >= today) next = dt;
+    }
+    if (!next) return;
+    var n = Math.round((next - today) / 86400000);
+    if (n > 60) return;
+    rows.push({ r: r, n: n, iso: isoOf(next) });
+  });
+  if (!rows.length) return '';
+
+  rows.sort(function (a, b) { return a.n - b.n; });
+  var body = rows.map(function (x) {
+    var v = VEN[x.r.venue] || {};
+    var nm = v.url
+      ? '<a href="' + esc(v.url) + '" target="_blank" rel="noopener">' + esc(v.name || '') + '</a>'
+      : esc(v.name || '');
+    return '<div class="rep"><span class="when">' + esc(dots(x.iso)) + ' 무렵</span>'
+      + '<span class="t">' + esc(x.r.label) + '</span>'
+      + (nm ? '<span class="vn">' + nm + '</span>' : '')
+      + '<span class="guess">짐작</span>'
+      + (x.r.note ? '<span class="n">' + esc(x.r.note) + '</span>' : '')
+      + '</div>';
+  }).join('');
+  return secbox('올해 날짜를 확인할 것', rows.length,
+    '<p class="lede" style="padding:2px 2px 10px">지난해 날짜로 적어 둔 것입니다. '
+    + '낼 곳을 열어 올해 마감을 확인하고 판에 옮겨 주세요.</p>'
+    + '<div class="reps">' + body + '</div>');
+}
+
 function buildCalendar() {
   var ev = [];
   (D.sections || []).forEach(function (sec) {
@@ -1107,6 +1161,7 @@ function buildCalendar() {
   });
 
   var out = [headHtml('calendar', '달력')];
+  out.push(guessChecks());
   out.push(waitingClock());
   if (D.repeats && D.repeats.length) {
     var rl = D.repeats.map(function (r) {

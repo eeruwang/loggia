@@ -199,4 +199,10 @@ git commit -q -m "$MSG"
 git push -q origin HEAD 2>&1 | sed "s/${TOKEN}/<token>/g" || true
 echo "올렸습니다  →  https://loggia.moonilsun.com/"
 
+# 방금 올린 data.enc 의 지문을 다시 적는다. 이걸 안 하면 한 폴더에서 두 번째로
+# 올릴 때 자기가 올린 것에 자기가 걸려 「그 사이에 바뀌었다」고 물린다.
+if [ -f "$WORK/repo/public/data.enc" ]; then
+  sha256sum "$WORK/repo/public/data.enc" | cut -d' ' -f1 > "$ROOT/.fetched-from"
+fi
+
 rm -rf "$WORK"
