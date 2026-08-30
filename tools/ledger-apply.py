@@ -21,8 +21,10 @@ ledger-apply.py — 사이트에서 직접 체크하거나 추가한 것을 데�
         → 할 일에 넣지 않고 버린다. 마지막 작업일만 바꾼다
       /edit 는 사이트에서 수정하거나 삭제한 할 일. 키는 처음 글로 만든 것이다
         → 글과 날짜를 바꾼다. del 이 있으면 뺀다
-      /seed 는 공고 판에서 담아 둔 공고
-        → `later` 칸에 새 항목으로 심는다. 같은 id 가 이미 있으면 건너뛴다
+      /seed 는 공고 판에서 담아 둔 것
+        → 채용은 `later` 칸에 새 항목으로 심는다. 같은 id 가 있으면 건너뛴다
+        → `venue` 가 적혀 있으면 그 낼 곳의 마감만 갈아 끼운다
+        → 갈래가 지면인데 `venue` 가 없으면 낼 곳을 새로 만들 자리라 알려만 준다
 
     보통은 워커가 10분마다 알아서 한다. 이 도구는 워커가 못 할 때와,
     무엇이 쌓였는지 눈으로 보고 싶을 때 쓴다.
@@ -156,12 +158,38 @@ def main():
     plan, touched_ids = [], {}
     clear_done, clear_add, clear_edit, clear_seed = [], [], [], []
     used_add = set()
-    seeds = []
+    seeds, venue_seeds = [], []
 
-    # ── 공고 판에서 담아 둔 것. 새 항목으로 심는다 ────────────────────────
+    # ── 공고 판에서 담아 둔 것 ────────────────────────────────────────────
+    venue_index = {v['id']: v for g in d.get('venueGroups', []) for v in g.get('venues', [])}
     for sk, row in (seed or {}).items():
         clear_seed.append(sk)
         iid = row.get('id') or sk
+        vid = row.get('venue')
+
+        # 낼 곳이 적혀 있으면 그곳의 마감만 갈아 끼운다. 마감은 한 벌만 둔다
+        if vid:
+            v = venue_index.get(vid)
+            if v is None:
+                plan.append(('못 찾음', vid, row.get('title', ''), '그런 낼 곳이 없어 그냥 버립니다'))
+                continue
+            new = row.get('deadline') or ''
+            if not new:
+                plan.append(('건너뜀', vid, row.get('title', ''), '마감이 비어 있습니다'))
+                continue
+            if v.get('deadline') == new:
+                plan.append(('그대로', vid, v['name'], f'이미 {new} 입니다'))
+                continue
+            venue_seeds.append((vid, new))
+            plan.append(('낼 곳 마감', vid, v['name'],
+                         f'{v.get("deadline") or "없음"} → {new}'))
+            continue
+
+        if '지면' in str(row.get('strand') or ''):
+            plan.append(('물어볼 것', iid, row.get('title', ''),
+                         '낼 곳에 없는 지면입니다. 새 낼 곳으로 만들지 사용자에게 물어보세요'))
+            continue
+
         if find(d, iid) is not None:
             plan.append(('있음', iid, row.get('title', ''), '같은 id 가 이미 있어 심지 않습니다'))
             continue
@@ -328,6 +356,11 @@ def main():
             row['due'] = a['due']
         ss.append(row)
         put_todos(it, ss)
+    for vid, new in venue_seeds:
+        v = venue_index.get(vid)
+        if v is not None:
+            v['deadline'] = new
+
     later = next((x for x in d.get('sections', []) if x['id'] == 'later'), None)
     for iid, row in seeds:
         if later is None:

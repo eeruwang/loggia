@@ -915,8 +915,8 @@ function buildJobs() {
   var kept = all.filter(function (j) { return j.kept; });
   if (kept.length) {
     out.push(secbox('담아 둔 것', kept.length,
-      '<p class="lede" style="padding:2px 2px 10px">다음 갱신에 현황판의 '
-      + '「아직 안 한 것」 칸으로 들어갑니다.</p>'
+      '<p class="lede" style="padding:2px 2px 10px">다음 갱신에 판으로 들어갑니다. '
+      + '채용은 현황판의 「아직 안 한 것」 칸으로, 지면은 낼 곳으로 갑니다.</p>'
       + kept.map(jobCard).join(''), 'jobkept', true));
   }
 
@@ -925,14 +925,16 @@ function buildJobs() {
   function strandOf(j) {
     var s = String(j.strand || '').replace(/\s/g, '');
     if (!s) return '연구소';
+    if (s.indexOf('지면') >= 0 || s.indexOf('특집') >= 0 || s.indexOf('CFP') >= 0) return '지면';
     if (s.indexOf('연구') >= 0) return '연구소';
     if (s.indexOf('강의') >= 0 || s.indexOf('영국') >= 0) return '강의';
     return '그 밖';
   }
-  var box = { '연구소': [], '강의': [], '그 밖': [] };
+  var box = { '연구소': [], '강의': [], '지면': [], '그 밖': [] };
   all.forEach(function (j) { if (!j.kept) box[strandOf(j)].push(j); });
 
-  [['연구소', '연구소'], ['강의', '영국 강의직'], ['그 밖', '그 밖']].forEach(function (st) {
+  [['연구소', '연구소'], ['강의', '영국 강의직'],
+   ['지면', '지면과 특집'], ['그 밖', '그 밖']].forEach(function (st) {
     var rows = box[st[0]];
     if (!rows.length) return;
     rows.sort(function (a, b) {
@@ -962,7 +964,10 @@ function jobCard(j) {
   var title = j.url
     ? '<a href="' + esc(j.url) + '" target="_blank" rel="noopener">' + esc(j.title) + '</a>'
     : esc(j.title);
+  var goes = j.venue && VEN[j.venue] ? '「' + esc(VEN[j.venue].name) + '」 마감으로'
+           : (String(j.strand || '').indexOf('지면') >= 0 ? '낼 곳으로' : '현황판으로');
   var acts = '<div class="jobacts">'
+    + (j.kept ? '<span class="sub">' + goes + '</span>' : '')
     + '<button type="button" class="jkeep" data-id="' + esc(j.id) + '">'
     + (j.kept ? '담아 둠' : '담아두기') + '</button>'
     + '<button type="button" class="jdrop" data-id="' + esc(j.id) + '">버리기</button>'
@@ -1000,7 +1005,8 @@ function bindJobs(app) {
         ? { set: (function () { var m = {}; m[id] = {
               id: id, title: j.title || '', url: j.url || '',
               deadline: j.deadline || '', note: j.note || '',
-              strand: j.strand || '', at: isoOf(today0()) }; return m; })() }
+              strand: j.strand || '', venue: j.venue || '',
+              at: isoOf(today0()) }; return m; })() }
         : { del: [id] };
       fetch('/seed' + q, { method: 'POST',
         headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })

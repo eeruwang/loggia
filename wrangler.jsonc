@@ -42,6 +42,9 @@
     // 공고 루틴이 저장소에 써 두는 자리. 워커가 열 분마다 훑어 판으로 옮긴다.
     // 예약 작업에는 바깥으로 글을 보낼 손이 없으므로 저장소를 사이에 둔다.
     "JOBS_URL": "https://raw.githubusercontent.com/eeruwang/loggia/main/jobs/latest.json",
+
+    // 지면 루틴이 주 한 번 써 두는 자리. 채용과 한 파일을 쓰면 서로 덮는다.
+    "CFP_URL": "https://raw.githubusercontent.com/eeruwang/loggia/main/jobs/cfp.json",
     "MAIL_TO": "moon@ilsunmoon.com",
     "MAIL_FROM": "info@loggia.moonilsun.com"
   },

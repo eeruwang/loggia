@@ -36,6 +36,7 @@ interface Env {
   DIGEST_KEY: string;      // 비밀. base64 로 적은 32바이트
   DIGEST_URL: string;
   JOBS_URL?: string;       // 공고 루틴이 저장소에 써 둔 파일. 열 분마다 이것을 훑는다
+  CFP_URL?: string;        // 주 1회 도는 지면 루틴이 써 둔 파일. 같은 자리로 옮긴다
   MAIL_FROM: string;
   MAIL_TO: string;
   PREVIEW_TOKEN?: string;  // 비밀. 손으로 한 통 부쳐 볼 때 쓴다
@@ -241,7 +242,28 @@ function pickOne(d: Digest, today: string): Row | null {
   return [...d.doing].sort((a, b) => score(a) - score(b))[0];
 }
 
-function compose(d: Digest, today: string, pend: AddRow[] = []) {
+/* 월요일 편지에만 붙는 지면 칸. 주 한 번 도는 루틴이 찾아 둔 특집 마감 가운데
+   예순 날 안으로 들어온 것을 보여준다. 날마다 여덟 줄을 보내면 소음이 된다. */
+type Cfp = { title: string; deadline: string; n: number };
+
+async function cfpSoon(env: Env, today: string): Promise<Cfp[]> {
+  if (!env.LEDGER) return [];
+  if (new Date(today + 'T00:00:00Z').getUTCDay() !== 1) return [];
+  const m = ((await env.LEDGER.get(JOBS_KEY, 'json')) ?? {}) as Record<string, {
+    strand?: string; title?: string; deadline?: string; kept?: boolean }>;
+  const out: Cfp[] = [];
+  for (const r of Object.values(m)) {
+    if (String(r.strand ?? '').indexOf('지면') < 0) continue;
+    if (!r.deadline || r.deadline.length !== 10) continue;
+    const n = until(today, r.deadline);
+    if (n < 0 || n > 60) continue;
+    out.push({ title: r.title ?? '', deadline: r.deadline, n });
+  }
+  out.sort((a, b) => a.n - b.n);
+  return out.slice(0, 4);
+}
+
+function compose(d: Digest, today: string, pend: AddRow[] = [], cfp: Cfp[] = []) {
   const one = pickOne(d, today);
   const vsep = (v: string) => (v ? ' · ' + v : '');
 
@@ -333,6 +355,15 @@ function compose(d: Digest, today: string, pend: AddRow[] = []) {
       cards: cold.slice(0, 4).map((x) => ({
         big: String(x.n), small: '일째', tone: 'stop' as Tone,
         title: x.r.t, meta: (x.r.v || '') + ` · 마지막 작업 ${md(x.r.touched!)}`,
+      })),
+    });
+  }
+  if (cfp.length) {
+    blocks.push({
+      cap: '지면 마감',
+      cards: cfp.map((x) => ({
+        big: dBig(x.n), small: md(x.deadline), tone: dTone(x.n),
+        title: cut(x.title, 60), meta: '',
       })),
     });
   }
@@ -439,8 +470,8 @@ function focusBox(one: Row | null, today: string): string {
 </td></tr></table>`;
 }
 
-function render(d: Digest, today: string, pend: AddRow[] = []) {
-  const { one, subject, blocks } = compose(d, today, pend);
+function render(d: Digest, today: string, pend: AddRow[] = [], cfp: Cfp[] = []) {
+  const { one, subject, blocks } = compose(d, today, pend, cfp);
   const w = WEEK[new Date(today + 'T00:00:00Z').getUTCDay()];
 
   const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8">
@@ -637,7 +668,7 @@ async function send(env: Env): Promise<string> {
   const today = todaySeoul(Date.now());
   const { subject, html, text } = isQuarterStart(today)
     ? renderQuarter(d, today)
-    : render(d, today, await pending(env));
+    : render(d, today, await pending(env), await cfpSoon(env, today));
   const r = await env.EMAIL.send({
     to: env.MAIL_TO, from: env.MAIL_FROM, subject, html, text,
   });
@@ -708,6 +739,7 @@ async function pending(env: Env): Promise<AddRow[]> {
 // 판에서 버린 항목이 이튿날 되살아나는 일을 이 자취가 막는다.
 
 const JOBS_SEEN = 'jobs-seen';
+const CFP_SEEN = 'cfp-seen';
 
 function trace(t: string): string {
   let h = 0;
@@ -720,6 +752,7 @@ function trace(t: string): string {
 function strandOf(v: unknown): string {
   const s = String(v ?? '').replace(/\s/g, '');
   if (!s) return '연구소';
+  if (s.indexOf('지면') >= 0 || s.indexOf('특집') >= 0 || s.indexOf('CFP') >= 0) return '지면';
   if (s.indexOf('연구') >= 0) return '연구소';
   if (s.indexOf('강의') >= 0 || s.indexOf('영국') >= 0) return '강의';
   return s;
@@ -732,23 +765,33 @@ function sameAs(r: Record<string, unknown>): string {
   return u ? 'u:' + u : 't:' + t.slice(-44);
 }
 
+/* 두 루틴이 저장소의 서로 다른 파일에 쓴다. 하루 두 번 도는 채용 루틴과
+   주 한 번 도는 지면 루틴이다. 한 파일을 같이 쓰면 서로 덮으므로 갈라 두었다.
+   걷어 들이는 자리는 하나다. 판에서 갈래로 나뉘어 보인다. */
 async function soakJobs(env: Env): Promise<string> {
-  if (!env.LEDGER || !env.JOBS_URL) return '공고 자리가 없습니다';
-  const res = await fetch(env.JOBS_URL, { cf: { cacheTtl: 0 } });
-  if (res.status === 404) return '공고 파일이 아직 없습니다';
-  if (!res.ok) return `공고 파일을 받지 못했습니다 (${res.status})`;
+  const a = await soakFrom(env, env.JOBS_URL, JOBS_SEEN, '공고');
+  const b = await soakFrom(env, env.CFP_URL, CFP_SEEN, '지면');
+  return a + ' / ' + b;
+}
+
+async function soakFrom(env: Env, url: string | undefined, seenKeyName: string,
+                        what: string): Promise<string> {
+  if (!env.LEDGER || !url) return `${what} 자리가 없습니다`;
+  const res = await fetch(url, { cf: { cacheTtl: 0 } });
+  if (res.status === 404) return `${what} 파일이 아직 없습니다`;
+  if (!res.ok) return `${what} 파일을 받지 못했습니다 (${res.status})`;
 
   const text = await res.text();
   const mark = trace(text);
-  const seen = await env.LEDGER.get(JOBS_SEEN);
-  if (seen === mark) return '공고 파일이 그대로입니다';
+  const seen = await env.LEDGER.get(seenKeyName);
+  if (seen === mark) return `${what} 파일이 그대로입니다`;
 
   let rows: Record<string, unknown> = {};
   try {
     const body = JSON.parse(text) as { set?: Record<string, unknown> };
     rows = body.set ?? {};
   } catch {
-    return '공고 파일의 꼴이 낯섭니다';
+    return `${what} 파일의 꼴이 낯섭니다`;
   }
 
   const now = ((await env.LEDGER.get(JOBS_KEY, 'json')) ?? {}) as Record<string, unknown>;
@@ -782,8 +825,8 @@ async function soakJobs(env: Env): Promise<string> {
     n++;
   }
   await env.LEDGER.put(JOBS_KEY, JSON.stringify(now));
-  await env.LEDGER.put(JOBS_SEEN, mark);
-  return `공고 ${n} 건을 옮겼습니다`;
+  await env.LEDGER.put(seenKeyName, mark);
+  return `${what} ${n} 건을 옮겼습니다`;
 }
 
 export default {
