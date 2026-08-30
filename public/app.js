@@ -521,19 +521,38 @@ function buildIndex() {
 
 /* ── 낼 곳 ───────────────────────────────────────────────────────────────── */
 
+/* 지금 원고가 가고 있는 곳. 따로 적어 두지 않고 항목에서 거꾸로 센다.
+   진행 중과 보낸 것 칸만 보고, 물렸거나 멈췄거나 끝난 것은 세지 않는다.
+   아직 안 한 것은 언젠가 갈 곳이지 지금 가는 곳이 아니라 뺀다. */
+function goingNow(vid) {
+  var n = 0;
+  (D.sections || []).forEach(function (s) {
+    if (s.id !== 'now' && s.id !== 'waiting') return;
+    (s.items || []).forEach(function (it) {
+      if (it.venue !== vid) return;
+      var tone = ((D.statuses || {})[it.status] || {}).tone;
+      if (tone === 'stop' || tone === 'done') return;
+      n++;
+    });
+  });
+  return n;
+}
+
 function buildJournals() {
   var out = [headHtml('journals', '낼 곳')];
 
   // 필터. 색인과 마감으로 좁힌다
-  var tally = {}, ndl = 0;
+  var tally = {}, ndl = 0, ngo = 0;
   (D.venueGroups || []).forEach(function (g) {
     g.venues.forEach(function (v) {
       indexTags(v).forEach(function (p) { tally[p[1]] = (tally[p[1]] || 0) + 1; });
       if (v.deadline) ndl++;
+      if (goingNow(v.id)) ngo++;
     });
   });
   var order = ['A&HCI', 'SSCI', 'Scopus', 'KCI 등재', 'ESCI', '색인 없음'];
   var buttons = [['*', '전체', NVEN]];
+  if (ngo) buttons.push(['진행', '지금 가는 곳', ngo]);
   order.forEach(function (t) { if (tally[t]) buttons.push([t, t, tally[t]]); });
   if (ndl) buttons.push(['마감', '마감 있음', ndl]);
   out.push(filtersHtml(buttons, '색인과 마감으로 골라 보기'));
@@ -548,6 +567,7 @@ function buildJournals() {
         return '<span class="idx ' + p[0] + '">' + esc(p[1]) + '</span>';
       }).join('');
       if (v.flag) tags += '<span class="flag">' + esc(v.flag) + '</span>';
+      var going = goingNow(v.id);
 
       var facts = [];
       if (v.deadline) {
@@ -572,11 +592,13 @@ function buildJournals() {
         ? '<div class="history"><div class="cap">여기에 낸 것 · ' + rows.length + '건</div>'
           + historyRows(rows) + '</div>'
         : '';
-      var tagset = tg.map(function (p) { return p[1]; }).concat(v.deadline ? ['마감'] : []);
+      var tagset = tg.map(function (p) { return p[1]; })
+        .concat(v.deadline ? ['마감'] : []).concat(going ? ['진행'] : []);
       return '<section class="venue-block" id="' + esc(v.id) + '" data-tags="'
         + esc(tagset.join(' ')) + '">\n'
         + '<div class="venue-head"><h3>' + name + '</h3><span class="sub">'
-        + esc(v.sub || '') + ' · ' + esc(v.type || '') + '</span></div>\n'
+        + esc(v.sub || '') + ' · ' + esc(v.type || '') + '</span>'
+        + (going ? '<span class="mark live">지금 원고가 간다</span>' : '') + '</div>\n'
         + (tags ? '<div class="idx-row">' + tags + '</div>' : '') + '\n'
         + (facts.length ? '<div class="venue-facts">' + facts.join('') + '</div>' : '') + '\n'
         + (v.note ? '<p class="note">' + esc(v.note) + '</p>' : '') + '\n'
