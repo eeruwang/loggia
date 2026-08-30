@@ -21,6 +21,8 @@ ledger-apply.py — 사이트에서 직접 체크하거나 추가한 것을 데�
         → 할 일에 넣지 않고 버린다. 마지막 작업일만 바꾼다
       /edit 는 사이트에서 수정하거나 삭제한 할 일. 키는 처음 글로 만든 것이다
         → 글과 날짜를 바꾼다. del 이 있으면 뺀다
+      /edit 의 키가 stop: 으로 시작하면 카드에서 중단으로 넘긴 것
+        → 상태를 보류로 바꾸고 적어 둔 이유를 결정 기록에 남긴다
       /seed 는 공고 판에서 담아 둔 것
         → 채용은 `later` 칸에 새 항목으로 심는다. 같은 id 가 있으면 건너뛴다
         → `venue` 가 적혀 있으면 그 낼 곳의 마감만 갈아 끼운다
@@ -265,8 +267,21 @@ def main():
     # ── 수정하거나 삭제한 할 일 ──────────────────────────────────────────
     # 키는 처음 글로 만든 것이라 원본에서 그대로 찾힌다.
     # 끝냈다고 표시한 것을 먼저 뺐으므로, 이미 없어진 것은 그냥 넘어간다.
+    stops = []
     for k, e in edit.items():
         clear_edit.append(k)
+        # 카드에서 중단으로 넘긴 것. 키가 `stop:<아이디>` 다.
+        if k.startswith('stop:'):
+            iid = e.get('item') or k[5:]
+            when = e.get('at') or datetime.date.today().isoformat()
+            it = find(d, iid)
+            if it is None:
+                plan.append(('못 찾음', iid, e.get('why', ''), '그런 항목이 없어서 그냥 버립니다'))
+                continue
+            touched_ids[iid] = max(touched_ids.get(iid, ''), when)
+            stops.append((iid, e.get('why', ''), when))
+            plan.append(('중단', iid, e.get('why', ''), '상태를 보류로 바꾸고 까닭을 남깁니다'))
+            continue
         # 일하는 기간은 할 일이 아니라 항목에 붙는다. 키가 `item:<아이디>` 다.
         if k.startswith('item:'):
             iid = e.get('item') or k[5:]
@@ -337,6 +352,8 @@ def main():
         if len(keep) != len(ss):
             put_todos(it, keep)
     for k, e in edit.items():
+        if k.startswith('stop:'):
+            continue
         if k.startswith('item:'):
             it = find(d, e.get('item') or k[5:])
             if it is None:
@@ -379,6 +396,16 @@ def main():
             row['due'] = a['due']
         ss.append(row)
         put_todos(it, ss)
+    for iid, why, when in stops:
+        it = find(d, iid)
+        if it is None:
+            continue
+        it['status'] = '보류'
+        d.setdefault('decisions', []).append({
+            'date': when, 'item': iid,
+            'what': (it.get('title') or iid) + ' 을(를) 중단했다',
+            'why': why})
+
     for vid, new in venue_seeds:
         v = venue_index.get(vid)
         if v is not None:

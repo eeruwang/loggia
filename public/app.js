@@ -244,14 +244,26 @@ function entryHtml(item) {
   var touch = t ? '<span class="touch" data-touched="' + esc(t) + '"></span>'
                 : '<span class="touch none">작업 기록 없음</span>';
   var tags = [item.status || '', item['품'] || ''].filter(Boolean).join(' ');
+  // 사이트에서 중단으로 넘긴 것. 다음 갱신에 상태가 보류로 바뀐다
+  var stop = EDIT['stop:' + item.id];
+  var stopRow = '';
+  if (D.meta.ledger) {
+    stopRow = stop
+      ? '<div class="stopped"><span class="mark">중단</span>'
+        + '<span class="why">' + esc(stop.why || '') + '</span>'
+        + '<button type="button" class="unstop" data-id="' + esc(item.id) + '">되돌리기</button></div>'
+      : '<div class="stoprow"><button type="button" class="stop" data-id="' + esc(item.id)
+        + '">중단</button></div>';
+  }
   // 종류마다 색을 준다. 왼쪽 막대 하나로 무슨 종류인지 눈이 먼저 안다
-  return '<article class="entry t-' + esc(st.tone || 'live') + '" data-id="' + esc(item.id)
+  return '<article class="entry t-' + (stop ? 'stop' : esc(st.tone || 'live'))
+       + '"' + (stop ? ' data-stopped="1"' : '') + ' data-id="' + esc(item.id)
        + '" data-tags="' + esc(tags) + '">' + whenCol(item) + '\n'
        + '<div class="body"><div class="title-line"><h3 class="t">' + esc(item.title) + '</h3>\n'
        + '<span class="state">' + esc(st.label) + '</span></div>\n'
        + '<div class="meta">' + venue + '<span class="k">' + esc(item.kind || '') + '</span>'
        + touch + '</div>\n'
-       + stepsHtml(item) + note + linksHtml(item) + '</div></article>';
+       + (stop ? '' : stepsHtml(item)) + note + linksHtml(item) + stopRow + '</div></article>';
 }
 
 /* 무게는 낼 곳의 갈래와 색인에서 뽑는다. 항목마다 손으로 붙이지 않는다.
@@ -305,6 +317,7 @@ function pickFocus() {
     (s.items || []).forEach(function (it) {
       var tone = ((D.statuses || {})[it.status] || {}).tone;
       if (tone === 'wait' || tone === 'stop' || tone === 'done') return;
+      if (EDIT['stop:' + it.id]) return;          // 사이트에서 중단으로 넘긴 것
       if (!stepsOf(it).length) return;
       rows.push({ it: it, s: focusScore(it, today) });
     });
@@ -1666,8 +1679,46 @@ function bindAdd(root, redrawEntry, board) {
         if (slot === 'add') ADD = j; else EDIT = j;
         Object.keys(ids).forEach(redrawEntry);
         board.rebind();
+        if (typeof bindStops === 'function') bindStops();
       });
   }
+
+  /* 중단. 이유를 적어야 넘어간다. 왜 멈췄는지가 안 남으면 두 달 뒤에
+     다시 열었을 때 그때의 판단을 되짚을 길이 없다. */
+  function bindStops() {
+    root.querySelectorAll('.stoprow .stop').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var row = b.parentNode;
+        row.innerHTML = '<input type="text" class="sw" maxlength="200" '
+          + 'placeholder="왜 멈추는지 한 줄">'
+          + '<button type="button" class="ok">중단</button>'
+          + '<button type="button" class="cancel">취소</button>';
+        var inp = row.querySelector('.sw');
+        inp.focus();
+        row.querySelector('.cancel').addEventListener('click', function () {
+          redrawEntry(b.dataset.id);
+          bindStops();
+        });
+        row.querySelector('.ok').addEventListener('click', function () {
+          var why = inp.value.trim();
+          if (!why) { inp.focus(); return; }
+          var id = b.dataset.id, set = {};
+          set['stop:' + id] = { item: id, why: why, at: isoOf(new Date()) };
+          post('edit', { set: set }, [id]).then(bindStops);
+        });
+        inp.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') row.querySelector('.ok').click();
+        });
+      });
+    });
+    root.querySelectorAll('.stopped .unstop').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var id = b.dataset.id;
+        post('edit', { del: ['stop:' + id] }, [id]).then(bindStops);
+      });
+    });
+  }
+  bindStops();
 
   function open_(on) {
     sheet.hidden = !on; fab.hidden = on;
