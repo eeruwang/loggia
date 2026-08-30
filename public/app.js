@@ -1037,7 +1037,8 @@ function waitingClock() {
       // 바깥 상자에는 data-since 를 걸지 않는다.
       // 날수를 적는 손이 그 상자의 안을 통째로 지워 버린다.
       rows.push('<details class="clock" data-sent="' + esc(d.sent) + '"'
-        + (days ? ' data-days="' + days + '"' : '') + '><summary>'
+        + (days ? ' data-days="' + days + '"' : '')
+        + (d.expected ? ' data-until="' + esc(d.expected) + '"' : '') + '><summary>'
         + '<span class="el" data-since="' + esc(d.sent) + '"></span>'
         + '<span class="t">' + esc(it.title) + '</span>'
         + '<span class="v">' + esc(v.name || '') + '</span>'
@@ -1214,7 +1215,14 @@ function paintDates(root) {
     el.textContent = n + '일째';
     // 그 지면이 대개 걸리는 날수를 넘겼으면 물어볼 때다
     var box = el.closest('.clock');
-    if (box && box.dataset.days && n > +box.dataset.days) box.dataset.late = '1';
+    if (!box) return;
+    if (box.dataset.days && n > +box.dataset.days) box.dataset.late = '1';
+    // 답이 올 달만 아는 것도 있다. 그 달이 다 가면 물어볼 때다
+    var u = box.dataset.until;
+    if (u && u.length >= 7) {
+      var y = +u.slice(0, 4), mo = +u.slice(5, 7);
+      if (today > new Date(y, mo, 0)) box.dataset.late = '1';
+    }
   });
   // 마지막으로 마지막 작업일. 오래 멎어 있으면 눈에 띄게 한다
   root.querySelectorAll('.touch[data-touched]').forEach(function (el) {

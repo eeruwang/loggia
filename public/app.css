@@ -402,6 +402,11 @@ cursor:pointer;list-style:none}
 .clock[data-late]{border-left-color:var(--now)}
 .clock[data-late] .el{color:var(--now)}
 .clock .t{font-size:17px;font-weight:700;color:var(--ink)}
+/* 대개 걸리는 날수를 넘겼거나 답이 올 달이 다 갔다. 물어볼 때다 */
+.clock[data-late]{border-color:var(--soon)}
+.clock[data-late] .el{color:var(--soon)}
+.clock[data-late] .t::after{content:'물어볼 때';margin-left:10px;font-size:11.5px;
+  font-weight:800;letter-spacing:.04em;color:var(--soon);vertical-align:2px}
 .clock .v{font-size:13px;font-weight:600;color:var(--ink-3)}
 .clock .side{margin-left:auto;order:0;display:flex;gap:16px;font-size:13px;color:var(--ink-2);align-items:center}
 .clock .side .lab{margin-right:6px;color:var(--ink-3);font-weight:700}
