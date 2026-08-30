@@ -1082,7 +1082,13 @@ function buildCalendar() {
       }
     });
   });
-  ev = ev.filter(function (e) { return e.d.length === 10; });
+  // 담아 둔 공고의 마감. 담지 않은 것까지 올리면 마흔 몇 건이 달력을 덮는다
+  jobsLive().forEach(function (j) {
+    if (!j.kept || !j.deadline) return;
+    ev.push({ d: j.deadline, k: '공고 마감', t: j.title });
+  });
+
+  ev = ev.filter(function (e) { return String(e.d).length === 10; });
 
   // 같은 날 같은 글은 한 번만
   var uniq = [], seen = {};
@@ -1734,7 +1740,7 @@ function paintCalendar(root, EV, REP) {
         cls.push('has');
         var worst = '';
         list.forEach(function (e) {
-          if (e.k === '마감' && !e.rep) {
+          if (e.k.indexOf('마감') >= 0 && !e.rep) {
             var u = urg(e).c;
             if (u === 'miss') worst = 'miss';
             else if (worst !== 'miss'
@@ -1754,7 +1760,7 @@ function paintCalendar(root, EV, REP) {
       h += '<div class="cal-ev">';
       rows.forEach(function (r) {
         r.list.forEach(function (e) {
-          var u = (e.k === '마감' && !e.rep) ? urg(e).c : '';
+          var u = (e.k.indexOf('마감') >= 0 && !e.rep) ? urg(e).c : '';
           h += '<div class="r ' + u + (e.rep ? ' rep' : '') + '"><span class="dd">' + r.day + '</span>'
              + '<span class="tx">' + esc(e.t) + ' <span style="color:var(--ink-3)">' + esc(e.k)
              + (e.guess ? ' 짐작' : '') + '</span></span></div>';
@@ -1945,14 +1951,17 @@ function cache(k) {
 function loadLedger() {
   var lt = D.meta.ledger;
   var page = document.body.dataset.page || 'index';
-  if (!lt || (page !== 'index' && page !== 'jobs')) return Promise.resolve();
+  if (!lt || (page !== 'index' && page !== 'jobs' && page !== 'calendar')) {
+    return Promise.resolve();
+  }
   var q = '?k=' + encodeURIComponent(lt);
   function get(path) {
     return fetch(path + q, { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; });
   }
-  if (page === 'jobs') {
+  // 달력도 공고를 읽는다. 담아 둔 공고의 마감이 다른 마감과 같은 줄에 서야 한다
+  if (page === 'jobs' || page === 'calendar') {
     return get('/gongo').then(function (j) { if (j) JOB = j; NJOB = jobsLive().length; });
   }
   return Promise.all([get('/done'), get('/add'), get('/edit')]).then(function (r) {
