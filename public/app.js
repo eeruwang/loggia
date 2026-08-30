@@ -254,15 +254,63 @@ function entryHtml(item) {
        + stepsHtml(item) + note + linksHtml(item) + '</div></article>';
 }
 
+/* 무게는 낼 곳의 갈래와 색인에서 뽑는다. 항목마다 손으로 붙이지 않는다.
+   낼 곳이 바뀌면 무게도 따라 바뀐다. */
+var SEAT_W = { '교원 공고': 2, '연구직 공고': 2, '펠로십': 2, '레지던시': 1.5,
+  '페스티벌': 1, '학회': 0.8, '공모': 0.8, '잡지': 0.7, '자격': 0.6, '단행본': 0.5 };
+var INDEX_W = { ahci: 2, ssci: 2, scie: 2, scopus: 1.5, kci: 1.3,
+  kcic: 1, esci: 1, erih: 1, doaj: 1 };
+var PUM_D = { '십분': 0, '한시간': 0, '반나절': 0.5, '며칠': 3 };
+
+function weightOf(item) {
+  var v = VEN[item.venue];
+  if (!v) return 1;
+  if (v.type !== '저널') return SEAT_W[v.type] || 1;
+  var w = 0.7;
+  (v.indexes || []).forEach(function (x) {
+    if (typeof x !== 'string' || x.charAt(0) === '-') return;   // 앞의 - 는 미등재
+    var n = INDEX_W[x];
+    if (n && n > w) w = n;
+  });
+  return w;
+}
+
+function daysBetween(a, b) {
+  return Math.round((fromIso(b) - fromIso(a)) / 86400000);
+}
+
+/* 급함은 마감에서 품에 드는 날을 뺀 여유로 센다. 며칠 걸리는 일이 사흘 남았으면
+   이미 늦은 것인데, 날짜만 보면 반나절짜리와 같은 급함으로 보인다. */
+function focusScore(item, today) {
+  var d = item.dates || {};
+  var iso = d.deadline || d.expected || '';
+  var slack = 999, over = false;
+  if (iso.length === 10) {
+    var n = daysBetween(today, iso);
+    over = n < 0;
+    slack = n - (PUM_D[item['품']] || 0);
+  }
+  var s = 100 / (Math.max(slack, 0) + 1) * weightOf(item);
+  if (d.touched && d.touched.length === 10 && daysBetween(d.touched, today) > 21) s += 8;
+  if (over) s += 1000;                       // 지난 마감은 숨기지 않고 맨 앞에 세운다
+  return s;
+}
+
+/* 진행 중인 것만 본다. 낸 것과 물린 것과 멈춘 것은 오늘 손댈 자리가 아니다.
+   위에서 셋을 고른다. */
 function pickFocus() {
-  var best = null;
+  var today = isoOf(today0()), rows = [];
   (D.sections || []).forEach(function (s) {
+    if (s.id !== 'now') return;
     (s.items || []).forEach(function (it) {
-      var dl = (it.dates || {}).deadline;
-      if (dl && stepsOf(it).length && (best === null || dl < best.dates.deadline)) best = it;
+      var tone = ((D.statuses || {})[it.status] || {}).tone;
+      if (tone === 'wait' || tone === 'stop' || tone === 'done') return;
+      if (!stepsOf(it).length) return;
+      rows.push({ it: it, s: focusScore(it, today) });
     });
   });
-  return best;
+  rows.sort(function (a, b) { return b.s - a.s; });
+  return rows.slice(0, 3).map(function (r) { return r.it; });
 }
 
 /* 접어 두는 섹션. 읽을 것이지 오늘 할 일이 아니라면 접는다. */
@@ -409,16 +457,31 @@ function buildIndex() {
       + '</form></div>');
   }
 
-  var f = pickFocus();
-  if (f) {
-    var v = VEN[f.venue];
-    var iso = f.dates.deadline;
+  var picks = pickFocus();
+  if (picks.length) {
+    var f = picks[0], v = VEN[f.venue];
+    var fd = f.dates || {};
+    var iso = fd.deadline || fd.expected || '';
+    var wide = (iso.length === 10)
+      ? '<span class="dday" data-wide="1" data-deadline="' + iso + '">D-</span>\n' : '';
+    var when = (iso.length === 10)
+      ? '<div class="when">마감 ' + iso.slice(5, 7).replace(/^0+/, '') + '월 '
+        + iso.slice(8).replace(/^0+/, '') + '일</div>' : '';
+    var rest = picks.slice(1).map(function (it) {
+      var v2 = VEN[it.venue], d2 = it.dates || {};
+      var i2 = d2.deadline || d2.expected || '';
+      return '<li>' + (i2.length === 10
+          ? '<span class="dday" data-deadline="' + i2 + '">D-</span>' : '<span class="dday"></span>')
+        + '<span class="t">' + esc(stepsOf(it)[0].t) + '</span>'
+        + '<span class="who">' + esc(it.title) + (v2 ? ' · ' + esc(v2.name) : '') + '</span></li>';
+    }).join('');
     out.push('<section class="focus"><div class="cap">지금 이것부터</div>\n'
-      + '<div class="line"><span class="dday" data-wide="1" data-deadline="' + iso + '">D-</span>\n'
+      + '<div class="line">' + wide
       + '<span class="who">' + esc(f.title) + (v ? ' · ' + esc(v.name) : '') + '</span></div>\n'
       + '<p class="todo">' + esc(stepsOf(f)[0].t) + '</p>\n'
-      + '<div class="when">마감 ' + iso.slice(5, 7).replace(/^0+/, '') + '월 '
-      + iso.slice(8).replace(/^0+/, '') + '일</div></section>');
+      + when
+      + (rest ? '<ul class="also">' + rest + '</ul>' : '')
+      + '</section>');
   }
 
   // 답을 기다리는 것은 달력의 응답 시계가 맡는다. 여기서 또 보이면 두 번 읽게 된다
@@ -519,7 +582,7 @@ function buildJournals() {
         + (v.note ? '<p class="note">' + esc(v.note) + '</p>' : '') + '\n'
         + hist + '</section>';
     }).join('');
-    out.push(secbox(g.name, g.venues.length, body));
+    out.push(secbox(g.name, g.venues.length, body, g.id || g.name, !g['접힘']));
   });
 
   if (D.watch && D.watch.length) {
@@ -809,10 +872,17 @@ function jobFresh(j) {
   return (Date.now() - fromIso(j.posted)) < 7 * 864e5;
 }
 
+/* 마감이 지난 것은 여드레 뒤에 내린다. 마감을 못 찾은 것은 올라온 날에서
+   마흔닷새를 세고 내린다. 그러지 않으면 쉰 건이 영영 쌓인 채로 남는다. */
 function jobDead(j) {
   if (j.kept) return false;
-  if (!j.deadline) return false;
-  return (Date.now() - fromIso(j.deadline)) > 8 * 864e5;
+  if (j.deadline && String(j.deadline).length === 10) {
+    return (Date.now() - fromIso(j.deadline)) > 8 * 864e5;
+  }
+  if (j.posted && String(j.posted).length === 10) {
+    return (Date.now() - fromIso(j.posted)) > 45 * 864e5;
+  }
+  return false;
 }
 
 function buildJobs() {
@@ -825,10 +895,20 @@ function buildJobs() {
     out.push(secbox('담아 둔 것', kept.length, kept.map(jobCard).join(''), 'jobkept', true));
   }
 
-  [['연구소', '연구소'], ['강의', '영국 강의직']].forEach(function (st) {
-    var rows = all.filter(function (j) {
-      return !j.kept && (j.strand || '연구소') === st[0];
-    });
+  // 루틴이 갈래를 여러 말로 적어 보낸 적이 있다. 아는 말 둘로 모으고,
+  // 모르는 말이 오면 「그 밖」으로 떨어뜨린다. 판에서 통째로 사라지지 않게.
+  function strandOf(j) {
+    var s = String(j.strand || '').replace(/\s/g, '');
+    if (!s) return '연구소';
+    if (s.indexOf('연구') >= 0) return '연구소';
+    if (s.indexOf('강의') >= 0 || s.indexOf('영국') >= 0) return '강의';
+    return '그 밖';
+  }
+  var box = { '연구소': [], '강의': [], '그 밖': [] };
+  all.forEach(function (j) { if (!j.kept) box[strandOf(j)].push(j); });
+
+  [['연구소', '연구소'], ['강의', '영국 강의직'], ['그 밖', '그 밖']].forEach(function (st) {
+    var rows = box[st[0]];
     if (!rows.length) return;
     rows.sort(function (a, b) {
       var fa = jobFresh(a) ? 0 : 1, fb = jobFresh(b) ? 0 : 1;

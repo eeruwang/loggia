@@ -118,6 +118,12 @@ border-radius:14px}
 /* 이 상자는 바탕이 어둡다. 일반 규칙의 검은 글씨를 그대로 두면 글이 사라진다 */
 .focus .todo::before{color:var(--now)}
 .focus .when{font-size:13px;opacity:.62;margin-top:12px}
+.focus .also{list-style:none;margin:22px 0 0;padding:16px 0 0;
+  border-top:1px solid rgba(255,255,255,.16)}
+.focus .also li{display:flex;align-items:baseline;gap:12px;padding:7px 0}
+.focus .also .dday{font-size:13px;font-weight:700;min-width:62px;opacity:.62;color:inherit}
+.focus .also .t{font-size:15px;font-weight:600}
+.focus .also .who{font-size:13px;opacity:.5}
 
 /* 섹션의 머리 */
 .sec{display:flex;align-items:baseline;gap:12px;margin:52px 0 16px;padding-bottom:0;border:0}

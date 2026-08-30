@@ -714,6 +714,23 @@ function trace(t: string): string {
   return String(t.length) + '.' + ((h >>> 0).toString(16));
 }
 
+// 루틴이 회차마다 다른 말로 적어 보냈다. 영국강의직, 영국강의, 영국, 강의가
+// 다 한 갈래다. 여기서 둘로 맞춘다. 판은 맞춘 값만 그린다.
+function strandOf(v: unknown): string {
+  const s = String(v ?? '').replace(/\s/g, '');
+  if (!s) return '연구소';
+  if (s.indexOf('연구') >= 0) return '연구소';
+  if (s.indexOf('강의') >= 0 || s.indexOf('영국') >= 0) return '강의';
+  return s;
+}
+
+// 같은 자리인지 가리는 열쇠. 기관과 직함만 남기고 표기 차이를 지운다.
+function sameAs(r: Record<string, unknown>): string {
+  const t = String(r.title ?? '').toLowerCase().replace(/[^0-9a-z가-힣]/g, '');
+  const u = String(r.url ?? '').replace(/[?#].*$/, '');
+  return u ? 'u:' + u : 't:' + t.slice(-44);
+}
+
 async function soakJobs(env: Env): Promise<string> {
   if (!env.LEDGER || !env.JOBS_URL) return '공고 자리가 없습니다';
   const res = await fetch(env.JOBS_URL, { cf: { cacheTtl: 0 } });
@@ -734,8 +751,35 @@ async function soakJobs(env: Env): Promise<string> {
   }
 
   const now = ((await env.LEDGER.get(JOBS_KEY, 'json')) ?? {}) as Record<string, unknown>;
+
+  // 같은 자리가 회차마다 다른 id 로 들어와 쌓였다. 제목을 다듬은 열쇠로 접는다.
+  const seenKey = new Map<string, string>();
+  for (const [id, row] of Object.entries(now)) {
+    const r = row as Record<string, unknown>;
+    r.strand = strandOf(r.strand);
+    seenKey.set(sameAs(r), id);
+  }
+
   let n = 0;
-  for (const [id, row] of Object.entries(rows)) { now[id] = row; n++; }
+  for (const [id, row] of Object.entries(rows)) {
+    const r = row as Record<string, unknown>;
+    r.strand = strandOf(r.strand);
+    const key = sameAs(r);
+    const old = seenKey.get(key);
+    if (old && old !== id) {
+      const prev = (now[old] ?? {}) as Record<string, unknown>;
+      // 뒤에 온 것을 바탕으로 삼되, 비어 있는 칸은 먼저 것에서 채운다.
+      // 회차마다 마감을 못 찾는 때가 있어서, 덮어쓰면 찾아 둔 날짜가 지워진다.
+      for (const f of ['deadline', 'url', 'note', 'posted', 'region']) {
+        if (!r[f] && prev[f]) r[f] = prev[f];
+      }
+      if (prev.kept) r.kept = true;              // 담아 둔 것은 담아 둔 채로
+      delete now[old];
+    }
+    now[id] = r;
+    seenKey.set(key, id);
+    n++;
+  }
   await env.LEDGER.put(JOBS_KEY, JSON.stringify(now));
   await env.LEDGER.put(JOBS_SEEN, mark);
   return `공고 ${n} 건을 옮겼습니다`;
