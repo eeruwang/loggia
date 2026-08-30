@@ -475,6 +475,7 @@ table.cal td.off{color:transparent}
 table.cal td.has{color:var(--ink);font-weight:800;background:var(--sunk)}
 table.cal td.now{color:var(--surface);background:var(--now)}
 table.cal td.soon{color:var(--surface);background:var(--soon)}
+table.cal td.miss{color:var(--surface);background:var(--ink-3)}
 table.cal td.today{outline:2px solid var(--ink);outline-offset:-2px;font-weight:800;color:var(--ink)}
 .cal-ev{margin-top:12px;padding-top:10px;border-top:1px solid var(--rule)}
 .cal-ev .r{display:flex;gap:9px;font-size:12.5px;padding:4px 0;align-items:baseline}
@@ -482,6 +483,7 @@ table.cal td.today{outline:2px solid var(--ink);outline-offset:-2px;font-weight:
 .cal-ev .r .tx{color:var(--ink-2)}
 .cal-ev .r.now .dd,.cal-ev .r.now .tx{color:var(--now);font-weight:700}
 .cal-ev .r.soon .dd,.cal-ev .r.soon .tx{color:var(--soon)}
+.cal-ev .r.miss .dd,.cal-ev .r.miss .tx{color:var(--ink-3);text-decoration:line-through}
 .cal-ev .r.rep .tx{color:var(--ink-3)}
 .cal-none{margin-top:12px;padding-top:10px;border-top:1px solid var(--rule);
 font-size:12.5px;color:var(--ink-3)}

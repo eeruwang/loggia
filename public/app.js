@@ -1058,7 +1058,8 @@ function buildCalendar() {
     (sec.items || []).forEach(function (it) {
       var d = it.dates || {}, v = VEN[it.venue];
       var nm = it.title + (v ? ' · ' + v.name : '');
-      if (d.deadline) ev.push({ d: d.deadline, k: '마감', t: nm });
+      // 낸 날이 있으면 그 마감은 지켰다. 지난 마감을 다 놓친 것으로 칠할 수 없다
+      if (d.deadline) ev.push({ d: d.deadline, k: '마감', t: nm, done: !!d.sent });
       if (d.sent) ev.push({ d: d.sent, k: '냄', t: nm });
     });
   });
@@ -1705,9 +1706,12 @@ function paintCalendar(root, EV, REP) {
     });
   }
 
-  function urg(iso) {
-    var n = Math.round((fromIso(iso) - today) / 86400000);
-    return { n: n, c: n < 0 ? '' : n <= 7 ? 'now' : n <= 30 ? 'soon' : '' };
+  /* 지난 마감은 놓친 것으로 표시한다. 다만 낸 날이 있는 것과, 항목 없이
+     낼 곳에만 적힌 마감은 뺀다. 냈는지 여부를 알 수 없기 때문이다. */
+  function urg(e) {
+    var n = Math.round((fromIso(e.d) - today) / 86400000);
+    if (n < 0) return { n: n, c: (e.done || e.done === undefined) ? '' : 'miss' };
+    return { n: n, c: n <= 7 ? 'now' : n <= 30 ? 'soon' : '' };
   }
 
   for (var off = -6; off <= 6; off++) {
@@ -1731,8 +1735,10 @@ function paintCalendar(root, EV, REP) {
         var worst = '';
         list.forEach(function (e) {
           if (e.k === '마감' && !e.rep) {
-            var u = urg(e.d).c;
-            if (u === 'now' || (u === 'soon' && worst !== 'now')) worst = u;
+            var u = urg(e).c;
+            if (u === 'miss') worst = 'miss';
+            else if (worst !== 'miss'
+                     && (u === 'now' || (u === 'soon' && worst !== 'now'))) worst = u;
           }
         });
         if (worst) cls.push(worst);
@@ -1748,7 +1754,7 @@ function paintCalendar(root, EV, REP) {
       h += '<div class="cal-ev">';
       rows.forEach(function (r) {
         r.list.forEach(function (e) {
-          var u = (e.k === '마감' && !e.rep) ? urg(e.d).c : '';
+          var u = (e.k === '마감' && !e.rep) ? urg(e).c : '';
           h += '<div class="r ' + u + (e.rep ? ' rep' : '') + '"><span class="dd">' + r.day + '</span>'
              + '<span class="tx">' + esc(e.t) + ' <span style="color:var(--ink-3)">' + esc(e.k)
              + (e.guess ? ' 짐작' : '') + '</span></span></div>';
