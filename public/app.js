@@ -914,7 +914,10 @@ function buildJobs() {
 
   var kept = all.filter(function (j) { return j.kept; });
   if (kept.length) {
-    out.push(secbox('담아 둔 것', kept.length, kept.map(jobCard).join(''), 'jobkept', true));
+    out.push(secbox('담아 둔 것', kept.length,
+      '<p class="lede" style="padding:2px 2px 10px">다음 갱신에 현황판의 '
+      + '「아직 안 한 것」 칸으로 들어갑니다.</p>'
+      + kept.map(jobCard).join(''), 'jobkept', true));
   }
 
   // 루틴이 갈래를 여러 말로 적어 보낸 적이 있다. 아는 말 둘로 모으고,
@@ -991,6 +994,17 @@ function bindJobs(app) {
       var row = {}; for (var k in j) row[k] = j[k];
       row.kept = !j.kept;
       var set = {}; set[id] = row;
+      // 담아 두면 씨앗을 남긴다. 다음 갱신에 현황판 항목으로 심긴다.
+      // 도로 빼면 씨앗도 거둔다. 아직 심기지 않았으므로 흔적이 남지 않는다.
+      var body = row.kept
+        ? { set: (function () { var m = {}; m[id] = {
+              id: id, title: j.title || '', url: j.url || '',
+              deadline: j.deadline || '', note: j.note || '',
+              strand: j.strand || '', at: isoOf(today0()) }; return m; })() }
+        : { del: [id] };
+      fetch('/seed' + q, { method: 'POST',
+        headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+        .catch(function () {});
       send({ set: set }, b);
     });
   });

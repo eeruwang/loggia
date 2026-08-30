@@ -664,6 +664,7 @@ const DONE_KEY = 'board';   // 끝냈다고 표시한 할 일
 const ADD_KEY = 'added';    // 사이트에서 새로 적은 할 일
 const EDIT_KEY = 'edited';  // 사이트에서 고치거나 지운 할 일
 const JOBS_KEY = 'jobs';    // 공고 루틴이 밀어 넣은 것. 판에 들어가지 않고 여기 산다
+const SEED_KEY = 'seeds';   // 담아 둔 공고. 다음 세션에 현황판 항목으로 심긴다
 
 function json(v: unknown, status = 200): Response {
   return new Response(JSON.stringify(v), {
@@ -817,6 +818,9 @@ export default {
     // 이름이 /jobs 가 아닌 까닭. public/jobs.html 이 있으면 자산이 먼저 나가
     // 워커까지 닿지 않는다. 판 이름과 겹치지 않는 자리를 쓴다.
     if (u.pathname === '/gongo') return ledger(req, env, u.searchParams.get('k'), JOBS_KEY);
+    // 씨앗. 담아두기를 누르면 여기 쌓이고 ledger-apply.py 가 항목으로 심는다.
+    // 판은 잠겨 있어 브라우저가 고칠 수 없으므로 할 일 추가와 같은 배관을 쓴다.
+    if (u.pathname === '/seed') return ledger(req, env, u.searchParams.get('k'), SEED_KEY);
     // 열 분을 기다리지 않고 지금 공고를 걷어 보고 싶을 때.  GET /soak?k=<PREVIEW_TOKEN>
     if (u.pathname === '/soak') {
       if (!env.PREVIEW_TOKEN || u.searchParams.get('k') !== env.PREVIEW_TOKEN) {

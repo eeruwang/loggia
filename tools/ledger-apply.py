@@ -21,6 +21,8 @@ ledger-apply.py — 사이트에서 직접 체크하거나 추가한 것을 데�
         → 할 일에 넣지 않고 버린다. 마지막 작업일만 바꾼다
       /edit 는 사이트에서 수정하거나 삭제한 할 일. 키는 처음 글로 만든 것이다
         → 글과 날짜를 바꾼다. del 이 있으면 뺀다
+      /seed 는 공고 판에서 담아 둔 공고
+        → `later` 칸에 새 항목으로 심는다. 같은 id 가 이미 있으면 건너뛴다
 
     보통은 워커가 10분마다 알아서 한다. 이 도구는 워커가 못 할 때와,
     무엇이 쌓였는지 눈으로 보고 싶을 때 쓴다.
@@ -39,7 +41,7 @@ import urllib.request, urllib.error, urllib.parse
 
 DEFAULT = 'loggia-data.json'
 MARK = '.ledger-applied'
-SLOTS = ('done', 'add', 'edit')
+SLOTS = ('done', 'add', 'edit', 'seed')
 
 
 def die(msg):
@@ -146,13 +148,26 @@ def main():
     done = get(f'{site}/done{q}')
     add = get(f'{site}/add{q}')
     edit = get(f'{site}/edit{q}')
-    if not done and not add and not edit:
+    seed = get(f'{site}/seed{q}')
+    if not done and not add and not edit and not seed:
         print('사이트에서 체크하거나 추가한 것이 없습니다.')
         return
 
     plan, touched_ids = [], {}
-    clear_done, clear_add, clear_edit = [], [], []
+    clear_done, clear_add, clear_edit, clear_seed = [], [], [], []
     used_add = set()
+    seeds = []
+
+    # ── 공고 판에서 담아 둔 것. 새 항목으로 심는다 ────────────────────────
+    for sk, row in (seed or {}).items():
+        clear_seed.append(sk)
+        iid = row.get('id') or sk
+        if find(d, iid) is not None:
+            plan.append(('있음', iid, row.get('title', ''), '같은 id 가 이미 있어 심지 않습니다'))
+            continue
+        seeds.append((iid, row))
+        plan.append(('심기', iid, row.get('title', ''),
+                     ('마감 ' + row['deadline']) if row.get('deadline') else '마감 모름'))
 
     # ── 추가하자마자 체크한 것. 할 일에 넣지 않고 버린다 ──────────────────
     for k, row in done.items():
@@ -313,6 +328,23 @@ def main():
             row['due'] = a['due']
         ss.append(row)
         put_todos(it, ss)
+    later = next((x for x in d.get('sections', []) if x['id'] == 'later'), None)
+    for iid, row in seeds:
+        if later is None:
+            break
+        dates = {'touched': row.get('at') or datetime.date.today().isoformat()}
+        if row.get('deadline'):
+            dates['deadline'] = row['deadline']
+        it = {'id': iid, 'title': row.get('title', '') or iid,
+              'kind': '강의직 지원' if row.get('strand') == '강의' else '연구직 지원',
+              'status': '미착수', 'dates': dates,
+              'steps': ['공고문 읽고 지원 여부 정하기']}
+        if row.get('note'):
+            it['note'] = row['note']
+        if row.get('url'):
+            it['links'] = [{'kind': 'web', 'label': '공고', 'url': row['url']}]
+        later['items'].append(it)
+
     for iid, when in touched_ids.items():
         it = find(d, iid)
         if it is not None:
@@ -329,8 +361,8 @@ def main():
               + '\n    다음에 뭘 할지 사용자에게 물어봐야 합니다.')
 
     with open(MARK, 'w', encoding='utf-8') as f:
-        json.dump({'done': clear_done, 'add': clear_add, 'edit': clear_edit},
-                  f, ensure_ascii=False)
+        json.dump({'done': clear_done, 'add': clear_add, 'edit': clear_edit,
+                   'seed': clear_seed}, f, ensure_ascii=False)
     print(f'  옮긴 키를 {MARK} 에 적어 두었습니다.')
     print('  사이트에 올린 다음 --clear 로 기록을 비워 주세요.')
 
