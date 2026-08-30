@@ -24,6 +24,7 @@ ledger-apply.py — 사이트에서 직접 체크하거나 추가한 것을 데�
       /seed 는 공고 판에서 담아 둔 것
         → 채용은 `later` 칸에 새 항목으로 심는다. 같은 id 가 있으면 건너뛴다
         → `venue` 가 적혀 있으면 그 낼 곳의 마감만 갈아 끼운다
+        → 다만 지금 원고가 가고 있는 낼 곳이면 덮지 않고 알리기만 한다
         → 갈래가 지면인데 `venue` 가 없으면 낼 곳을 새로 만들 자리라 알려만 준다
 
     보통은 워커가 10분마다 알아서 한다. 이 도구는 워커가 못 할 때와,
@@ -162,6 +163,20 @@ def main():
 
     # ── 공고 판에서 담아 둔 것 ────────────────────────────────────────────
     venue_index = {v['id']: v for g in d.get('venueGroups', []) for v in g.get('venues', [])}
+
+    def going_now(vid):
+        """지금 원고가 가고 있는 낼 곳인가. 판의 낼 곳 화면과 같은 셈이다."""
+        for sec in d.get('sections', []):
+            if sec['id'] not in ('now', 'waiting'):
+                continue
+            for it in sec['items']:
+                if it.get('venue') != vid:
+                    continue
+                tone = (d.get('statuses', {}).get(it.get('status'), {}) or {}).get('tone')
+                if tone in ('stop', 'done'):
+                    continue
+                return it['title']
+        return None
     for sk, row in (seed or {}).items():
         clear_seed.append(sk)
         iid = row.get('id') or sk
@@ -179,6 +194,14 @@ def main():
                 continue
             if v.get('deadline') == new:
                 plan.append(('그대로', vid, v['name'], f'이미 {new} 입니다'))
+                continue
+            # 원고가 가고 있는 곳의 마감은 스스로 건 시계인 때가 있다.
+            # 저널이 적은 날짜로 덮으면 그 시계가 지워진다. 알리고 사람이 정한다.
+            going = going_now(vid)
+            if going:
+                plan.append(('물어볼 것', vid, v['name'],
+                             f'{going} 이(가) 가고 있는 곳입니다. '
+                             f'{v.get("deadline") or "없음"} 을 {new} 로 바꿀지 물어보세요'))
                 continue
             venue_seeds.append((vid, new))
             plan.append(('낼 곳 마감', vid, v['name'],
