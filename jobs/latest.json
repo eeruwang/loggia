@@ -7,7 +7,7 @@
     "url": "https://www.kadh.org/%EC%B1%84%EC%9A%A9-%EC%97%B0%EA%B5%AC%EA%B5%90%EC%88%98-%EC%84%9C%EA%B0%95%EB%8C%80%ED%95%99%EA%B5%90-%EB%94%94%EC%A7%80%ED%84%B8%EC%97%AD%EC%82%AC%EC%97%B0%EA%B5%AC%EC%86%8C/",
     "posted": "",
     "deadline": "2026-09-14",
-    "note": "미확인. KADH 경유로만 확인, 원문 열람 안 됨. 지난 회차 확인 마감 9/14 그대로 곧 마감으로 다시 싣습니다."
+    "note": "미확인. KADH 경유로만 확인, 원문 열람 안 됨. 이번 회차 검색에 결과발표 9/21이라는 상충 정보가 있어 접수마감 9/14는 확정 못한 채 그대로 유지."
   },
   "knu-inmun-2026-2": {
     "id": "knu-inmun-2026-2",
@@ -17,6 +17,16 @@
     "url": "https://www.kadh.org/%EC%B1%84%EC%9A%A9-%EB%B9%84%EC%A0%84%EC%9E%84-%EA%B2%BD%EB%B6%81%EB%8C%80-%EA%B2%BD%EB%B6%81%EC%9D%B8%EB%AC%B8%EC%82%AC%ED%9A%8C%EC%97%B0%EA%B5%AC%EC%9B%90-2026%EB%85%84-9%EC%9B%94/",
     "posted": "2026-09-03",
     "deadline": "",
-    "note": "미확인. 언론보도와 KADH 경유로만 확인. 13명 규모 2차 공개채용, 10월1일 임용 목표. 접수 마감일 스니펫에 없어 마감일 미상."
+    "note": "미확인. 매일신문 보도(1차 208명 지원 17명 선발, 부족 13명)와 KADH 경유로만 확인. 10월1일 임용 목표. 접수 마감일 이번 회차도 못 찾아 마감일 미상."
+  },
+  "hull-digitalmedia-2026": {
+    "id": "hull-digitalmedia-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "University of Hull, Lecturer in Digital Media",
+    "url": "https://www.jobs.ac.uk/job/DQY529/lecturer",
+    "posted": "2026-09-04",
+    "deadline": "2026-10-03",
+    "note": "미확인. jobs.ac.uk 스니펫만 확인, 원문 열람 안 됨. 스폰서십·계약형태·시작일 불명. 급여 £39,906–£46,049, 하이브리드 근무."
   }
 }}
