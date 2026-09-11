@@ -153,6 +153,18 @@ function linksHtml(item) {
 
 function whenCol(item) {
   var d = item.dates || {};
+  /* 손을 떠난 것과 끝난 것은 마감이 지나도 재촉하지 않는다.
+     마감은 할 일이 아니라 기록이므로 날짜만 조용히 남긴다. */
+  var tone = ((D.statuses || {})[item.status] || {}).tone;
+  var restful = (tone === 'wait' || tone === 'stop' || tone === 'done');
+  if (restful && d.sent) {
+    return '<div class="when-col"><span class="dday none" data-since="' + d.sent + '"></span>'
+         + '<span class="date">' + md(d.sent) + ' 냄</span></div>';
+  }
+  if (restful && d.deadline) {
+    return '<div class="when-col"><span class="dday none">—</span>'
+         + '<span class="date">' + md(d.deadline) + ' 마감</span></div>';
+  }
   if (d.deadline) {
     return '<div class="when-col"><span class="dday" data-deadline="' + d.deadline + '">D-</span>'
          + '<span class="date" data-d="' + md(d.deadline) + '">' + md(d.deadline) + '</span></div>';
