@@ -7,7 +7,7 @@
     "url": "https://www.kadh.org/%EC%B1%84%EC%9A%A9-%EC%97%B0%EA%B5%AC%EA%B5%90%EC%88%98-%EC%84%9C%EA%B0%95%EB%8C%80%ED%95%99%EA%B5%90-%EB%94%94%EC%A7%80%ED%84%B8%EC%97%AD%EC%82%AC%EC%97%B0%EA%B5%AC%EC%86%8C/",
     "posted": "",
     "deadline": "2026-09-14",
-    "note": "미확인. KADH 경유 재게시, 원문 열람 이번 회차도 차단. 모집분야 과학기술사·디지털역사학·동아시아사로 전공과 결이 다름. 최종 합격자 발표 9월21일."
+    "note": "미확인. KADH 경유 재게시, 원문 열람 이번 회차도 차단. 모집분야 과학기술사·환경사, 디지털역사학·데이터과학, 동아시아사로 전공과 결이 다름. 최종 합격자 발표 9월21일."
   },
   "knu-humanities-2026-2": {
     "id": "knu-humanities-2026-2",
@@ -18,5 +18,45 @@
     "posted": "",
     "deadline": "",
     "note": "미확인. 매일신문 9/3자 기사 재확인, 1차 208명 지원 17명 선발, 남은 13명 9월 중 2차 선발 10월1일 임용목표. 접수기간 원문 이번 회차도 못 찾음, 원문 열람 차단."
+  },
+  "hull-digitalmedia-2026": {
+    "id": "hull-digitalmedia-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "University of Hull, Lecturer in Digital Media",
+    "url": "https://www.jobs.ac.uk/job/DSV911/lecturer",
+    "posted": "2026-09-04",
+    "deadline": "2026-10-03",
+    "note": "미확인. jobs.ac.uk 스니펫만 확인, 스폰서십 불명. 게시된 job code가 회차마다 달라(CCH432/DQY529/DSV911) 동일 공고인지 미해소."
+  },
+  "liverpool-mediaculture-2026": {
+    "id": "liverpool-mediaculture-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "University of Liverpool, Lecturer in Media and Culture (Grade 7/8)",
+    "url": "https://www.jobs.ac.uk/job/DSU894/lecturer-in-media-and-culture-grade-7-8",
+    "posted": "",
+    "deadline": "2026-09-23",
+    "note": "미확인. jobs.ac.uk 스니펫 기준 마감 9/23 23:30 확인, 스폰서십 불명, 원문 열람 차단."
+  },
+  "plymouth-digitalmedia-2026": {
+    "id": "plymouth-digitalmedia-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "University of Plymouth, Lecturer in Digital Media",
+    "url": "https://www.jobs.ac.uk/job/DSE285/lecturer-in-digital-media",
+    "posted": "",
+    "deadline": "",
+    "note": "미확인. jobs.ac.uk 스니펫만 확인, 마감일 못 찾음. 원문 열람 차단, 스폰서십 불명."
+  },
+  "rhul-digitalmedia-2026": {
+    "id": "rhul-digitalmedia-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Royal Holloway, Lecturer in Digital Media and Immersive Storytelling",
+    "url": "https://www.jobs.ac.uk/job/DRI578/lecturer-in-digital-and-immersive-storytelling",
+    "posted": "",
+    "deadline": "",
+    "note": "미확인. jobs.ac.uk 스니펫만 확인, 마감일 못 찾음. 원문 열람 차단, 스폰서십 불명."
   }
 }}
