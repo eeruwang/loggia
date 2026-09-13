@@ -39,6 +39,7 @@ Practice-based moving-image artist and early-career researcher. PhD in Film and 
 - British Journal of Aesthetics (Oxford UP)
 - Journal of Aesthetics and Art Criticism (Oxford UP)
 - Ambiances · 오픈액세스, 분위기 전문
+- Sophia (Springer) · 신현상학과 분위기 논문이 실린다
 - Capacious, Journal for Emerging Affect Inquiry · 오픈액세스
 - Humanities (MDPI) 가운데 Film and Philosophy 계열 특집 · 게재 예정 이력
 - Journal of Visual Culture (SAGE)
@@ -87,7 +88,7 @@ Hermann Schmitz, Gernot Böhme, Tonino Griffero, Walter Benjamin, Béla Balázs,
 2. WASET, IEREK, Scientific Research Publishing처럼 분야를 가리지 않고 찍어 내는 곳과 게재비를 앞세운 대량 발행처의 글은 뺀다. MDPI Humanities는 이미 게재 이력이 있으니 이 규칙에서 예외로 둔다.
 3. 프리프린트는 갈래 3의 이론가 본인이 올린 것만 싣고 프리프린트라고 적는다.
 4. 학위논문, 서평, 학회 발표문, 뉴스 기사는 뺀다. 서평은 영화 리뷰 다이제스트 몫도 아니므로 어디에도 넣지 않는다.
-5. 처음 공개된 날이 지난 이레 밖이면 뺀다. 날짜를 확인하지 못하면 스니펫 기준으로 싣고 그렇게 적는다.
+5. 처음 공개된 날이 지난 이레 밖임을 **확인했을 때만** 뺀다. 날짜를 확인하지 못한 것은 빼는 사유가 아니다. 스니펫 기준으로 싣고 날짜 미확인이라고 적는다. 호에 묶여 나온 글이 이레 안의 신규 공개인지 불분명한 경우도 같다. 빼지 말고 싣되 선공개 시점 미확인이라고 적는다.
 
 === 반복 검사 ===
 
