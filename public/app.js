@@ -359,9 +359,11 @@ function secbox(title, count, body, key, open_) {
 /* 거르는 단추 한 줄. 단추마다 키 하나. 상자의 data-tags 에 그 말이
    적혀 있으면 남는다. */
 function filtersHtml(buttons, label) {
-  if (buttons.length < 2) return '';
+  if (buttons.filter(function (b) { return b[0] !== '--'; }).length < 2) return '';
   var bs = buttons.map(function (b) {
     var k = b[0], t = b[1], n = b[2];
+    // '--' 는 단추가 아니라 줄을 바꾸고 그 줄이 무엇인지 적는 머리다
+    if (k === '--') return '<span class="fcap">' + esc(t) + '</span>';
     return '<button type="button" data-filter="' + esc(k) + '"'
          + (k === '*' ? ' aria-pressed="true"' : '') + '>' + esc(t)
          + (n === null || n === undefined ? '' : '<b>' + n + '</b>') + '</button>';
@@ -580,12 +582,19 @@ function buildJournals() {
     });
   });
   var order = ['A&HCI', 'SSCI', 'Scopus', 'KCI 등재', 'ESCI', '색인 없음'];
-  var buttons = [['*', '전체', NVEN]];
+  var tagOrder = ['냈음', '접수 중단', '상시 접수'];
+  vorder.forEach(function (t) { if (tagOrder.indexOf(t) < 0) tagOrder.push(t); });
+
+  // 줄을 둘로 가른다. 위는 내 형편, 아래는 지면의 격이다.
+  // 한 줄에 섞어 두면 무엇을 찾는지에 상관없이 열둘을 다 훑게 된다.
+  // 셈이 하나뿐인 것은 단추로 만들지 않는다. 한 곳을 골라내는 품이 더 든다.
+  var buttons = [['--', '형편'], ['*', '전체', NVEN]];
   if (ngo) buttons.push(['진행', '원고 진행중', ngo]);
-  order.forEach(function (t) { if (tally[t]) buttons.push([t, t, tally[t]]); });
-  vorder.forEach(function (t) { buttons.push([t, t, vtally[t]]); });
+  tagOrder.forEach(function (t) { if (vtally[t] > 1) buttons.push([t, t, vtally[t]]); });
   if (ndl) buttons.push(['마감', '마감 있음', ndl]);
-  out.push(filtersHtml(buttons, '색인과 태그와 마감으로 골라 보기'));
+  buttons.push(['--', '색인']);
+  order.forEach(function (t) { if (tally[t] > 1) buttons.push([t, t, tally[t]]); });
+  out.push(filtersHtml(buttons, '형편과 색인으로 골라 보기'));
 
   (D.venueGroups || []).forEach(function (g) {
     var body = g.venues.map(function (v) {
@@ -593,7 +602,11 @@ function buildJournals() {
         ? '<a href="' + esc(v.url) + '" target="_blank" rel="noopener">' + esc(v.name) + '</a>'
         : esc(v.name);
       var tg = indexTags(v);
-      var tags = tg.map(function (p) {
+      // 위쪽에는 가장 무거운 색인 하나만 둔다. 이름이 먼저 읽히게 한다.
+      // 나머지는 마감과 비용이 있는 아랫줄로 내린다.
+      var head = tg.length ? [tg[0]] : [];
+      var rest = tg.slice(1);
+      var tags = head.map(function (p) {
         return '<span class="idx ' + p[0] + '">' + esc(p[1]) + '</span>';
       }).join('');
       (v.tags || []).forEach(function (t) {
@@ -603,6 +616,10 @@ function buildJournals() {
       var going = goingNow(v.id);
 
       var facts = [];
+      if (rest.length) {
+        facts.push('<span><span class="lab">색인</span>'
+          + esc(rest.map(function (p) { return p[1]; }).join(' · ')) + '</span>');
+      }
       if (v.deadline) {
         facts.push('<span><span class="lab">마감</span><b>' + dots(v.deadline) + ' · </b>'
           + '<b class="dday" style="font-size:13.5px;display:inline" data-wide="1" data-deadline="'
@@ -617,7 +634,7 @@ function buildJournals() {
         facts.push('<span><span class="lab">비용</span><b>' + esc(v.cost) + '</b></span>');
       }
       if (v.review) facts.push('<span><span class="lab">심사</span>' + esc(v.review) + '</span>');
-      if (v.clarivate) facts.push('<span><span class="lab">색인</span>클래리베이트 대조 완료</span>');
+      if (v.clarivate) facts.push('<span><span class="lab">대조</span>클래리베이트 확인 완료</span>');
       if (v['라이선스']) facts.push('<span><span class="lab">라이선스</span>' + esc(v['라이선스']) + '</span>');
 
       var rows = BYVEN[v.id] || [];
