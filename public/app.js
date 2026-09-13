@@ -567,10 +567,14 @@ function buildJournals() {
   var out = [headHtml('journals', '낼 곳')];
 
   // 필터. 색인과 마감으로 좁힌다
-  var tally = {}, ndl = 0, ngo = 0;
+  var tally = {}, vtally = {}, vorder = [], ndl = 0, ngo = 0;
   (D.venueGroups || []).forEach(function (g) {
     g.venues.forEach(function (v) {
       indexTags(v).forEach(function (p) { tally[p[1]] = (tally[p[1]] || 0) + 1; });
+      (v.tags || []).forEach(function (t) {
+        if (!vtally[t]) vorder.push(t);
+        vtally[t] = (vtally[t] || 0) + 1;
+      });
       if (v.deadline) ndl++;
       if (goingNow(v.id)) ngo++;
     });
@@ -579,8 +583,9 @@ function buildJournals() {
   var buttons = [['*', '전체', NVEN]];
   if (ngo) buttons.push(['진행', '지금 가는 곳', ngo]);
   order.forEach(function (t) { if (tally[t]) buttons.push([t, t, tally[t]]); });
+  vorder.forEach(function (t) { buttons.push([t, t, vtally[t]]); });
   if (ndl) buttons.push(['마감', '마감 있음', ndl]);
-  out.push(filtersHtml(buttons, '색인과 마감으로 골라 보기'));
+  out.push(filtersHtml(buttons, '색인과 태그와 마감으로 골라 보기'));
 
   (D.venueGroups || []).forEach(function (g) {
     var body = g.venues.map(function (v) {
@@ -591,6 +596,9 @@ function buildJournals() {
       var tags = tg.map(function (p) {
         return '<span class="idx ' + p[0] + '">' + esc(p[1]) + '</span>';
       }).join('');
+      (v.tags || []).forEach(function (t) {
+        tags += '<span class="vtag">' + esc(t) + '</span>';
+      });
       if (v.flag) tags += '<span class="flag">' + esc(v.flag) + '</span>';
       var going = goingNow(v.id);
 
@@ -618,6 +626,7 @@ function buildJournals() {
           + historyRows(rows) + '</div>'
         : '';
       var tagset = tg.map(function (p) { return p[1]; })
+        .concat(v.tags || [])
         .concat(v.deadline ? ['마감'] : []).concat(going ? ['진행'] : []);
       return '<section class="venue-block" id="' + esc(v.id) + '" data-tags="'
         + esc(tagset.join(' ')) + '">\n'

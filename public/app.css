@@ -229,6 +229,8 @@ border:1.5px solid var(--rule-2);color:var(--ink-3)}
 .idx.strong{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 .idx.plain{border-color:var(--ink-3);color:var(--ink-2)}
 .idx.none{border-style:dashed;color:var(--ink-3)}
+.vtag{font-size:11.5px;font-weight:800;letter-spacing:.03em;padding:4px 9px;border-radius:6px;
+border:1.5px solid var(--ink-2);color:var(--ink)}
 .flag{font-size:11.5px;font-weight:800;color:var(--surface);background:var(--soon);
 padding:4px 9px;border-radius:6px}
 .venue-facts{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:14px;font-size:13.5px;color:var(--ink-2)}
