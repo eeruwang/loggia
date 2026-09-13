@@ -585,16 +585,16 @@ function buildJournals() {
   var tagOrder = ['냈음', '접수 중단', '상시 접수'];
   vorder.forEach(function (t) { if (tagOrder.indexOf(t) < 0) tagOrder.push(t); });
 
-  // 줄을 둘로 가른다. 위는 내 형편, 아래는 지면의 격이다.
+  // 줄을 둘로 가른다. 위는 내 쪽의 상태, 아래는 지면의 격이다.
   // 한 줄에 섞어 두면 무엇을 찾는지에 상관없이 열둘을 다 훑게 된다.
   // 셈이 하나뿐인 것은 단추로 만들지 않는다. 한 곳을 골라내는 품이 더 든다.
-  var buttons = [['--', '형편'], ['*', '전체', NVEN]];
+  var buttons = [['--', '상태'], ['*', '전체', NVEN]];
   if (ngo) buttons.push(['진행', '원고 진행중', ngo]);
   tagOrder.forEach(function (t) { if (vtally[t] > 1) buttons.push([t, t, vtally[t]]); });
   if (ndl) buttons.push(['마감', '마감 있음', ndl]);
   buttons.push(['--', '색인']);
   order.forEach(function (t) { if (tally[t] > 1) buttons.push([t, t, tally[t]]); });
-  out.push(filtersHtml(buttons, '형편과 색인으로 골라 보기'));
+  out.push(filtersHtml(buttons, '상태와 색인으로 골라 보기'));
 
   (D.venueGroups || []).forEach(function (g) {
     var body = g.venues.map(function (v) {
