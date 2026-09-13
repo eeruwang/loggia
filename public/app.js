@@ -2205,23 +2205,25 @@ function cache(k) {
 function loadLedger() {
   var lt = D.meta.ledger;
   var page = document.body.dataset.page || 'index';
-  if (!lt || (page !== 'index' && page !== 'jobs' && page !== 'calendar')) {
-    return Promise.resolve();
-  }
+  if (!lt) return Promise.resolve();
   var q = '?k=' + encodeURIComponent(lt);
   function get(path) {
     return fetch(path + q, { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; });
   }
-  // 달력도 공고를 읽는다. 담아 둔 공고의 마감이 다른 마감과 같은 줄에 서야 한다
-  if (page === 'jobs' || page === 'calendar') {
-    return get('/gongo').then(function (j) { if (j) JOB = j; NJOB = jobsLive().length; });
-  }
-  return Promise.all([get('/done'), get('/add'), get('/edit')]).then(function (r) {
-    if (r[0]) SRV = r[0];
-    if (r[1]) ADD = r[1];
-    if (r[2]) EDIT = r[2];
+  // 공고는 어느 장에서나 읽는다. 길잡이의 공고 셈이 장마다 달라지면
+  // 그 숫자를 믿을 수 없게 된다. 달력은 담아 둔 공고의 마감도 함께 쓴다.
+  var jobs = get('/gongo').then(function (j) {
+    if (j) JOB = j;
+    NJOB = jobsLive().length;
+  });
+  // 할 일 기록은 그것을 그리는 장에서만 읽는다. 나머지 장에서는 쓸 데가 없다.
+  if (page !== 'index') return jobs;
+  return Promise.all([jobs, get('/done'), get('/add'), get('/edit')]).then(function (r) {
+    if (r[1]) SRV = r[1];
+    if (r[2]) ADD = r[2];
+    if (r[3]) EDIT = r[3];
   });
 }
 
