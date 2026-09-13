@@ -22,6 +22,7 @@ ledger-apply.py — 사이트에서 직접 체크하거나 추가한 것을 데�
       /edit 는 사이트에서 수정하거나 삭제한 할 일. 키는 처음 글로 만든 것이다
         → 글과 날짜를 바꾼다. del 이 있으면 뺀다
       /edit 의 키가 stop: 으로 시작하면 카드에서 중단으로 넘긴 것
+      /edit 의 키가 due: 으로 시작하면 카드에서 고친 마감. 빈 값은 마감을 없앤 것
         → 상태를 보류로 바꾸고 적어 둔 이유를 결정 기록에 남긴다
       /seed 는 공고 판에서 담아 둔 것
         → 채용은 `later` 칸에 새 항목으로 심는다. 같은 id 가 있으면 건너뛴다
@@ -282,6 +283,19 @@ def main():
             stops.append((iid, e.get('why', ''), when))
             plan.append(('중단', iid, e.get('why', ''), '상태를 보류로 바꾸고 까닭을 남깁니다'))
             continue
+        # 마감은 할 일이 아니라 항목에 붙는다. 키가 `due:<아이디>` 다.
+        if k.startswith('due:'):
+            iid = e.get('item') or k[4:]
+            when = e.get('at') or datetime.date.today().isoformat()
+            it = find(d, iid)
+            if it is None:
+                plan.append(('못 찾음', iid, e.get('deadline', ''), '그런 항목이 없어서 그냥 버립니다'))
+                continue
+            touched_ids[iid] = max(touched_ids.get(iid, ''), when)
+            was = (it.get('dates') or {}).get('deadline', '')
+            now = e.get('deadline') or ''
+            plan.append(('마감', iid, now or '없앰', (was or '없음') + ' → ' + (now or '없음')))
+            continue
         # 일하는 기간은 할 일이 아니라 항목에 붙는다. 키가 `item:<아이디>` 다.
         if k.startswith('item:'):
             iid = e.get('item') or k[5:]
@@ -353,6 +367,16 @@ def main():
             put_todos(it, keep)
     for k, e in edit.items():
         if k.startswith('stop:'):
+            continue
+        if k.startswith('due:'):
+            it = find(d, e.get('item') or k[4:])
+            if it is None:
+                continue
+            it.setdefault('dates', {})
+            if e.get('deadline'):
+                it['dates']['deadline'] = e['deadline']
+            else:
+                it['dates'].pop('deadline', None)
             continue
         if k.startswith('item:'):
             it = find(d, e.get('item') or k[5:])

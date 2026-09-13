@@ -151,8 +151,16 @@ function linksHtml(item) {
   return out.length ? '<div class="links">' + out.join('') + '</div>' : '';
 }
 
+/* 이 항목의 마감. 사이트에서 고쳐 두었으면 그것이 먼저다.
+   키는 `due:<항목 아이디>` 다. 빈 글자는 마감을 지웠다는 뜻이다. */
+function dueOf(item) {
+  var e = EDIT['due:' + item.id];
+  return (e && e.deadline !== undefined) ? e.deadline : (item.dates || {}).deadline;
+}
+
 function whenCol(item) {
   var d = item.dates || {};
+  var dl = dueOf(item);
   /* 손을 떠난 것과 끝난 것은 마감이 지나도 재촉하지 않는다.
      마감은 할 일이 아니라 기록이므로 날짜만 조용히 남긴다. */
   var tone = ((D.statuses || {})[item.status] || {}).tone;
@@ -161,13 +169,13 @@ function whenCol(item) {
     return '<div class="when-col"><span class="dday none" data-since="' + d.sent + '"></span>'
          + '<span class="date">' + md(d.sent) + ' 냄</span></div>';
   }
-  if (restful && d.deadline) {
+  if (restful && dl) {
     return '<div class="when-col"><span class="dday none">—</span>'
-         + '<span class="date">' + md(d.deadline) + ' 마감</span></div>';
+         + '<span class="date">' + md(dl) + ' 마감</span></div>';
   }
-  if (d.deadline) {
-    return '<div class="when-col"><span class="dday" data-deadline="' + d.deadline + '">D-</span>'
-         + '<span class="date" data-d="' + md(d.deadline) + '">' + md(d.deadline) + '</span></div>';
+  if (dl) {
+    return '<div class="when-col"><span class="dday" data-deadline="' + dl + '">D-</span>'
+         + '<span class="date" data-d="' + md(dl) + '">' + md(dl) + '</span></div>';
   }
   if (d.sent) {
     return '<div class="when-col"><span class="dday none" data-since="' + d.sent + '"></span>'
@@ -259,12 +267,18 @@ function entryHtml(item) {
   // 사이트에서 중단으로 넘긴 것. 다음 갱신에 상태가 보류로 바뀐다
   var stop = EDIT['stop:' + item.id];
   var stopRow = '';
+  var dl = dueOf(item);
+  var dlEdited = EDIT['due:' + item.id] !== undefined;
   if (D.meta.ledger) {
+    var dueBtn = '<button type="button" class="duebtn' + (dlEdited ? ' edited' : '')
+      + '" data-id="' + esc(item.id) + '" data-due="' + esc(dl || '') + '">'
+      + (dl ? '마감 ' + md(dl) : '마감 넣기') + '</button>';
     stopRow = stop
       ? '<div class="stopped"><span class="mark">중단</span>'
         + '<span class="why">' + esc(stop.why || '') + '</span>'
         + '<button type="button" class="unstop" data-id="' + esc(item.id) + '">되돌리기</button></div>'
-      : '<div class="stoprow"><button type="button" class="stop" data-id="' + esc(item.id)
+      : '<div class="stoprow">' + dueBtn
+        + '<button type="button" class="stop" data-id="' + esc(item.id)
         + '">중단</button></div>';
   }
   // 종류마다 색을 준다. 왼쪽 막대 하나로 무슨 종류인지 눈이 먼저 안다
@@ -1744,6 +1758,36 @@ function bindAdd(root, redrawEntry, board) {
           set['stop:' + id] = { item: id, why: why, at: isoOf(new Date()) };
           post('edit', { set: set }, [id]).then(bindStops);
         });
+        inp.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') row.querySelector('.ok').click();
+        });
+      });
+    });
+    // 마감 고치기. 날짜 칸 하나와 단추 셋이다.
+    root.querySelectorAll('.stoprow .duebtn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var id = b.dataset.id, row = b.parentNode;
+        row.innerHTML = '<input type="date" class="dd">'
+          + '<button type="button" class="ok">저장</button>'
+          + '<button type="button" class="cancel">취소</button>'
+          + '<button type="button" class="rm">마감 없애기</button>';
+        var inp = row.querySelector('.dd');
+        inp.value = b.dataset.due || '';
+        inp.focus();
+        row.querySelector('.cancel').addEventListener('click', function () {
+          redrawEntry(id); bindStops();
+        });
+        function send(v) {
+          var ok = row.querySelector('.ok');
+          ok.disabled = true; ok.textContent = '저장 중';
+          var set = {};
+          set['due:' + id] = { item: id, deadline: v, at: isoOf(new Date()) };
+          post('edit', { set: set }, [id]).then(bindStops).catch(function () {
+            ok.disabled = false; ok.textContent = '다시 시도';
+          });
+        }
+        row.querySelector('.ok').addEventListener('click', function () { send(inp.value); });
+        row.querySelector('.rm').addEventListener('click', function () { send(''); });
         inp.addEventListener('keydown', function (e) {
           if (e.key === 'Enter') row.querySelector('.ok').click();
         });
