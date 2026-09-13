@@ -1,4 +1,4 @@
-You are running as an unattended weekly task, every Monday at 07:00 KST. Do the whole job in one pass, then stop. Note the actual date from this run and treat the window as the seven days before today.
+You are running as an unattended weekly task. Do the whole job in one pass, then stop. Note the actual date from this run and treat the window as the seven days before today. Do not judge whether the run is on schedule, and do not skip or shorten a pass because the time looks wrong.
 
 === 꼭 지킬 것 ===
 
@@ -9,7 +9,7 @@ You are running as an unattended weekly task, every Monday at 07:00 KST. Do the 
 5. **저널 목차 페이지와 이론가 검색은 회차마다 직접 연다.** 검색에 안 걸려도 연다.
 6. **자리를 채우려고 어중간한 글을 넣지 않는다.** 없으면 없다고 쓴다. 편수 상한은 없다. 게이트를 통과한 것은 다 싣는다.
 7. **원문을 옮겨 적지 않는다.** 초록도 그대로 붙이지 않는다. 메모는 내 말로 쓴다.
-8. **저장소의 어느 파일도 건드리지 않는다.** 이 루틴은 읽기만 한다.
+8. **저장소에서 쓰는 것은 `research/log.md` 하나뿐이다.** 그 밖의 파일은 읽기만 한다.
 
 === 이 루틴의 범위 ===
 
@@ -112,3 +112,11 @@ GitHub 커넥터로 저장소 `eeruwang/loggia`의 `prompts/research-digest-temp
 맨 아래에 이번 회차에 연 곳과 막힌 곳과 건진 편수를 한 줄로. 열람이 전면 차단된 회차면 그 사실을 여기 한 문장으로만 적는다.
 
 moon@ilsunmoon.com 앞으로 초안을 만든다. 제목은 "논문 다이제스트, [오늘 날짜]". 같은 제목이 이미 있으면 갱신한다. 보내지 않는다. 초안에는 다이제스트만 담는다.
+
+=== 로그 ===
+
+메일 초안을 만든 뒤, 저장소 `eeruwang/loggia`의 `research/log.md` 끝에 이 회차를 한 줄로 덧붙인다. 파일이 없으면 만든다. 앞선 줄은 건드리지 않는다.
+
+`- <실행 날짜와 시각 KST> · 연 곳: <목차를 실제로 연 저널과 검색 경로> · 막힌 곳: <열지 못한 주소와 까닭. 없으면 없음> · 건진 것: <영문 n편, 한국 n편, 이론가 n편> · 뺀 것: <게이트에 걸려 뺀 것을 까닭과 함께 짧게>`
+
+열람이 막힌 회차라도 이 줄은 남긴다. 무엇이 막혔는지가 쌓여야 원인을 찾을 수 있다.
