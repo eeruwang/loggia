@@ -632,7 +632,7 @@ function buildJournals() {
         + esc(tagset.join(' ')) + '">\n'
         + '<div class="venue-head"><h3>' + name + '</h3><span class="sub">'
         + esc(v.sub || '') + ' · ' + esc(v.type || '') + '</span>'
-        + (going ? '<span class="mark live">지금 원고가 간다</span>' : '') + '</div>\n'
+        + (going ? '<span class="mark live">원고 진행중</span>' : '') + '</div>\n'
         + (tags ? '<div class="idx-row">' + tags + '</div>' : '') + '\n'
         + (facts.length ? '<div class="venue-facts">' + facts.join('') + '</div>' : '') + '\n'
         + (v.note ? '<p class="note">' + esc(v.note) + '</p>' : '') + '\n'
