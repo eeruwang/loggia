@@ -817,7 +817,7 @@ function buildMaterials() {
     + '아래에서 개념을 하나 고르면 그 개념이 지나간 자리만 남는다.</p>');
   out.push('<div class="jump">'
     + '<a href="#readings">읽기</a><a href="#thinkers">이론가와 개념</a>'
-    + '<a href="#reuse" class="hot">다시 쓸 것 · CV와 지원서</a>'
+    + '<a href="#reuse" class="hot">문서 자료 · CV와 지원서</a>'
     + '<a href="#people">사람</a></div>');
 
   // 개념 고르는 줄. 어느 섹션에도 들어 있지 않으므로 읽기와 이론가를 함께 거른다.
@@ -920,7 +920,7 @@ function buildMaterials() {
                    + esc(r['파일'] || '파일') + '</a>' : '')
         + '</div>';
     }).join('');
-    out.push(fold('다시 쓸 것', D.reuse.length,
+    out.push(fold('문서 자료', D.reuse.length,
       '<p class="lede">한 번 쓴 글의 어느 부분을 다음에 어디로 쓸지. '
       + '지원서를 쓸 때 여기부터 본다.</p><div class="reuses">' + rs + '</div>', 'reuse'));
   }

@@ -21,7 +21,7 @@ sections[]    now 진행 중, waiting 결과 기다리는 중, later 아직 손�
   items[]     id, title, venue, kind, status, dates, next, note, uses, chats[], links[]
 compass       연구 지형도
 decisions[]   정한 것
-reuse[]       다시 쓸 것
+reuse[]       문서 자료. 지원서를 쓸 때 꺼내 오는 글과 서류
 people[]      사람. 이름, 관계, 학교, 과, 메일, 보낸 날, 받은 날, 다음, 메모
               관계는 나에게 무엇인 사람인지다. 소속은 학교와 과로 따로 적는다.
               날짜는 열 글자면 며칠 지났는지 저절로 세고, 달까지만 적으면 글자 그대로 둔다.
@@ -47,7 +47,7 @@ memo[]        기억해 둘 것
 | 현황판 `index` | 진행 중과 아직 손대지 않은 것, 정한 것 | `sections`, `decisions` |
 | 달력 `calendar` | 확인할 것, 답을 기다리는 중, 해마다 돌아오는 것, 열세 달 | `sections.waiting`, `repeats`, 담아 둔 공고 |
 | 낼 곳 `journals` | 저널·학회·레지던시·공고, 길목, 새겨 둘 것 | `venueGroups`, `watch`, `memo` |
-| 재료 `materials` | 이론가·개념·읽기, 다시 쓸 것, 사람 | `uses`, `thinkers`, `readings`, `reuse`, `people` |
+| 재료 `materials` | 이론가·개념·읽기, 문서 자료, 사람 | `uses`, `thinkers`, `readings`, `reuse`, `people` |
 | 지난 일 `archive` | 끝난 것과 심사평 | `archive` |
 
 취업 항목 하나가 움직였을 때 판을 따라 움직이게 한다.
@@ -259,7 +259,7 @@ memo[]        기억해 둘 것
 
 **오늘 할 일이 아닌 섹션은 접는다.** 펼쳐 둔 것이 많으면 무엇부터 볼지가 흐려진다.
 화면 만드는 코드가 이미 그렇게 짓는다. 지금 접혀 있는 것은 정한 것, 해마다 돌아오는 것,
-다시 쓸 것, 사람이다. 펼쳐 둔 것은 진행 중과 기다리는 중과 답을 기다리는 중,
+문서 자료, 사람이다. 펼쳐 둔 것은 진행 중과 기다리는 중과 답을 기다리는 중,
 곧 지금 손이 가야 하거나 남의 답이 늦고 있는 것들뿐이다.
 
 새 섹션을 더할 때 이 항목을 지킨다. 할 일이면 펼치고 참고할 것이면 접는다.
