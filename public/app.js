@@ -925,13 +925,29 @@ function buildMaterials() {
       + '지원서를 쓸 때 여기부터 본다.</p><div class="reuses">' + rs + '</div>', 'reuse'));
   }
   if (D.people && D.people.length) {
+    // 날짜는 열 글자일 때만 며칠 지났는지 센다. 달까지만 적힌 것은 글자 그대로 둔다.
+    var day = function (lab, v) {
+      if (!v) return '';
+      return '<span class="ld"><span class="lab">' + lab + '</span>'
+        + (v.length === 10 ? '<span data-since="' + esc(v) + '"></span>'
+                           : '<span>' + esc(v) + '</span>') + '</span>';
+    };
     var ps = D.people.map(function (pp) {
-      var last = (pp['마지막'] || '').length === 10
-        ? '<span class="last" data-since="' + esc(pp['마지막']) + '"></span>'
-        : '<span class="last">' + esc(pp['마지막'] || '') + '</span>';
-      return '<div class="who-row"><span class="nm">' + esc(pp['이름']) + '</span>'
-        + '<span class="role">' + esc(pp['몫'] || '') + '</span>' + last
-        + '<p class="n">' + esc(pp['메모'] || '') + '</p></div>';
+      var where = [pp['학교'], pp['과']].filter(Boolean).join(' · ');
+      var days = day('보냄', pp['보낸 날']) + day('받음', pp['받은 날']);
+      return '<div class="who-row">'
+        + '<div class="who-head"><span class="nm">' + esc(pp['이름']) + '</span>'
+        + (pp['관계'] ? '<span class="role">' + esc(pp['관계']) + '</span>' : '')
+        + '<span class="days">' + days + '</span></div>'
+        + (where || pp['메일']
+            ? '<p class="who-at">' + (where ? '<span>' + esc(where) + '</span>' : '')
+              + (pp['메일'] ? '<a class="mail" href="mailto:' + esc(pp['메일']) + '">'
+                            + esc(pp['메일']) + '</a>' : '') + '</p>'
+            : '')
+        + (pp['다음'] ? '<p class="who-next"><span class="lab">다음</span>'
+                      + esc(pp['다음']) + '</p>' : '')
+        + (pp['메모'] ? '<p class="n">' + esc(pp['메모']) + '</p>' : '')
+        + '</div>';
     }).join('');
     out.push(fold('사람', D.people.length,
       '<p class="lede">누구에게 무엇을 언제 부탁했나. '

@@ -467,13 +467,22 @@ padding:4px 10px;border-radius:7px}
 
 /* 사람 */
 .whos{margin-top:4px}
-.who-row{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:15px 0}
+.who-row{padding:15px 0}
 .who-row+.who-row{border-top:1px solid var(--rule)}
+.who-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
 .who-row .nm{font-size:17px;font-weight:800;color:var(--ink)}
 .who-row .role{font-size:12px;font-weight:700;color:var(--ink-2);background:var(--sunk);
 padding:3px 10px;border-radius:7px}
-.who-row .last{margin-left:auto;font-size:13px;font-weight:600;color:var(--ink-3)}
-.who-row .n{flex-basis:100%;margin:5px 0 0;font-size:14.5px;color:var(--ink-2)}
+.who-row .days{margin-left:auto;display:flex;gap:12px;font-size:13px;font-weight:600;color:var(--ink-3)}
+.who-row .ld .lab{color:var(--ink-3);font-weight:700;margin-right:5px;opacity:.75}
+.who-row .ld.none{color:var(--ink-3);font-weight:600}
+.who-at{margin:6px 0 0;font-size:13.5px;color:var(--ink-2);display:flex;gap:14px;flex-wrap:wrap}
+.who-at .mail{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule-2)}
+.who-at .mail:hover{border-bottom-color:var(--ink)}
+.who-next{margin:7px 0 0;font-size:14.5px;color:var(--ink)}
+.who-next .lab{font-size:11.5px;font-weight:800;letter-spacing:.04em;color:var(--paper);
+background:var(--ink-2);padding:2px 7px;border-radius:5px;margin-right:8px}
+.who-row .n{margin:6px 0 0;font-size:14.5px;color:var(--ink-2)}
 
 /* 길목과 새겨 둘 것과 지형도 */
 .watch{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
@@ -529,7 +538,7 @@ font-size:12.5px;color:var(--ink-3)}
   .focus{padding:22px 20px 24px}
   .clock .side{margin-left:0;flex-basis:100%;margin-top:8px}
   .hrow .d{margin-left:0;width:100%}
-  .reuse .to,.who-row .last{margin-left:0}
+  .reuse .to,.who-row .days{margin-left:0}
 }
 
 /* 새로 추가한 할 일이 첫 할 일 자리에 설 때가 있다. 데이터에 할 일이 하나도
