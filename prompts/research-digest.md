@@ -105,7 +105,9 @@ Hermann Schmitz, Gernot Böhme, Tonino Griffero, Walter Benjamin, Béla Balázs,
 
 === 메일 ===
 
-GitHub 커넥터로 저장소 `eeruwang/loggia`의 `prompts/research-digest-template.html`을 읽는다. 있으면 그 채우기 지침을 그대로 따르고 보이는 글은 한국어로 쓴다. 없으면 같은 구조의 단순한 HTML을 만든다. 인라인 CSS만, 모든 글자에 색 명시. 제목 #111111, 설명 #444444, 배경 #ffffff, 갈래 표시 #888888. CSS 변수와 다크모드 쿼리를 쓰지 않는다.
+HTML로 만든다. 보이는 글은 한국어로 쓴다. 인라인 CSS만 쓰고 모든 글자에 색을 명시한다. CSS 변수와 다크모드 쿼리를 쓰지 않는다.
+
+빛깔과 글꼴은 로지아 판과 같게 한다. 바탕 #f5f6f8, 카드 바탕 #ffffff, 제목 글자 #12151c, 본문 글자 #4b5059, 옅은 글자 #767b85, 가는 선 #dcdfe4. 글꼴은 Pretendard와 Apple SD Gothic Neo와 Noto Sans KR을 이 차례로 적고 마지막에 sans-serif를 둔다. 카드는 흰 바탕에 가는 선 하나를 두르고 모서리를 6픽셀 굴린다. 절 제목은 굵게, 갈래 표시는 옅은 글자로 작게.
 
 맨 위에 날짜와 창(어느 날부터 어느 날까지). 그 아래 세 절, 영문 저널 신간, 한국 KCI 신간, 이론가 신착. 절 안에서는 처음 공개된 날의 역순. 빈 절은 절 제목 아래 "이번 주 새 글 없음" 한 줄.
 
