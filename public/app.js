@@ -581,7 +581,7 @@ function buildJournals() {
   });
   var order = ['A&HCI', 'SSCI', 'Scopus', 'KCI 등재', 'ESCI', '색인 없음'];
   var buttons = [['*', '전체', NVEN]];
-  if (ngo) buttons.push(['진행', '지금 가는 곳', ngo]);
+  if (ngo) buttons.push(['진행', '원고 진행중', ngo]);
   order.forEach(function (t) { if (tally[t]) buttons.push([t, t, tally[t]]); });
   vorder.forEach(function (t) { buttons.push([t, t, vtally[t]]); });
   if (ndl) buttons.push(['마감', '마감 있음', ndl]);
