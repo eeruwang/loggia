@@ -17,7 +17,9 @@ For every link in the whole digest, use the publisher's own final URL on the tit
 
 Before searching, look in Gmail for the most recent draft whose subject starts with "영화 리뷰 다이제스트" within the last 21 days and note the items already listed. Do not list the same piece again.
 
-Mail. Read prompts/research-digest-template.html from the GitHub repository eeruwang/loggia through the GitHub connector. If it exists, use it as the exact, fixed shell, all visible text in Korean. Set {{TITLE}} to "영화 리뷰 공부" and {{DATE}} to today's date. Between the ITEMS markers, replace the example with the items, grouped with SUBHEAD lines. If the template does not exist, build a plain HTML message of the same structure instead. Inline CSS only, every text element with an explicit colour. Headings #111111, body #444444, background #ffffff, group labels #888888. No CSS variables and no dark-mode queries. Do not stop the run because the template is missing.
+Mail. Build the message as HTML. The title is "영화 리뷰 공부" and the date is today's date. Group the items with subhead lines. All visible text in Korean. Inline CSS only, every text element with an explicit colour. No CSS variables and no dark-mode queries.
+
+Match the Loggia board. Background #f5f6f8, card background #ffffff, heading text #12151c, body text #4b5059, muted text #767b85, hairline rules #dcdfe4. Font stack: Pretendard, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif. Each item sits on a white card with a single hairline border and 6px corners. Subheads in bold, group labels small and in the muted colour.
 
 Use 이번 주 새 글 and 다시 보는 평 for the study items, and a separate SUBHEAD 옮길 수 있는 새 리뷰 for the openly licensed group. Up to 8 items overall. For each study item give the critic or outlet and the date, the title as a clickable link, the one-line Korean craft note, and the author. For each item in 옮길 수 있는 새 리뷰 give the venue and the date, the title as a clickable link, the licence such as CC BY or CC BY-NC, and the one-line Korean note. Never list an item without its link. If little appeared this week, send fewer rather than padding, and write 이번 주 새 글 없음 under a group heading if nothing fits.
 
