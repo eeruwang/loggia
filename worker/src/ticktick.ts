@@ -20,7 +20,8 @@ import { loadData, type FlushEnv } from './flush';
 
 export interface TTEnv extends FlushEnv {
   LEDGER?: KVNamespace;
-  TICKTICK_CLIENT_ID?: string;
+  TICKTICK_TOKEN?: string;        // 틱틱 웹에서 바로 받은 토큰. 이것만 있어도 된다
+  TICKTICK_CLIENT_ID?: string;    // 아래 셋은 앱을 등록해 받는 길. 토큰이 없을 때만 쓴다
   TICKTICK_CLIENT_SECRET?: string;
   TICKTICK_REDIRECT?: string;
   LEDGER_TOKEN?: string;
@@ -90,9 +91,26 @@ export async function ttCallback(env: TTEnv, url: URL): Promise<Response> {
 }
 
 async function token(env: TTEnv): Promise<string | null> {
+  // 손으로 넣어 둔 토큰이 먼저다. 틱틱 웹의 설정, 계정, API 토큰에서 받는다
+  if (env.TICKTICK_TOKEN) return env.TICKTICK_TOKEN;
   if (!env.LEDGER) return null;
   const t = (await env.LEDGER.get(TOKEN_KEY, 'json')) as Any;
   return t?.token || null;
+}
+
+/** 토큰이 통하는지 눈으로 보는 자리.  GET /tt/probe?k=<LEDGER_TOKEN> */
+export async function ttProbe(env: TTEnv): Promise<Response> {
+  const tok = await token(env);
+  const say = (t: string) => new Response(t, {
+    headers: { 'content-type': 'text/plain; charset=utf-8' } });
+  if (!tok) return say('토큰이 없습니다');
+  try {
+    const ps = await tt(tok, '/project');
+    const names = (ps || []).map((p: Any) => `${p.name} ${p.id}`).join('\n');
+    return say(`토큰이 통합니다. 목록 ${(ps || []).length}개\n${names}`);
+  } catch (e) {
+    return say(`통하지 않습니다\n${e}`);
+  }
 }
 
 async function tt(tok: string, path: string, init?: RequestInit): Promise<Any> {

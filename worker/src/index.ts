@@ -26,7 +26,7 @@
 // =============================================================================
 
 import { flush } from './flush';
-import { ttSync, ttLogin, ttCallback } from './ticktick';
+import { ttSync, ttLogin, ttCallback, ttProbe } from './ticktick';
 
 interface Env {
   EMAIL: {
@@ -51,6 +51,7 @@ interface Env {
   GITHUB_API?: string;
 
   // 틱틱. 셋이 다 있어야 열 분마다 맞춘다. 없으면 조용히 건너뛴다.
+  TICKTICK_TOKEN?: string;
   TICKTICK_CLIENT_ID?: string;
   TICKTICK_CLIENT_SECRET?: string;
   TICKTICK_REDIRECT?: string;
@@ -870,6 +871,10 @@ export default {
         ? ttLogin(env) : new Response('없습니다', { status: 404 });
     }
     if (u.pathname === '/tt/callback') return ttCallback(env, u);
+    if (u.pathname === '/tt/probe') {
+      return u.searchParams.get('k') === env.LEDGER_TOKEN
+        ? ttProbe(env) : new Response('없습니다', { status: 404 });
+    }
     if (u.pathname === '/done') return ledger(req, env, u.searchParams.get('k'), DONE_KEY);
     if (u.pathname === '/add') return ledger(req, env, u.searchParams.get('k'), ADD_KEY);
     if (u.pathname === '/edit') return ledger(req, env, u.searchParams.get('k'), EDIT_KEY);
