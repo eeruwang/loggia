@@ -14,9 +14,12 @@ ticktick-plan.py — 로지아와 틱틱 사이에 무엇을 옮길지 계산한
 구조
 
     할 일 목록은 항목이 어버이가 되고 할 일이 하위로 붙는다.
-      어버이  제목은 항목 이름. 본문 첫 줄 `로지아 항목 <아이디>`. 태그는 항목의 갈래
-      하위    제목은 판의 할 일 글 그대로. 본문 첫 줄 `로지아 <아이디>.<지문>`
-    마감 목록은 로지아를 비추기만 한다. 본문 첫 줄 `로지아 마감 <갈래>:<아이디>`.
+      어버이  제목은 항목 이름. 본문에 `로지아 항목 <아이디>` 한 줄. 태그는 항목의 갈래
+      하위    제목은 판의 할 일 글 그대로. 본문에 `로지아 <아이디>.<지문>` 한 줄
+    마감 목록은 로지아를 비추기만 한다. 본문에 `로지아 마감 <갈래>:<아이디>` 한 줄.
+
+    **본문의 나머지는 사람의 자리다.** 열쇠 줄만 보고 나머지 메모는 건드리지 않는다.
+    열쇠 줄은 첫 줄이 아니어도 된다. 줄마다 훑어 찾는다.
 
     **갈래는 틱틱이 정한다.** 사람이 어떤 줄을 노트로 바꾸면 그대로 둔다.
     노트는 체크할 수 없고 하위로도 못 들어간다. 틱틱이 막는다.
@@ -58,15 +61,33 @@ def day(s):
 
 
 def keyline(content):
-    """본문 첫 줄에 박아 둔 열쇠. 없으면 None"""
+    """본문 어딘가에 박아 둔 열쇠 한 줄. 없으면 None.
+
+    사람이 같은 본문에 메모를 적으므로 첫 줄만 보지 않는다. 줄마다 훑는다."""
     if not content:
         return None
-    head = content.strip().split('\n')[0].strip()
-    for mark in ('로지아 마감 ', '로지아 항목 ', '로지아 '):
-        if head.startswith(mark):
-            rest = head[len(mark):].strip()
-            return ('항목:' + rest) if mark == '로지아 항목 ' else rest
+    for line in content.split('\n'):
+        head = line.strip()
+        for mark in ('로지아 마감 ', '로지아 항목 ', '로지아 '):
+            if head.startswith(mark):
+                rest = head[len(mark):].strip()
+                return ('항목:' + rest) if mark == '로지아 항목 ' else rest
     return None
+
+
+def restamp(content, marker):
+    """열쇠 줄만 갈아 끼우고 사람이 적은 나머지는 그대로 둔다."""
+    lines = (content or '').split('\n')
+    out, hit = [], False
+    for line in lines:
+        if not hit and line.strip().startswith('로지아 '):
+            out.append(marker)
+            hit = True
+        else:
+            out.append(line)
+    if not hit:
+        out = [marker] + [x for x in out if x.strip()]
+    return '\n'.join(out).strip()
 
 
 def todos_of(item):
@@ -140,7 +161,7 @@ def main():
 
     def mk_todo(k, w):
         t = {'projectId': TODO_PID, 'title': w['t'],
-             'content': f"로지아 {k}\n항목 {w['title']}",
+             'content': f"로지아 {k}",
              'parentKey': '항목:' + w['item']}
         pid = parent_id.get('항목:' + w['item'])
         if pid:
@@ -199,7 +220,7 @@ def main():
             plan['ledger']['add'][f"tt-{t['id']}"] = row
             nk = f"{iid}.{fp(row['t'])}"
             plan['update'].append({'id': t['id'], 'projectId': TODO_PID,
-                                   'content': f"로지아 {nk}\n항목 {items[iid]['title']}"})
+                                   'content': restamp(t.get('content'), f"로지아 {nk}")})
             if done:
                 plan['ledger']['done'][f"add:tt-{t['id']}"] = {'at': today}
                 plan['delete'].append({'projectId': TODO_PID, 'taskId': t['id'],
@@ -226,7 +247,7 @@ def main():
             plan['ledger']['edit'][k] = row
             nk = f"{w['item']}.{fp(t['title'])}"
             plan['update'].append({'id': t['id'], 'projectId': TODO_PID,
-                                   'content': f"로지아 {nk}\n항목 {w['title']}"})
+                                   'content': restamp(t.get('content'), f"로지아 {nk}")})
             plan['report'].append(f"글을 고쳤다 · {k}")
             continue
         if day(t.get('dueDate')) != w.get('due'):
