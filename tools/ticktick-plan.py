@@ -20,6 +20,9 @@ ticktick-plan.py — 로지아와 틱틱 사이에 무엇을 옮길지 계산한
 
     **본문의 나머지는 사람의 자리다.** 열쇠 줄만 보고 나머지 메모는 건드리지 않는다.
     열쇠 줄은 첫 줄이 아니어도 된다. 줄마다 훑어 찾는다.
+    그 메모는 판의 할 일에도 붙는다. 틱틱이 적는 자리이고 판은 읽는 자리다.
+    달라졌을 때만 `/edit` 에 `memo` 를 실어 보낸다. `memo` 가 없는 수정은
+    있던 메모를 그대로 둔다. 빈 값이면 지운다.
 
     **갈래는 틱틱이 정한다.** 사람이 어떤 줄을 노트로 바꾸면 그대로 둔다.
     노트는 체크할 수 없고 하위로도 못 들어간다. 틱틱이 막는다.
@@ -90,6 +93,18 @@ def restamp(content, marker):
     return '\n'.join(out).strip()
 
 
+def bodymemo(content):
+    """본문에서 열쇠 줄을 뺀 나머지. 사람이 적은 메모다."""
+    out = []
+    hit = False
+    for line in (content or '').split('\n'):
+        if not hit and line.strip().startswith('로지아 '):
+            hit = True
+            continue
+        out.append(line)
+    return '\n'.join(out).strip()
+
+
 def todos_of(item):
     st = item.get('steps') or ([item['next']] if item.get('next') else [])
     return [{'t': x} if isinstance(x, str) else dict(x) for x in st]
@@ -126,6 +141,7 @@ def main():
             for x in ts:
                 k = f"{it['id']}.{fp(x['t'])}"
                 want_todo[k] = {'t': x['t'], 'due': x.get('due'),
+                                'memo': x.get('memo') or '',
                                 'item': it['id'], 'title': it['title']}
             dl = (it.get('dates') or {}).get('deadline')
             if dl and dl >= today:
@@ -160,8 +176,10 @@ def main():
             parent_id[k] = t['id']
 
     def mk_todo(k, w):
-        t = {'projectId': TODO_PID, 'title': w['t'],
-             'content': f"로지아 {k}",
+        body = f"로지아 {k}"
+        if w.get('memo'):
+            body += '\n\n' + w['memo']
+        t = {'projectId': TODO_PID, 'title': w['t'], 'content': body,
              'parentKey': '항목:' + w['item']}
         pid = parent_id.get('항목:' + w['item'])
         if pid:
@@ -217,6 +235,8 @@ def main():
             row = {'item': iid, 't': t.get('title', ''), 'at': today}
             if day(t.get('dueDate')):
                 row['due'] = day(t['dueDate'])
+            if (t.get('content') or '').strip():
+                row['memo'] = (t['content'] or '').strip()
             plan['ledger']['add'][f"tt-{t['id']}"] = row
             nk = f"{iid}.{fp(row['t'])}"
             plan['update'].append({'id': t['id'], 'projectId': TODO_PID,
@@ -240,22 +260,29 @@ def main():
             plan['delete'].append({'projectId': TODO_PID, 'taskId': t['id'],
                                    'why': '로지아에 없는 할 일'})
             continue
+        memo = bodymemo(t.get('content'))
         if (t.get('title') or '') != w['t']:
             row = {'item': w['item'], 't': t['title'], 'at': today}
             if day(t.get('dueDate')):
                 row['due'] = day(t['dueDate'])
+            if memo != (w.get('memo') or ''):
+                row['memo'] = memo
             plan['ledger']['edit'][k] = row
             nk = f"{w['item']}.{fp(t['title'])}"
             plan['update'].append({'id': t['id'], 'projectId': TODO_PID,
                                    'content': restamp(t.get('content'), f"로지아 {nk}")})
             plan['report'].append(f"글을 고쳤다 · {k}")
             continue
-        if day(t.get('dueDate')) != w.get('due'):
+        if day(t.get('dueDate')) != w.get('due') or memo != (w.get('memo') or ''):
             row = {'item': w['item'], 't': w['t'], 'at': today}
             if day(t.get('dueDate')):
                 row['due'] = day(t['dueDate'])
+            if memo != (w.get('memo') or ''):
+                row['memo'] = memo
+                plan['report'].append(f"메모를 고쳤다 · {k}")
+            if day(t.get('dueDate')) != w.get('due'):
+                plan['report'].append(f"마감을 고쳤다 · {k} → {row.get('due','없음')}")
             plan['ledger']['edit'][k] = row
-            plan['report'].append(f"마감을 고쳤다 · {k} → {row.get('due','없음')}")
         if not note and not t.get('parentId'):
             pid = parent_id.get('항목:' + w['item'])
             if pid:

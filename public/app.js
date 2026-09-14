@@ -205,7 +205,7 @@ function stepsOf(item) {
   var out = [];
   var st = item.steps || (item.next ? [item.next] : []);
   st.forEach(function (x) {
-    var o = (typeof x === 'string') ? { t: x } : { t: x.t, due: x.due };
+    var o = (typeof x === 'string') ? { t: x } : { t: x.t, due: x.due, memo: x.memo };
     // 키는 처음 글로 만든다. 고쳐도 그대로 둔다. 그래야 체크한 것과 고친 것이
     // 같은 할 일을 가리키고, 반영할 때 원본에서 찾을 수 있다.
     o.key = item.id + '.' + sha1hex(o.t).slice(0, 8);
@@ -213,6 +213,7 @@ function stepsOf(item) {
     if (e) {
       if (e.del) return;                       // 삭제로 표시한 것은 안 보인다
       o.t = e.t; o.due = e.due; o.edited = true;
+      if (e.memo !== undefined) o.memo = e.memo;
     }
     out.push(o);
   });
@@ -236,11 +237,12 @@ function stepsHtml(item) {
     var due = st.due ? '<span class="sdue" data-deadline="' + esc(st.due) + '">D-</span>' : '';
     var tag = st.fresh ? '<span class="tag">새로 추가</span>'
             : st.edited ? '<span class="tag">수정됨</span>' : '';
+    var memo = st.memo ? '<p class="smemo">' + esc(st.memo) + '</p>' : '';
     return '<input type="checkbox" id="s-' + esc(st.key) + '" data-done="' + esc(st.key) + '">'
          + '<label for="s-' + esc(st.key) + '"' + (cls || '') + '>' + esc(st.t) + '</label>'
          + due + tag
          + '<button type="button" class="edit" data-edit="' + esc(st.key) + '"'
-         + ' data-item="' + esc(item.id) + '" aria-label="이 할 일 수정">수정</button>';
+         + ' data-item="' + esc(item.id) + '" aria-label="이 할 일 수정">수정</button>' + memo;
   }
 
   var out = ['<div class="step first">' + box(ss[0], ' class="todo"') + cost + '</div>'];

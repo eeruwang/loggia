@@ -648,3 +648,8 @@ background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;padding
 }
 .jobacts button:hover { border-color: var(--ink); color: var(--ink) }
 .jobacts .jkeep[disabled], .jobacts .jdrop[disabled] { opacity:.5; cursor:default }
+
+/* 할 일 아래 붙는 메모. 틱틱에서 적은 것이 여기로 온다 */
+.smemo{flex:1 1 100%;order:9;margin:4px 0 2px calc(1.15em + 11px);
+  font-size:12.5px;line-height:1.55;color:var(--ink-3);white-space:pre-wrap}
+.rest .smemo{margin-left:calc(1.15em + 11px)}

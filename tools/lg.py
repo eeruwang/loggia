@@ -111,7 +111,16 @@ def todos_of(item):
 
 def put_todos(item, ss):
     """다시 데이터 형태로 되돌린다. 날짜가 없으면 문자열로만 저장한다."""
-    item['steps'] = [s['t'] if not s.get('due') else {'t': s['t'], 'due': s['due']} for s in ss]
+    def one(s):
+        if not s.get('due') and not s.get('memo'):
+            return s['t']
+        o = {'t': s['t']}
+        if s.get('due'):
+            o['due'] = s['due']
+        if s.get('memo'):
+            o['memo'] = s['memo']
+        return o
+    item['steps'] = [one(s) for s in ss]
     if not item['steps']:
         del item['steps']
     item.pop('next', None)
