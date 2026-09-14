@@ -11,27 +11,33 @@ ticktick-plan.py — 로지아와 틱틱 사이에 무엇을 옮길지 계산한
     틱틱에서 받아 온 지금의 과제와 견주어 할 일을 적어 낸다.
     스스로는 아무 데도 손대지 않는다. 부르는 쪽이 계획대로 움직인다.
 
+구조
+
+    할 일 목록은 항목이 어버이가 되고 할 일이 하위로 붙는다.
+      어버이  제목은 항목 이름. 본문 첫 줄 `로지아 항목 <아이디>`. 태그는 항목의 갈래
+      하위    제목은 판의 할 일 글 그대로. 본문 첫 줄 `로지아 <아이디>.<지문>`
+    마감 목록은 로지아를 비추기만 한다. 본문 첫 줄 `로지아 마감 <갈래>:<아이디>`.
+
+    **갈래는 틱틱이 정한다.** 사람이 어떤 줄을 노트로 바꾸면 그대로 둔다.
+    노트는 체크할 수 없고 하위로도 못 들어간다. 틱틱이 막는다.
+    그래서 노트가 된 할 일은 어버이 밖에 홀로 서고, 되받기에서 빠진다.
+
     들어가는 것
       loggia-data.json      fetch.sh 로 받은 것
       --gongo   gongo.json  /gongo?k=<장부토큰> 이 준 것
       --current current.json  틱틱에서 받아 온 지금 상태
         {"todo": [과제...], "due": [과제...]}
-        과제는 틱틱이 주는 그대로. id, title, content, dueDate, tags,
-        status, completedTime 만 본다. 완료한 것도 todo 에 함께 담는다
+        과제는 틱틱이 주는 그대로. id, title, content, dueDate, tags, kind,
+        parentId, status, completedTime 을 본다. 완료한 것도 todo 에 함께 담는다
 
     나오는 것 (JSON)
-      create_todo[]  batch_add_tasks 에 그대로 넘길 것
-      create_due[]   같음
-      update[]       batch_update_tasks 에 넘길 것. id 와 projectId 가 들어 있다
-      delete[]       {projectId, taskId, why}
+      create_parent[]  먼저 만든다. 각 항목의 어버이
+      create_todo[]    어버이를 만든 뒤에 만든다. parentKey 를 그 어버이의 id 로 갈아 끼운다
+      create_due[]     마감 목록에 넣을 것
+      update[]         batch_update_tasks 에 넘길 것
+      delete[]         {projectId, taskId, why}
       ledger{done,add,edit}  /done /add /edit 에 set 으로 보낼 것
-      report[]       사람이 읽을 한 줄들
-
-규칙
-
-    할 일 목록은 두 쪽으로 오간다. 마감 목록은 로지아를 비추기만 한다.
-    마감 과제는 체크하지 않는다. 날이 지나면 다음 회차에 저절로 빠진다.
-    틱틱에서 새로 적은 할 일은 항목 아이디를 태그로 달아야 로지아로 간다.
+      report[]         사람이 읽을 한 줄들
 """
 import json, argparse, hashlib, datetime, sys
 
@@ -48,7 +54,6 @@ def iso(ds):
 
 
 def day(s):
-    """틱틱이 준 날짜에서 앞 열 글자만. 없으면 None"""
     return s[:10] if s else None
 
 
@@ -57,10 +62,10 @@ def keyline(content):
     if not content:
         return None
     head = content.strip().split('\n')[0].strip()
-    if head.startswith('로지아 마감 '):
-        return head[7:].strip()
-    if head.startswith('로지아 '):
-        return head[4:].strip()
+    for mark in ('로지아 마감 ', '로지아 항목 ', '로지아 '):
+        if head.startswith(mark):
+            rest = head[len(mark):].strip()
+            return ('항목:' + rest) if mark == '로지아 항목 ' else rest
     return None
 
 
@@ -86,12 +91,18 @@ def main():
     gongo = json.load(open(a.gongo, encoding='utf-8')) if a.gongo else {}
     today = a.today
 
-    # ── 로지아가 바라는 모습 ────────────────────────────────────────────────
-    want_todo = {}                      # key -> {t, due, item, title}
-    want_due = {}                       # key -> 과제
+    items = {}
+    want_parent = {}
+    want_todo = {}
+    want_due = {}
     for s in d.get('sections', []):
         for it in s['items']:
-            for x in todos_of(it):
+            items[it['id']] = it
+            ts = todos_of(it)
+            if ts:
+                want_parent['항목:' + it['id']] = {'title': it['title'],
+                                                 'kind': it.get('kind') or '항목'}
+            for x in ts:
                 k = f"{it['id']}.{fp(x['t'])}"
                 want_todo[k] = {'t': x['t'], 'due': x.get('due'),
                                 'item': it['id'], 'title': it['title']}
@@ -118,12 +129,22 @@ def main():
                 'title': f"공고 {v.get('title','')}"[:120], 'due': v['deadline'],
                 'tag': '공고', 'body': v.get('url', '')}
 
-    plan = {'create_todo': [], 'create_due': [], 'update': [], 'delete': [],
-            'ledger': {'done': {}, 'add': {}, 'edit': {}}, 'report': []}
+    plan = {'create_parent': [], 'create_todo': [], 'create_due': [], 'update': [],
+            'delete': [], 'ledger': {'done': {}, 'add': {}, 'edit': {}}, 'report': []}
+
+    parent_id = {}
+    for t in cur.get('todo', []):
+        k = keyline(t.get('content'))
+        if k and k.startswith('항목:'):
+            parent_id[k] = t['id']
 
     def mk_todo(k, w):
         t = {'projectId': TODO_PID, 'title': w['t'],
-             'content': f"로지아 {k}\n항목 {w['title']}", 'tags': [w['item']]}
+             'content': f"로지아 {k}\n항목 {w['title']}",
+             'parentKey': '항목:' + w['item']}
+        pid = parent_id.get('항목:' + w['item'])
+        if pid:
+            t['parentId'] = pid
         if w.get('due'):
             t.update(dueDate=iso(w['due']), isAllDay=True, timeZone='Asia/Seoul')
         return t
@@ -135,32 +156,57 @@ def main():
             t.update(dueDate=iso(w['due']), isAllDay=True, timeZone='Asia/Seoul')
         return t
 
-    # ── 할 일. 두 쪽으로 오간다 ─────────────────────────────────────────────
     seen = set()
+    seen_parent = set()
     for t in cur.get('todo', []):
         k = keyline(t.get('content'))
-        done = t.get('status') in (2, -1) or t.get('completedTime')
-        if not k:
-            # 틱틱에서 새로 적은 것. 태그가 항목 아이디면 로지아로 보낸다
-            items = {i['id'] for s in d.get('sections', []) for i in s['items']}
-            tag = next((x for x in (t.get('tags') or []) if x in items), None)
-            if not tag:
-                plan['report'].append(f"항목 태그가 없어 그냥 둔다 · {t.get('title','')}")
+        note = (t.get('kind') == 'NOTE')
+        done = (not note) and (t.get('status') in (2, -1) or t.get('completedTime'))
+
+        if k and k.startswith('항목:'):
+            w = want_parent.get(k)
+            if not w:
+                plan['delete'].append({'projectId': TODO_PID, 'taskId': t['id'],
+                                       'why': '할 일이 남지 않은 항목'})
                 continue
-            row = {'item': tag, 't': t.get('title', ''), 'at': today}
+            seen_parent.add(k)
+            if (t.get('title') or '') != w['title'] or (t.get('tags') or []) != [w['kind']]:
+                plan['update'].append({'id': t['id'], 'projectId': TODO_PID,
+                                       'title': w['title'], 'tags': [w['kind']]})
+            if done:
+                plan['update'].append({'id': t['id'], 'projectId': TODO_PID, 'status': 0})
+                plan['report'].append(f"어버이를 체크했길래 되돌린다 · {w['title']}")
+            continue
+
+        if not k:
+            iid = None
+            for pk, pid in parent_id.items():
+                if t.get('parentId') == pid:
+                    iid = pk[3:]
+            if not iid:
+                names = {v['title']: i for i, v in items.items()}
+                for x in (t.get('tags') or []):
+                    if x in items:
+                        iid = x
+                    elif x in names:
+                        iid = names[x]
+            if not iid:
+                plan['report'].append(f"어느 항목인지 알 수 없어 그냥 둔다 · {t.get('title','')}")
+                continue
+            row = {'item': iid, 't': t.get('title', ''), 'at': today}
             if day(t.get('dueDate')):
                 row['due'] = day(t['dueDate'])
             plan['ledger']['add'][f"tt-{t['id']}"] = row
-            nk = f"{tag}.{fp(row['t'])}"
-            title = next(i['title'] for s in d['sections'] for i in s['items'] if i['id'] == tag)
+            nk = f"{iid}.{fp(row['t'])}"
             plan['update'].append({'id': t['id'], 'projectId': TODO_PID,
-                                   'content': f"로지아 {nk}\n항목 {title}"})
+                                   'content': f"로지아 {nk}\n항목 {items[iid]['title']}"})
             if done:
                 plan['ledger']['done'][f"add:tt-{t['id']}"] = {'at': today}
                 plan['delete'].append({'projectId': TODO_PID, 'taskId': t['id'],
                                        'why': '적자마자 체크한 것'})
-            plan['report'].append(f"틱틱에서 적은 것을 {tag} 로 보낸다 · {row['t']}")
+            plan['report'].append(f"틱틱에서 적은 것을 {iid} 로 보낸다 · {row['t']}")
             continue
+
         seen.add(k)
         if done:
             plan['ledger']['done'][k] = {'at': day(t.get('completedTime')) or today}
@@ -173,7 +219,6 @@ def main():
             plan['delete'].append({'projectId': TODO_PID, 'taskId': t['id'],
                                    'why': '로지아에 없는 할 일'})
             continue
-        # 글을 고쳤으면 열쇠가 어긋난다. 제목이 곧 열쇠이므로 제목으로 가린다
         if (t.get('title') or '') != w['t']:
             row = {'item': w['item'], 't': t['title'], 'at': today}
             if day(t.get('dueDate')):
@@ -190,11 +235,21 @@ def main():
                 row['due'] = day(t['dueDate'])
             plan['ledger']['edit'][k] = row
             plan['report'].append(f"마감을 고쳤다 · {k} → {row.get('due','없음')}")
+        if not note and not t.get('parentId'):
+            pid = parent_id.get('항목:' + w['item'])
+            if pid:
+                plan['update'].append({'id': t['id'], 'projectId': TODO_PID,
+                                       'parentId': pid})
+
+    for k, w in want_parent.items():
+        if k not in seen_parent:
+            plan['create_parent'].append({'key': k, 'projectId': TODO_PID,
+                                          'title': w['title'], 'tags': [w['kind']],
+                                          'content': f"로지아 항목 {k[3:]}"})
     for k, w in want_todo.items():
         if k not in seen:
             plan['create_todo'].append(mk_todo(k, w))
 
-    # ── 마감. 비추기만 한다 ────────────────────────────────────────────────
     seen = set()
     for t in cur.get('due', []):
         k = keyline(t.get('content'))
