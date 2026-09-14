@@ -26,6 +26,7 @@
 // =============================================================================
 
 import { flush } from './flush';
+import { ttSync, ttLogin, ttCallback } from './ticktick';
 
 interface Env {
   EMAIL: {
@@ -48,6 +49,11 @@ interface Env {
   GITHUB_TOKEN?: string;     // 비밀. 저장소에 쓴다
   GITHUB_REPO?: string;
   GITHUB_API?: string;
+
+  // 틱틱. 셋이 다 있어야 열 분마다 맞춘다. 없으면 조용히 건너뛴다.
+  TICKTICK_CLIENT_ID?: string;
+  TICKTICK_CLIENT_SECRET?: string;
+  TICKTICK_REDIRECT?: string;
 }
 
 /** 기록 한 칸. 무엇을 언제 해치웠는지. */
@@ -840,9 +846,14 @@ export default {
         (e) => console.error(`부치지 못했습니다 ${e}`)));
       return;
     }
+    // 차례가 있다. 장부를 먼저 데이터에 옮기고 나서 틱틱을 본다.
+    // 거꾸로 하면 아직 반영되지 않은 판을 틱틱과 견주어 헛일을 한다.
     ctx.waitUntil(flush(env).then(
       (msg) => console.log(msg),
-      (e) => console.error(`반영하지 못했습니다 ${e}`)));
+      (e) => console.error(`반영하지 못했습니다 ${e}`))
+      .then(() => ttSync(env).then(
+        (msg) => console.log(msg),
+        (e) => console.error(`틱틱을 맞추지 못했습니다 ${e}`))));
     ctx.waitUntil(soakJobs(env).then(
       (msg) => console.log(msg),
       (e) => console.error(`공고를 옮기지 못했습니다 ${e}`)));
@@ -853,6 +864,12 @@ export default {
   // 판의 내용은 어떤 경우에도 돌려주지 않는다. 결과는 편지함에서 본다.
   async fetch(req: Request, env: Env): Promise<Response> {
     const u = new URL(req.url);
+    // 틱틱을 잇는 자리. 한 번만 누른다
+    if (u.pathname === '/tt/login') {
+      return u.searchParams.get('k') === env.LEDGER_TOKEN
+        ? ttLogin(env) : new Response('없습니다', { status: 404 });
+    }
+    if (u.pathname === '/tt/callback') return ttCallback(env, u);
     if (u.pathname === '/done') return ledger(req, env, u.searchParams.get('k'), DONE_KEY);
     if (u.pathname === '/add') return ledger(req, env, u.searchParams.get('k'), ADD_KEY);
     if (u.pathname === '/edit') return ledger(req, env, u.searchParams.get('k'), EDIT_KEY);

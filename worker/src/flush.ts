@@ -263,6 +263,18 @@ async function commitFiles(env: FlushEnv, repo: string, files: { path: string; t
 
 /* ── 반영하기 ──────────────────────────────────────────────────────────────── */
 
+/** 데이터를 받아 풀어 준다. 읽기만 한다. ticktick.ts 가 쓴다. */
+export async function loadData(env: FlushEnv): Promise<Any> {
+  const repo = env.GITHUB_REPO || 'eeruwang/loggia';
+  const rawKey = toBytes(env.PAGE_KEY as string, 'PAGE_KEY');
+  const meta = await gh(env, `/repos/${repo}/contents/${DATA_PATH}?ref=${BRANCH}`);
+  const text = new TextDecoder().decode(toBytes(String(meta.content), '깃허브가 준 파일'));
+  const key = await crypto.subtle.importKey(
+    'raw', rawKey, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+  const { data } = await unseal(text, key);
+  return data;
+}
+
 export async function flush(env: FlushEnv): Promise<string> {
   if (!env.LEDGER || !env.PAGE_KEY || !env.GITHUB_TOKEN) {
     return '설정이 없어 건너뜁니다 (PAGE_KEY 와 GITHUB_TOKEN 이 필요합니다)';
