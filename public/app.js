@@ -1865,15 +1865,18 @@ function bindAdd(root, redrawEntry, board) {
                     : (EDIT[key] || { t: row.querySelector('label').textContent,
                                       due: (row.querySelector('.sdue') || {}).dataset
                                            ? row.querySelector('.sdue').dataset.deadline : '',
-                                      from: st0 ? (st0.from || '') : '' });
+                                      from: st0 ? (st0.from || '') : '',
+                                      memo: st0 ? (st0.memo || '') : '' });
     var t = cur.t || row.querySelector('label').textContent;
     var due = cur.due || '';
+    var memo0 = (cur.memo !== undefined) ? cur.memo : (st0 ? (st0.memo || '') : '');
     var frm = cur.from || (st0 ? (st0.from || '') : '');
     var form = document.createElement('form');
     form.className = 'tedit';
 
     form.innerHTML =
       '<input type="text" class="et" maxlength="200" required>'
+      + '<textarea class="em" rows="2" maxlength="600" placeholder="메모. 비워 둬도 됩니다"></textarea>'
       + '<div class="erow"><button type="button" class="dpick"></button>'
       + '<div class="cal" hidden></div>'
       + '<button type="submit" class="ok">저장</button>'
@@ -1881,6 +1884,7 @@ function bindAdd(root, redrawEntry, board) {
       + '<button type="button" class="rm">삭제</button></div>';
     row.appendChild(form);
     form.querySelector('.et').value = t;
+    form.querySelector('.em').value = memo0;
     // 날짜 고르기. 한 번 누르면 하루, 한 번 더 누르면 기간, 같은 날을 누르면 거둔다
     var pick = { from: frm || '', due: due || '' };
     var pin = form.querySelector('.dpick');
@@ -1946,6 +1950,7 @@ function bindAdd(root, redrawEntry, board) {
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var nt = form.querySelector('.et').value.trim();
+      var nm = form.querySelector('.em').value.trim();
       if (!nt) return;
       var nd = pick.due || '';
       var nf = pick.from || '';
@@ -1958,11 +1963,13 @@ function bindAdd(root, redrawEntry, board) {
         set[key.slice(4)] = { item: itemId, t: nt, at: a.at || isoOf(new Date()) };
         if (nd) set[key.slice(4)].due = nd;
         if (nf) set[key.slice(4)].from = nf;
+        if (nm) set[key.slice(4)].memo = nm;
         post('add', { set: set }, [itemId]).catch(fail);
       } else {
         set[key] = { item: itemId, t: nt, at: isoOf(new Date()) };
         if (nd) set[key].due = nd;
         set[key].from = nf || '';               // 빈 값이면 기간을 거둔다
+        set[key].memo = nm || '';               // 빈 값이면 메모를 거둔다
         post('edit', { set: set }, [itemId]).catch(fail);
       }
     });
