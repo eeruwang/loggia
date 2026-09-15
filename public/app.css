@@ -656,3 +656,7 @@ background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;padding
 
 /* 기간이 걸린 할 일. 시작일과 마감일을 함께 읽는다 */
 .sspan{margin-left:9px;font-size:12px;font-weight:700;color:var(--ink-3);white-space:nowrap}
+
+/* 수정 화면의 날짜 두 칸. 시작과 마감 */
+.tedit .dl{display:inline-flex;align-items:center;gap:5px}
+.tedit .dl span{font-size:12px;color:var(--ink-3)}

@@ -221,7 +221,7 @@ function stepsOf(item) {
   Object.keys(ADD).forEach(function (k) {
     var a = ADD[k];
     if (a.item !== item.id) return;
-    out.push({ t: a.t, due: a.due, key: 'add:' + k, addKey: k, fresh: true });
+    out.push({ t: a.t, due: a.due, from: a.from, key: 'add:' + k, addKey: k, fresh: true });
   });
   return out;
 }
@@ -1858,12 +1858,16 @@ function bindAdd(root, redrawEntry, board) {
     var effs = D.efforts || {};
     var pum0 = it0 ? (it0['품'] || '') : '';
     var pumNow = it0 ? (pumOf(it0) || '') : '';
+    var st0 = null;
+    if (it0) stepsOf(it0).forEach(function (x) { if (x.key === key) st0 = x; });
     var cur = fresh ? (ADD[key.slice(4)] || {})
                     : (EDIT[key] || { t: row.querySelector('label').textContent,
                                       due: (row.querySelector('.sdue') || {}).dataset
-                                           ? row.querySelector('.sdue').dataset.deadline : '' });
+                                           ? row.querySelector('.sdue').dataset.deadline : '',
+                                      from: st0 ? (st0.from || '') : '' });
     var t = cur.t || row.querySelector('label').textContent;
     var due = cur.due || '';
+    var frm = cur.from || (st0 ? (st0.from || '') : '');
     var form = document.createElement('form');
     form.className = 'tedit';
     var pumSel = it0 && Object.keys(effs).length
@@ -1877,13 +1881,16 @@ function bindAdd(root, redrawEntry, board) {
     form.innerHTML =
       '<input type="text" class="et" maxlength="200" required>'
       + pumSel
-      + '<div class="erow"><input type="date" class="ed">'
+      + '<div class="erow"><label class="dl"><span>시작</span>'
+      + '<input type="date" class="ef2"></label>'
+      + '<label class="dl"><span>마감</span><input type="date" class="ed"></label>'
       + '<button type="submit" class="ok">저장</button>'
       + '<button type="button" class="cancel">취소</button>'
       + '<button type="button" class="rm">삭제</button></div>';
     row.appendChild(form);
     form.querySelector('.et').value = t;
     form.querySelector('.ed').value = due;
+    form.querySelector('.ef2').value = frm;
     if (pumSel) form.querySelector('.ef select').value = pumNow;
     form.querySelector('.et').focus();
 
@@ -1898,6 +1905,8 @@ function bindAdd(root, redrawEntry, board) {
       var nt = form.querySelector('.et').value.trim();
       if (!nt) return;
       var nd = form.querySelector('.ed').value;
+      var nf = form.querySelector('.ef2').value;
+      if (nf && nd && nf >= nd) nf = '';        // 시작이 마감보다 늦으면 기간이 아니다
       var np = pumSel ? form.querySelector('.ef select').value : pumNow;
       var ok = form.querySelector('.ok');
       ok.disabled = true; ok.textContent = '저장 중';
@@ -1916,12 +1925,14 @@ function bindAdd(root, redrawEntry, board) {
         var a = ADD[key.slice(4)] || {};
         set[key.slice(4)] = { item: itemId, t: nt, at: a.at || isoOf(new Date()) };
         if (nd) set[key.slice(4)].due = nd;
+        if (nf) set[key.slice(4)].from = nf;
         post('add', { set: set }, [itemId])
           .then(function () { return pumBody ? post('edit', pumBody, [itemId]) : null; })
           .catch(fail);
       } else {
         set[key] = { item: itemId, t: nt, at: isoOf(new Date()) };
         if (nd) set[key].due = nd;
+        set[key].from = nf || '';               // 빈 값이면 기간을 거둔다
         var body = { set: set };
         if (pumBody && pumBody.set) {
           Object.keys(pumBody.set).forEach(function (k2) { set[k2] = pumBody.set[k2]; });
