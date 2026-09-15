@@ -282,6 +282,8 @@ function entryHtml(item) {
         + '<span class="why">' + esc(stop.why || '') + '</span>'
         + '<button type="button" class="unstop" data-id="' + esc(item.id) + '">되돌리기</button></div>'
       : '<div class="stoprow">' + dueBtn
+        + '<button type="button" class="movebtn" data-id="' + esc(item.id)
+        + '">옮기기</button>'
         + '<button type="button" class="stop" data-id="' + esc(item.id)
         + '">중단</button></div>';
   }
@@ -1808,6 +1810,31 @@ function bindAdd(root, redrawEntry, board) {
         });
         inp.addEventListener('keydown', function (e) {
           if (e.key === 'Enter') row.querySelector('.ok').click();
+        });
+      });
+    });
+    /* 옮기기. 진행 중과 기다리는 중과 아직 안 한 것 사이를 오간다. */
+    root.querySelectorAll('.stoprow .movebtn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var row = b.parentNode, id = b.dataset.id;
+        var here = '';
+        (D.sections || []).forEach(function (sec) {
+          (sec.items || []).forEach(function (x) { if (x.id === id) here = sec.id; });
+        });
+        row.innerHTML = (D.sections || []).map(function (sec) {
+          return '<button type="button" class="mv' + (sec.id === here ? ' now' : '')
+               + '" data-to="' + esc(sec.id) + '"'
+               + (sec.id === here ? ' disabled' : '') + '>' + esc(sec.label) + '</button>';
+        }).join('') + '<button type="button" class="cancel">취소</button>';
+        row.querySelector('.cancel').addEventListener('click', function () {
+          redrawEntry(id); bindStops();
+        });
+        row.querySelectorAll('.mv').forEach(function (m) {
+          m.addEventListener('click', function () {
+            var set = {};
+            set['move:' + id] = { item: id, to: m.dataset.to, at: isoOf(new Date()) };
+            post('edit', { set: set }, [id]).then(bindStops);
+          });
         });
       });
     });

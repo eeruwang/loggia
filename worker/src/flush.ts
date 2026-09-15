@@ -349,7 +349,53 @@ export async function flush(env: FlushEnv): Promise<string> {
   const editKeys = Object.keys(edit);
   for (const k of editKeys) {
     const e = edit[k];
-    // 일하는 기간은 할 일이 아니라 항목에 붙는다. 키가 `item:<아이디>` 다.
+    // 카드에서 중단으로 넘긴 것. 키가 `stop:<아이디>` 다.
+    if (k.startsWith('stop:')) {
+      const iid = e.item || k.slice(5);
+      const it2 = findItem(data, iid);
+      const w2 = e.at || today;
+      if (!it2) { note.push(`못 찾음 ${iid}`); continue; }
+      touched[iid] = touched[iid] > w2 ? touched[iid] : w2;
+      it2.status = '보류';
+      (data.decisions = data.decisions || []).push({
+        date: w2, item: iid,
+        what: `${it2.title || iid} 을(를) 중단했다`, why: e.why || '',
+      });
+      note.push(`중단 ${iid}`);
+      continue;
+    }
+    // 마감은 할 일이 아니라 항목에 붙는다. 키가 `due:<아이디>` 다.
+    if (k.startsWith('due:')) {
+      const iid = e.item || k.slice(4);
+      const it2 = findItem(data, iid);
+      const w2 = e.at || today;
+      if (!it2) { note.push(`못 찾음 ${iid}`); continue; }
+      touched[iid] = touched[iid] > w2 ? touched[iid] : w2;
+      it2.dates = it2.dates || {};
+      if (e.deadline) it2.dates.deadline = e.deadline;
+      else delete it2.dates.deadline;
+      note.push(`마감 ${iid}`);
+      continue;
+    }
+    // 카드에서 다른 칸으로 옮긴 것. 키가 `move:<아이디>` 다.
+    if (k.startsWith('move:')) {
+      const iid = e.item || k.slice(5);
+      const to = String(e.to || '');
+      const w2 = e.at || today;
+      let moved: Any = null;
+      for (const sec of data.sections || []) {
+        const at = (sec.items || []).findIndex((x: Any) => x.id === iid);
+        if (at >= 0) { moved = sec.items.splice(at, 1)[0]; break; }
+      }
+      const dest = (data.sections || []).find((x: Any) => x.id === to);
+      if (!moved || !dest) { note.push(`못 옮김 ${iid}`); continue; }
+      dest.items = dest.items || [];
+      dest.items.unshift(moved);
+      touched[iid] = touched[iid] > w2 ? touched[iid] : w2;
+      note.push(`옮김 ${iid} → ${to}`);
+      continue;
+    }
+    // 항목에 붙던 옛 값. 키가 `item:<아이디>` 다.
     if (k.startsWith('item:')) {
       const iid = e.item || k.slice(5);
       const it2 = findItem(data, iid);

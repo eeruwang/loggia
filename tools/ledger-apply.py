@@ -294,6 +294,11 @@ def main():
             stops.append((iid, e.get('why', ''), when))
             plan.append(('중단', iid, e.get('why', ''), '상태를 보류로 바꾸고 까닭을 남깁니다'))
             continue
+        # 카드에서 다른 칸으로 옮긴 것. 키가 `move:<아이디>` 다.
+        if k.startswith('move:'):
+            iid = e.get('item') or k[5:]
+            plan.append(('옮김', iid, e.get('to', ''), '항목을 그 칸으로 옮깁니다'))
+            continue
         # 마감은 할 일이 아니라 항목에 붙는다. 키가 `due:<아이디>` 다.
         if k.startswith('due:'):
             iid = e.get('item') or k[4:]
@@ -378,6 +383,22 @@ def main():
             put_todos(it, keep)
     for k, e in edit.items():
         if k.startswith('stop:'):
+            continue
+        if k.startswith('move:'):
+            iid = e.get('item') or k[5:]
+            to = e.get('to', '')
+            moved = None
+            for sec in d.get('sections', []):
+                for x in list(sec.get('items', [])):
+                    if x.get('id') == iid:
+                        sec['items'].remove(x)
+                        moved = x
+                        break
+                if moved:
+                    break
+            dest = next((x for x in d.get('sections', []) if x['id'] == to), None)
+            if moved and dest:
+                dest.setdefault('items', []).insert(0, moved)
             continue
         if k.startswith('due:'):
             it = find(d, e.get('item') or k[4:])

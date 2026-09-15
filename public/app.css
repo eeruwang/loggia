@@ -695,3 +695,10 @@ background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;padding
 .tedit .em{width:100%;margin-top:6px;padding:7px 9px;font-family:inherit;font-size:13px;
   line-height:1.5;color:var(--ink);background:var(--surface);border:1px solid var(--sunk);
   border-radius:3px;resize:vertical}
+
+/* 카드 아래 옮기기. 세 칸 가운데 하나를 고른다 */
+.stoprow .movebtn,.stoprow .mv{font-family:inherit;font-size:12px;padding:5px 10px;
+  color:var(--ink-2);background:var(--surface);border:1px solid var(--sunk);
+  border-radius:3px;cursor:pointer}
+.stoprow .mv[disabled]{color:var(--ink-3);background:var(--sunk);cursor:default}
+.stoprow .mv:hover:not([disabled]){color:var(--ink);border-color:var(--ink-3)}
