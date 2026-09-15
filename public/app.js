@@ -1820,7 +1820,8 @@ function bindAdd(root, redrawEntry, board) {
       + (D.sections || []).map(function (sec) {
           return '<button type="button" class="mv" data-to="' + esc(sec.id) + '"'
                + (sec.id === here ? ' disabled' : '') + '>' + esc(sec.label) + '</button>';
-        }).join('') + '</span></div>'
+        }).join('')
+      + '<button type="button" class="mv done" data-to="done">완료</button></span></div>'
       + '<div class="mrow"><span class="ml">중단</span>'
       + '<input type="text" class="sw" maxlength="200" placeholder="왜 멈추는지 한 줄">'
       + '<button type="button" class="stopnow">중단</button></div>'

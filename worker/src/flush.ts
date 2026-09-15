@@ -388,8 +388,18 @@ export async function flush(env: FlushEnv): Promise<string> {
         const at = (sec.items || []).findIndex((x: Any) => x.id === iid);
         if (at >= 0) { moved = sec.items.splice(at, 1)[0]; break; }
       }
+      if (!moved) { note.push(`못 옮김 ${iid}`); continue; }
+      if (to === 'done') {
+        // 지난 일로. 결과 날짜가 비어 있으면 오늘로 적는다
+        moved.dates = moved.dates || {};
+        if (!moved.dates.decided) moved.dates.decided = w2;
+        (data.archive = data.archive || []).unshift(moved);
+        touched[iid] = touched[iid] > w2 ? touched[iid] : w2;
+        note.push(`지난 일 ${iid}`);
+        continue;
+      }
       const dest = (data.sections || []).find((x: Any) => x.id === to);
-      if (!moved || !dest) { note.push(`못 옮김 ${iid}`); continue; }
+      if (!dest) { note.push(`못 옮김 ${iid}`); continue; }
       dest.items = dest.items || [];
       dest.items.unshift(moved);
       touched[iid] = touched[iid] > w2 ? touched[iid] : w2;

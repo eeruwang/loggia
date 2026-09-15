@@ -257,6 +257,12 @@ export async function ttSync(env: TTEnv): Promise<string> {
             .map(([k, v]) => [v, k])), due: {} };
 
   const done: Any = {}; const add: Any = {}; const edit: Any = {};
+  const seen_parent_skip = new Set<string>();
+  // 칸 이름과 아이디. 판이 이름을 바꾸면 여기도 함께 바꾼다
+  const SECS: Record<string, string> = {};
+  for (const sec of d.sections || []) SECS[String(sec.label || sec.id).toLowerCase()] = sec.id;
+  SECS['완료'] = 'done';
+  const secIdOf = (label: string) => SECS[String(label).toLowerCase()] || '';
   const note: string[] = [];
   const nowSeen: { todo: Record<string, string>; due: Record<string, string> } =
     { todo: {}, due: {} };
@@ -337,6 +343,14 @@ export async function ttSync(env: TTEnv): Promise<string> {
       }
       // 이름과 갈래는 판을 따른다
       const tags: string[] = (t.tags || []).map((x: string) => String(x).toLowerCase());
+      // 사람이 칸 태그를 다른 것으로 바꿔 두었으면 판을 그쪽으로 옮긴다
+      const secTag = tags.find((x) => SECS[x] && SECS[x] !== secIdOf(w.sec));
+      if (secTag) {
+        edit[`move:${k.slice(3)}`] = { item: k.slice(3), to: SECS[secTag], at: today };
+        note.push(`칸 옮김 ${k.slice(3)} → ${secTag}`);
+        seen_parent_skip.add(k);
+        continue;
+      }
       const want2 = [w.kind, w.sec].map((x) => String(x).toLowerCase());
       const col = column.get(w.kind);
       if ((t.title || '') !== w.title

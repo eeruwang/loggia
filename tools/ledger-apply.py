@@ -399,6 +399,11 @@ def main():
                         break
                 if moved:
                     break
+            if moved and to == 'done':
+                moved.setdefault('dates', {}).setdefault(
+                    'decided', e.get('at') or datetime.date.today().isoformat())
+                d.setdefault('archive', []).insert(0, moved)
+                continue
             dest = next((x for x in d.get('sections', []) if x['id'] == to), None)
             if moved and dest:
                 dest.setdefault('items', []).insert(0, moved)

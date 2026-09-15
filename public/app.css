@@ -719,6 +719,7 @@ background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;padding
 .mbox .dpick.set{color:var(--ink);font-weight:700}
 .mbox .mv[disabled]{color:var(--ink-3);background:var(--sunk);cursor:default}
 .mbox .mv-wrap{display:flex;gap:6px;flex-wrap:wrap}
+.mbox .mv.done{color:var(--ink);border-color:var(--ink-3);font-weight:700}
 .mbox .stopnow{color:var(--now);border-color:var(--now)}
 .mft{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 .mbox .ok{color:var(--paper);background:var(--ink);border-color:var(--ink);font-weight:700}
