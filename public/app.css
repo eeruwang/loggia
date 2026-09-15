@@ -702,3 +702,46 @@ background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;padding
   border-radius:3px;cursor:pointer}
 .stoprow .mv[disabled]{color:var(--ink-3);background:var(--sunk);cursor:default}
 .stoprow .mv:hover:not([disabled]){color:var(--ink);border-color:var(--ink-3)}
+
+/* 카드 편집 모달. 마감과 칸과 중단을 한 자리에서 */
+.modal{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  padding:18px;background:hsl(222 28% 9% / .38)}
+.mbox{width:min(420px,100%);padding:18px 20px 16px;background:var(--surface);
+  border-radius:8px;box-shadow:0 18px 48px hsl(222 28% 9% / .28)}
+.mbox h4{margin:0 0 14px;font-size:15px;font-weight:800;color:var(--ink)}
+.mrow{position:relative;display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.mrow .ml{flex:0 0 38px;font-size:12px;color:var(--ink-3)}
+.mrow .sw{flex:1 1 auto;min-width:0;padding:6px 9px;font-family:inherit;font-size:13px;
+  color:var(--ink);background:var(--surface);border:1px solid var(--sunk);border-radius:3px}
+.mbox .dpick,.mbox .mv,.mbox .stopnow,.mbox .ok,.mbox .cancel{font-family:inherit;font-size:12.5px;
+  padding:6px 11px;color:var(--ink-2);background:var(--surface);border:1px solid var(--sunk);
+  border-radius:3px;cursor:pointer}
+.mbox .dpick.set{color:var(--ink);font-weight:700}
+.mbox .mv[disabled]{color:var(--ink-3);background:var(--sunk);cursor:default}
+.mbox .mv-wrap{display:flex;gap:6px;flex-wrap:wrap}
+.mbox .stopnow{color:var(--now);border-color:var(--now)}
+.mft{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.mbox .ok{color:var(--paper);background:var(--ink);border-color:var(--ink);font-weight:700}
+.mbox .cal{position:absolute;top:calc(100% + 6px);left:38px;z-index:70;width:262px;padding:11px;
+  background:var(--surface);border:1px solid var(--sunk);border-radius:5px;
+  box-shadow:0 8px 24px hsl(222 28% 9% / .14)}
+.mbox .cal[hidden]{display:none}
+.mbox .calhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;
+  font-size:13px;font-weight:700;color:var(--ink)}
+.mbox .calhd button{width:24px;height:24px;font-size:15px;line-height:1;color:var(--ink-2);
+  background:none;border:0;cursor:pointer}
+.mbox .calwk,.mbox .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.mbox .calwk span{text-align:center;font-size:10.5px;color:var(--ink-3);padding-bottom:4px}
+.mbox .calgrid .pad{height:30px}
+.mbox .day{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;
+  height:30px;padding:0;font-family:inherit;font-size:12.5px;line-height:1;color:var(--ink-2);
+  background:none;border:0;border-radius:3px;cursor:pointer}
+.mbox .day:hover{background:var(--sunk)}
+.mbox .day.on{background:var(--ink);color:var(--paper);font-weight:700}
+.mbox .calft{display:flex;justify-content:space-between;margin-top:8px}
+.mbox .calft button{font-family:inherit;font-size:12px;color:var(--ink-3);background:none;
+  border:0;cursor:pointer}
+.stoprow .cardedit{font-family:inherit;font-size:12px;padding:5px 10px;color:var(--ink-2);
+  background:var(--surface);border:1px solid var(--sunk);border-radius:3px;cursor:pointer}
+.stoprow .dueshow{margin-left:9px;font-size:12px;font-weight:700;color:var(--ink-3)}
+.stoprow .dueshow.edited{color:var(--soon)}

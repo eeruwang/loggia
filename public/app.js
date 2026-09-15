@@ -274,18 +274,14 @@ function entryHtml(item) {
   var dl = dueOf(item);
   var dlEdited = EDIT['due:' + item.id] !== undefined;
   if (D.meta.ledger) {
-    var dueBtn = '<button type="button" class="duebtn' + (dlEdited ? ' edited' : '')
-      + '" data-id="' + esc(item.id) + '" data-due="' + esc(dl || '') + '">'
-      + (dl ? '마감 ' + md(dl) : '마감 넣기') + '</button>';
     stopRow = stop
       ? '<div class="stopped"><span class="mark">중단</span>'
         + '<span class="why">' + esc(stop.why || '') + '</span>'
         + '<button type="button" class="unstop" data-id="' + esc(item.id) + '">되돌리기</button></div>'
-      : '<div class="stoprow">' + dueBtn
-        + '<button type="button" class="movebtn" data-id="' + esc(item.id)
-        + '">옮기기</button>'
-        + '<button type="button" class="stop" data-id="' + esc(item.id)
-        + '">중단</button></div>';
+      : '<div class="stoprow"><button type="button" class="cardedit" data-id="'
+        + esc(item.id) + '" data-due="' + esc(dl || '') + '">편집</button>'
+        + (dl ? '<span class="dueshow' + (dlEdited ? ' edited' : '') + '">마감 '
+              + esc(md(dl)) + '</span>' : '') + '</div>';
   }
   // 종류마다 색을 준다. 왼쪽 막대 하나로 무슨 종류인지 눈이 먼저 안다
   return '<article class="entry t-' + (stop ? 'stop' : esc(st.tone || 'live'))
@@ -1785,96 +1781,113 @@ function bindAdd(root, redrawEntry, board) {
       });
   }
 
-  /* 중단. 이유를 적어야 넘어간다. 왜 멈췄는지가 안 남으면 두 달 뒤에
-     다시 열었을 때 그때의 판단을 되짚을 길이 없다. */
+  /* 카드 편집. 마감과 칸과 중단을 한 자리에서 다룬다.
+     단추 셋이 카드 밑에 늘어서면 눈이 갈 곳을 잃는다. 편집 하나로 모은다. */
   function bindStops() {
-    root.querySelectorAll('.stoprow .stop').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var row = b.parentNode;
-        row.innerHTML = '<input type="text" class="sw" maxlength="200" '
-          + 'placeholder="왜 멈추는지 한 줄">'
-          + '<button type="button" class="ok">중단</button>'
-          + '<button type="button" class="cancel">취소</button>';
-        var inp = row.querySelector('.sw');
-        inp.focus();
-        row.querySelector('.cancel').addEventListener('click', function () {
-          redrawEntry(b.dataset.id);
-          bindStops();
-        });
-        row.querySelector('.ok').addEventListener('click', function () {
-          var why = inp.value.trim();
-          if (!why) { inp.focus(); return; }
-          var id = b.dataset.id, set = {};
-          set['stop:' + id] = { item: id, why: why, at: isoOf(new Date()) };
-          post('edit', { set: set }, [id]).then(bindStops);
-        });
-        inp.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter') row.querySelector('.ok').click();
-        });
-      });
-    });
-    /* 옮기기. 진행 중과 기다리는 중과 아직 안 한 것 사이를 오간다. */
-    root.querySelectorAll('.stoprow .movebtn').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var row = b.parentNode, id = b.dataset.id;
-        var here = '';
-        (D.sections || []).forEach(function (sec) {
-          (sec.items || []).forEach(function (x) { if (x.id === id) here = sec.id; });
-        });
-        row.innerHTML = (D.sections || []).map(function (sec) {
-          return '<button type="button" class="mv' + (sec.id === here ? ' now' : '')
-               + '" data-to="' + esc(sec.id) + '"'
-               + (sec.id === here ? ' disabled' : '') + '>' + esc(sec.label) + '</button>';
-        }).join('') + '<button type="button" class="cancel">취소</button>';
-        row.querySelector('.cancel').addEventListener('click', function () {
-          redrawEntry(id); bindStops();
-        });
-        row.querySelectorAll('.mv').forEach(function (m) {
-          m.addEventListener('click', function () {
-            var set = {};
-            set['move:' + id] = { item: id, to: m.dataset.to, at: isoOf(new Date()) };
-            post('edit', { set: set }, [id]).then(bindStops);
-          });
-        });
-      });
-    });
-    // 마감 고치기. 날짜 칸 하나와 단추 셋이다.
-    root.querySelectorAll('.stoprow .duebtn').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var id = b.dataset.id, row = b.parentNode;
-        row.innerHTML = '<input type="date" class="dd">'
-          + '<button type="button" class="ok">저장</button>'
-          + '<button type="button" class="cancel">취소</button>'
-          + '<button type="button" class="rm">마감 없애기</button>';
-        var inp = row.querySelector('.dd');
-        inp.value = b.dataset.due || '';
-        inp.focus();
-        row.querySelector('.cancel').addEventListener('click', function () {
-          redrawEntry(id); bindStops();
-        });
-        function send(v) {
-          var ok = row.querySelector('.ok');
-          ok.disabled = true; ok.textContent = '저장 중';
-          var set = {};
-          set['due:' + id] = { item: id, deadline: v, at: isoOf(new Date()) };
-          post('edit', { set: set }, [id]).then(bindStops).catch(function () {
-            ok.disabled = false; ok.textContent = '다시 시도';
-          });
-        }
-        row.querySelector('.ok').addEventListener('click', function () { send(inp.value); });
-        row.querySelector('.rm').addEventListener('click', function () { send(''); });
-        inp.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter') row.querySelector('.ok').click();
-        });
-      });
-    });
-    root.querySelectorAll('.stopped .unstop').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var id = b.dataset.id;
-        post('edit', { del: ['stop:' + id] }, [id]).then(bindStops);
-      });
+    root.querySelectorAll('.stoprow .cardedit').forEach(function (b) {
+      b.addEventListener('click', function () { openCard(b.dataset.id, b.dataset.due || ''); });
     });
   }
+
+  function openCard(id, due0) {
+    var here = '';
+    (D.sections || []).forEach(function (sec) {
+      (sec.items || []).forEach(function (x) { if (x.id === id) here = sec.id; });
+    });
+    var title = '';
+    (D.sections || []).forEach(function (sec) {
+      (sec.items || []).forEach(function (x) { if (x.id === id) title = x.title || id; });
+    });
+
+    var back = document.createElement('div');
+    back.className = 'modal';
+    back.innerHTML = '<div class="mbox" role="dialog" aria-label="항목 편집">'
+      + '<h4>' + esc(title) + '</h4>'
+      + '<div class="mrow"><span class="ml">마감</span>'
+      + '<button type="button" class="dpick"></button><div class="cal" hidden></div></div>'
+      + '<div class="mrow"><span class="ml">칸</span><span class="mv-wrap">'
+      + (D.sections || []).map(function (sec) {
+          return '<button type="button" class="mv" data-to="' + esc(sec.id) + '"'
+               + (sec.id === here ? ' disabled' : '') + '>' + esc(sec.label) + '</button>';
+        }).join('') + '</span></div>'
+      + '<div class="mrow"><span class="ml">중단</span>'
+      + '<input type="text" class="sw" maxlength="200" placeholder="왜 멈추는지 한 줄">'
+      + '<button type="button" class="stopnow">중단</button></div>'
+      + '<div class="mft"><button type="button" class="ok">저장</button>'
+      + '<button type="button" class="cancel">닫기</button></div></div>';
+    document.body.appendChild(back);
+
+    var pickDue = due0 || '';
+    var pin = back.querySelector('.dpick');
+    var cal = back.querySelector('.cal');
+    var c0 = new Date((pickDue || isoOf(new Date())) + 'T00:00:00');
+    var calY = c0.getFullYear(), calM = c0.getMonth();
+    function paint() {
+      pin.textContent = pickDue ? md(pickDue) : '없음';
+      pin.classList.toggle('set', !!pickDue);
+      var lead = new Date(calY, calM, 1).getDay();
+      var days = new Date(calY, calM + 1, 0).getDate();
+      var cells = [];
+      for (var i2 = 0; i2 < lead; i2++) cells.push('<span class="pad"></span>');
+      for (var d2 = 1; d2 <= days; d2++) {
+        var iso = calY + '-' + String(calM + 1).padStart(2, '0') + '-' + String(d2).padStart(2, '0');
+        cells.push('<button type="button" class="day' + (iso === pickDue ? ' on' : '')
+          + '" data-d="' + iso + '">' + d2 + '</button>');
+      }
+      cal.innerHTML = '<div class="calhd"><button type="button" class="pv">‹</button>'
+        + '<span>' + calY + '.' + String(calM + 1).padStart(2, '0') + '</span>'
+        + '<button type="button" class="nx">›</button></div>'
+        + '<div class="calwk"><span>일</span><span>월</span><span>화</span><span>수</span>'
+        + '<span>목</span><span>금</span><span>토</span></div>'
+        + '<div class="calgrid">' + cells.join('') + '</div>'
+        + '<div class="calft"><button type="button" class="clr">지우기</button>'
+        + '<button type="button" class="dn">닫기</button></div>';
+    }
+    paint();
+    pin.addEventListener('click', function () { cal.hidden = !cal.hidden; });
+    cal.addEventListener('click', function (ev) {
+      var t2 = ev.target.closest('button');
+      if (!t2) return;
+      if (t2.classList.contains('pv')) { calM--; if (calM < 0) { calM = 11; calY--; } return paint(); }
+      if (t2.classList.contains('nx')) { calM++; if (calM > 11) { calM = 0; calY++; } return paint(); }
+      if (t2.classList.contains('clr')) { pickDue = ''; return paint(); }
+      if (t2.classList.contains('dn')) { cal.hidden = true; return; }
+      if (!t2.classList.contains('day')) return;
+      pickDue = (t2.dataset.d === pickDue) ? '' : t2.dataset.d;
+      paint();
+    });
+
+    function shut() { back.remove(); }
+    back.addEventListener('click', function (e) { if (e.target === back) shut(); });
+    back.querySelector('.cancel').addEventListener('click', shut);
+
+    back.querySelectorAll('.mv').forEach(function (m) {
+      m.addEventListener('click', function () {
+        var set = {};
+        set['move:' + id] = { item: id, to: m.dataset.to, at: isoOf(new Date()) };
+        post('edit', { set: set }, [id]).then(function () { shut(); bindStops(); });
+      });
+    });
+
+    back.querySelector('.stopnow').addEventListener('click', function () {
+      var why = back.querySelector('.sw').value.trim();
+      if (!why) { back.querySelector('.sw').focus(); return; }
+      var set = {};
+      set['stop:' + id] = { item: id, why: why, at: isoOf(new Date()) };
+      post('edit', { set: set }, [id]).then(function () { shut(); bindStops(); });
+    });
+
+    back.querySelector('.ok').addEventListener('click', function () {
+      if (pickDue === (due0 || '')) { shut(); return; }
+      var ok = back.querySelector('.ok');
+      ok.disabled = true; ok.textContent = '저장 중';
+      var set = {};
+      set['due:' + id] = { item: id, deadline: pickDue, at: isoOf(new Date()) };
+      post('edit', { set: set }, [id]).then(function () { shut(); bindStops(); })
+        .catch(function () { ok.disabled = false; ok.textContent = '다시 시도'; });
+    });
+  }
+
   bindStops();
 
   function open_(on) {
