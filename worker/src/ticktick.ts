@@ -144,7 +144,14 @@ async function sha1(t: string) {
 const fp = async (t: string) => (await sha1(t)).slice(0, 8);
 
 const iso = (d: string) => `${d}T00:00:00+0900`;
-const day = (s?: string | null) => (s ? s.slice(0, 10) : null);
+/** 틱틱은 하루짜리 일정을 협정시로 적는다. 서울로 옮겨 읽어야 날이 맞는다.
+    9월 28일 하루짜리는 9월 27일 15시로 저장된다. 앞 열 글자만 자르면 하루가 밀린다. */
+const day = (s?: string | null) => {
+  if (!s) return null;
+  const t = Date.parse(s);
+  if (Number.isNaN(t)) return s.slice(0, 10);
+  return new Date(t + 9 * 3600 * 1000).toISOString().slice(0, 10);
+};
 
 function keyline(content?: string | null): string | null {
   if (!content) return null;
