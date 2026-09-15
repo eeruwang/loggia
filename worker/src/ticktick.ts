@@ -202,11 +202,13 @@ export async function ttSync(env: TTEnv): Promise<string> {
     for (const it of s.items || []) {
       items.set(it.id, it);
       const ss = stepsOf(it);
-      if (ss.length) wantParent.set(`항목:${it.id}`, { title: it.title, kind: it.kind || '항목' });
+      if (ss.length) wantParent.set(`항목:${it.id}`, {
+        title: it.title, kind: it.kind || '항목', sec: s.label || s.id,
+      });
       for (const x of ss) {
         wantTodo.set(`${it.id}.${await fp(x.t)}`, {
           t: x.t, due: x.due || null, from: x.from || null,
-          memo: x.memo || '', item: it.id, title: it.title,
+          memo: x.memo || '', pri: x.pri || 0, item: it.id, title: it.title,
         });
       }
       const dl = it.dates?.deadline;
@@ -286,7 +288,7 @@ export async function ttSync(env: TTEnv): Promise<string> {
     if (parentId.has(k)) continue;
     const made = await tt(tok, '/task', {
       method: 'POST',
-      body: JSON.stringify({ projectId: TODO_PID, title: w.title, tags: [w.kind],
+      body: JSON.stringify({ projectId: TODO_PID, title: w.title, tags: [w.kind, w.sec],
                              columnId: column.get(w.kind) }),
     });
     if (made?.id) {
@@ -334,11 +336,14 @@ export async function ttSync(env: TTEnv): Promise<string> {
         continue;
       }
       // 이름과 갈래는 판을 따른다
-      const tags: string[] = t.tags || [];
+      const tags: string[] = (t.tags || []).map((x: string) => String(x).toLowerCase());
+      const want2 = [w.kind, w.sec].map((x) => String(x).toLowerCase());
       const col = column.get(w.kind);
-      if ((t.title || '') !== w.title || tags.length !== 1 || tags[0] !== w.kind
+      if ((t.title || '') !== w.title
+          || tags.length !== 2 || want2.some((x) => tags.indexOf(x) < 0)
           || (col && t.columnId !== col)) {
-        const body: Any = { id: t.id, projectId: TODO_PID, title: w.title, tags: [w.kind] };
+        const body: Any = { id: t.id, projectId: TODO_PID, title: w.title,
+                            tags: [w.kind, w.sec] };
         if (col) body.columnId = col;
         await tt(tok, `/task/${t.id}`, { method: 'POST', body: JSON.stringify(body) });
         note.push(`항목 매만짐 ${k.slice(3)}`);
@@ -360,6 +365,7 @@ export async function ttSync(env: TTEnv): Promise<string> {
       const row: Any = { item: iid, t: t.title || '', at: today };
       if (day(t.dueDate)) row.due = day(t.dueDate);
       if (day(t.startDate) && day(t.startDate) !== day(t.dueDate)) row.from = day(t.startDate);
+      if (Number(t.priority || 0)) row.pri = Number(t.priority);
       const memo = (t.content || '').trim();
       if (memo) row.memo = memo;
       add[`tt-${t.id}`] = row;
@@ -381,6 +387,7 @@ export async function ttSync(env: TTEnv): Promise<string> {
     // 시작일이 기한과 다르면 기간으로 본다
     const frm = (day(t.startDate) && day(t.startDate) !== day(t.dueDate))
       ? day(t.startDate) : null;
+    const pri = Number(t.priority || 0);
     if (stamped) {
       // 본문에 남은 예전 표시를 걷어 낸다. 메모만 남긴다
       await tt(tok, `/task/${t.id}`, {
@@ -398,11 +405,13 @@ export async function ttSync(env: TTEnv): Promise<string> {
       note.push(`글 고침 ${k}`);
       continue;
     }
-    if (day(t.dueDate) !== w.due || frm !== (w.from || null) || memo !== (w.memo || '')) {
+    if (day(t.dueDate) !== w.due || frm !== (w.from || null)
+        || memo !== (w.memo || '') || pri !== (w.pri || 0)) {
       const row: Any = { item: w.item, t: w.t, at: today };
       if (day(t.dueDate)) row.due = day(t.dueDate);
       if (frm) row.from = frm;
       if (memo !== (w.memo || '')) row.memo = memo;
+      if (pri !== (w.pri || 0)) row.pri = pri;
       edit[k] = row;
       note.push(`고침 ${k}`);
     }
@@ -441,6 +450,7 @@ export async function ttSync(env: TTEnv): Promise<string> {
     if (gone.has(k)) { done[k] = { at: today }; note.push(`체크 ${k}`); continue; }
     const body: Any = {
       projectId: TODO_PID, title: w.t, content: w.memo || '',
+      priority: w.pri || 0,
     };
     const pid = parentId.get(`항목:${w.item}`);
     if (pid) body.parentId = pid;

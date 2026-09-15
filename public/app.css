@@ -746,3 +746,13 @@ background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;padding
   background:var(--surface);border:1px solid var(--sunk);border-radius:3px;cursor:pointer}
 .when-col .cardedit:hover{color:var(--ink);border-color:var(--ink-3)}
 .when-col .cardedit.edited{color:var(--soon);border-color:var(--soon)}
+
+/* 할 일의 우선순위. 틱틱의 깃발과 같은 값 */
+.spri{margin-left:9px;font-size:11px;font-weight:800;padding:1px 6px;border-radius:9px;
+  color:var(--paper);white-space:nowrap}
+.spri.p5{background:var(--now)} .spri.p3{background:var(--soon)}
+.spri.p1{background:var(--later)}
+.tedit .ep{display:flex;align-items:center;gap:7px;margin-top:7px}
+.tedit .ep span{font-size:12px;color:var(--ink-3)}
+.tedit .ep select{font-family:inherit;font-size:12.5px;padding:4px 7px;color:var(--ink);
+  background:var(--surface);border:1px solid var(--sunk);border-radius:3px}
