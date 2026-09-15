@@ -897,6 +897,18 @@ export default {
         return new Response(`공고를 옮기지 못했습니다 ${e}`, { status: 500 });
       }
     }
+    // 10분을 기다리지 않고 지금 틱틱을 맞춰 보고 싶을 때.  GET /tt/sync?k=<PREVIEW_TOKEN>
+    if (u.pathname === '/tt/sync') {
+      if (!env.PREVIEW_TOKEN || u.searchParams.get('k') !== env.PREVIEW_TOKEN) {
+        return new Response('없습니다', { status: 404 });
+      }
+      try {
+        return new Response(await ttSync(env), {
+          headers: { 'content-type': 'text/plain; charset=utf-8' } });
+      } catch (e) {
+        return new Response(`틱틱을 맞추지 못했습니다 ${e}`, { status: 500 });
+      }
+    }
     // 10분을 기다리지 않고 지금 반영해 보고 싶을 때.  GET /flush?k=<PREVIEW_TOKEN>
     if (u.pathname === '/flush') {
       if (!env.PREVIEW_TOKEN || u.searchParams.get('k') !== env.PREVIEW_TOKEN) {
