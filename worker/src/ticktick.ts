@@ -11,9 +11,15 @@
      KV 에 든 토큰                                /tt/login 을 한 번 눌러 받는다
    하나라도 없으면 조용히 건너뛴다.
 
+   어느 줄이 판의 무엇인지 알아보는 법
+     과제 아이디와 열쇠를 짝지어 KV 에 둔다. 틱틱 과제의 본문에는 아무것도 적지
+     않는다. 본문은 통째로 사람의 메모 자리다. 살림이 비면 어버이가 알려 주는
+     항목과 제목의 지문으로 짝을 되찾고, 그래도 못 찾은 줄만 새로 적은 것으로 본다.
+     예전에 본문 첫 줄에 박아 두었던 표시가 남아 있으면 읽어서 쓰고 그 줄은 지운다.
+
    체크를 알아보는 법
      틱틱의 공개 API 에는 끝낸 것을 돌려주는 자리가 없다. 그래서 지난 회차에
-     보았던 열쇠가 이번에 안 보이면 체크한 것으로 친다. 틱틱에서 과제를 지워도
+     보았던 과제가 이번에 안 보이면 체크한 것으로 친다. 틱틱에서 과제를 지워도
      같은 자리로 들어온다. 지우는 것과 체크하는 것을 가리지 못한다.
    ========================================================================== */
 import { loadData, type FlushEnv } from './flush';
@@ -164,18 +170,6 @@ function bodymemo(content?: string | null): string {
   return out.join('\n').trim();
 }
 
-function restamp(content: string | null | undefined, marker: string): string {
-  const lines = (content || '').split('\n');
-  const out: string[] = [];
-  let hit = false;
-  for (const line of lines) {
-    if (!hit && line.trim().startsWith('로지아 ')) { out.push(marker); hit = true; }
-    else out.push(line);
-  }
-  if (!hit) return [marker, ...out.filter((x) => x.trim())].join('\n').trim();
-  return out.join('\n').trim();
-}
-
 function stepsOf(item: Any): Any[] {
   const st = item.steps || (item.next ? [item.next] : []);
   return st.map((x: Any) => (typeof x === 'string' ? { t: x } : { ...x }));
@@ -243,15 +237,27 @@ export async function ttSync(env: TTEnv): Promise<string> {
   const dueData = await tt(tok, `/project/${DUE_PID}/data`);
   const cur: Any[] = todoData?.tasks || [];
   const curDue: Any[] = dueData?.tasks || [];
-  const seen = ((await env.LEDGER.get(SEEN_KEY, 'json')) ?? {}) as Record<string, string>;
+  // 살림. { todo: {과제아이디: 열쇠}, due: {과제아이디: 열쇠} }
+  const raw = ((await env.LEDGER.get(SEEN_KEY, 'json')) ?? {}) as Any;
+  const seen: { todo: Record<string, string>; due: Record<string, string> } =
+    raw.todo || raw.due
+      ? { todo: raw.todo || {}, due: raw.due || {} }
+      // 예전 살림은 열쇠가 앞이고 아이디가 뒤였다. 뒤집어 받는다
+      : { todo: Object.fromEntries(Object.entries(raw as Record<string, string>)
+            .map(([k, v]) => [v, k])), due: {} };
 
   const done: Any = {}; const add: Any = {}; const edit: Any = {};
   const note: string[] = [];
-  const nowSeen: Record<string, string> = {};
+  const nowSeen: { todo: Record<string, string>; due: Record<string, string> } =
+    { todo: {}, due: {} };
 
   const parentId = new Map<string, string>();
+  const byTitle = new Map<string, string>();
+  for (const [k, w] of wantParent) byTitle.set(w.title, k);
   for (const t of cur) {
-    const k = keyline(t.content);
+    let k = keyline(t.content);
+    if (!k) k = seen.todo[t.id] || null;
+    if (!k && !t.parentId && byTitle.has(t.title)) k = byTitle.get(t.title)!;
     if (k && k.startsWith('항목:')) parentId.set(k, t.id);
   }
 
@@ -268,13 +274,44 @@ export async function ttSync(env: TTEnv): Promise<string> {
 
   const here = new Set<string>();
   for (const t of cur) {
-    const k = keyline(t.content);
+    const stamped = keyline(t.content);      // 예전 표시가 남아 있으면 읽는다
+    let k = stamped || seen.todo[t.id] || null;
     const isNote = t.kind === 'NOTE';
+    // 살림이 비었으면 어버이와 제목으로 짝을 되찾는다
+    if (!k && t.parentId) {
+      for (const [pk, pid] of parentId) {
+        if (t.parentId !== pid) continue;
+        const guess = `${pk.slice(3)}.${await fp(t.title || '')}`;
+        if (wantTodo.has(guess)) k = guess;
+      }
+    }
+    if (!k && !t.parentId) {
+      for (const x of t.tags || []) {
+        let iid: string | null = items.has(x) ? x : null;
+        if (!iid) {
+          for (const [id, it] of items) {
+            if ((it.title || '').toLowerCase() === String(x).toLowerCase()) iid = id;
+          }
+        }
+        if (!iid) continue;
+        const guess = `${iid}.${await fp(t.title || '')}`;
+        if (wantTodo.has(guess)) k = guess;
+      }
+    }
 
     if (k && k.startsWith('항목:')) {
+      nowSeen.todo[t.id] = k;
+      if (stamped) {
+        await tt(tok, `/task/${t.id}`, {
+          method: 'POST',
+          body: JSON.stringify({ id: t.id, projectId: TODO_PID,
+                                 content: bodymemo(t.content) }),
+        });
+      }
       const w = wantParent.get(k);
       if (!w) {
         await tt(tok, `/project/${TODO_PID}/task/${t.id}`, { method: 'DELETE' });
+        delete nowSeen.todo[t.id];
         note.push(`항목 거둠 ${k.slice(3)}`);
       }
       continue;
@@ -296,38 +333,34 @@ export async function ttSync(env: TTEnv): Promise<string> {
       const memo = (t.content || '').trim();
       if (memo) row.memo = memo;
       add[`tt-${t.id}`] = row;
-      const nk = `${iid}.${await fp(row.t)}`;
-      await tt(tok, `/task/${t.id}`, {
-        method: 'POST',
-        body: JSON.stringify({ id: t.id, projectId: TODO_PID,
-                               content: restamp(t.content, `로지아 ${nk}`) }),
-      });
-      nowSeen[nk] = t.id;
+      nowSeen.todo[t.id] = `${iid}.${await fp(row.t)}`;
       note.push(`새 할 일 ${iid}`);
       continue;
     }
 
     here.add(k);
-    nowSeen[k] = t.id;
+    nowSeen.todo[t.id] = k;
     const w = wantTodo.get(k);
     if (!w) {
       await tt(tok, `/project/${TODO_PID}/task/${t.id}`, { method: 'DELETE' });
+      delete nowSeen.todo[t.id];
       note.push(`판에 없어 거둠 ${k}`);
       continue;
     }
     const memo = bodymemo(t.content);
+    if (stamped) {
+      // 본문에 남은 예전 표시를 걷어 낸다. 메모만 남긴다
+      await tt(tok, `/task/${t.id}`, {
+        method: 'POST',
+        body: JSON.stringify({ id: t.id, projectId: TODO_PID, content: memo }),
+      });
+    }
     if ((t.title || '') !== w.t) {
       const row: Any = { item: w.item, t: t.title, at: today };
       if (day(t.dueDate)) row.due = day(t.dueDate);
       if (memo !== (w.memo || '')) row.memo = memo;
       edit[k] = row;
-      const nk = `${w.item}.${await fp(t.title)}`;
-      await tt(tok, `/task/${t.id}`, {
-        method: 'POST',
-        body: JSON.stringify({ id: t.id, projectId: TODO_PID,
-                               content: restamp(t.content, `로지아 ${nk}`) }),
-      });
-      delete nowSeen[k]; nowSeen[nk] = t.id;
+      nowSeen.todo[t.id] = `${w.item}.${await fp(t.title)}`;
       note.push(`글 고침 ${k}`);
       continue;
     }
@@ -349,27 +382,33 @@ export async function ttSync(env: TTEnv): Promise<string> {
     }
   }
 
+  // 지난 회차에 보던 과제가 이번에 안 보이면 체크했거나 지운 것이다
+  const gone = new Set(Object.entries(seen.todo)
+    .filter(([id]) => !cur.some((t: Any) => t.id === id))
+    .map(([, k]) => k));
+
   // 없던 할 일을 만든다
   for (const [k, w] of wantTodo) {
     if (here.has(k)) continue;
-    // 지난 회차에 보았는데 이번에 안 보이면 체크했거나 지운 것이다
-    if (seen[k]) { done[k] = { at: today }; note.push(`체크 ${k}`); continue; }
+    if (gone.has(k)) { done[k] = { at: today }; note.push(`체크 ${k}`); continue; }
     const body: Any = {
-      projectId: TODO_PID, title: w.t,
-      content: `로지아 ${k}` + (w.memo ? `\n\n${w.memo}` : ''),
+      projectId: TODO_PID, title: w.t, content: w.memo || '',
     };
     const pid = parentId.get(`항목:${w.item}`);
     if (pid) body.parentId = pid;
     if (w.due) { body.dueDate = iso(w.due); body.isAllDay = true; body.timeZone = 'Asia/Seoul'; }
     const made = await tt(tok, '/task', { method: 'POST', body: JSON.stringify(body) });
-    if (made?.id) nowSeen[k] = made.id;
+    if (made?.id) nowSeen.todo[made.id] = k;
     note.push(`할 일 세움 ${k}`);
   }
 
   // 마감 판. 비추기만 한다
   const hereDue = new Set<string>();
+  const dueByTitle = new Map<string, string>();
+  for (const [k, w] of wantDue) dueByTitle.set(w.title, k);
   for (const t of curDue) {
-    const k = keyline(t.content);
+    const stamped = keyline(t.content);
+    const k = stamped || seen.due[t.id] || dueByTitle.get(t.title) || null;
     if (!k) continue;
     const w = wantDue.get(k);
     if (!w) {
@@ -377,6 +416,14 @@ export async function ttSync(env: TTEnv): Promise<string> {
       continue;
     }
     hereDue.add(k);
+    nowSeen.due[t.id] = k;
+    if (stamped) {
+      await tt(tok, `/task/${t.id}`, {
+        method: 'POST',
+        body: JSON.stringify({ id: t.id, projectId: DUE_PID,
+                               content: w.body || '' }),
+      });
+    }
     if ((t.title || '') !== w.title || day(t.dueDate) !== w.due) {
       const body: Any = { id: t.id, projectId: DUE_PID, title: w.title };
       if (w.due) { body.dueDate = iso(w.due); body.isAllDay = true; body.timeZone = 'Asia/Seoul'; }
@@ -386,11 +433,11 @@ export async function ttSync(env: TTEnv): Promise<string> {
   for (const [k, w] of wantDue) {
     if (hereDue.has(k)) continue;
     const body: Any = {
-      projectId: DUE_PID, title: w.title, tags: [w.tag],
-      content: `로지아 마감 ${k}` + (w.body ? `\n${w.body}` : ''),
+      projectId: DUE_PID, title: w.title, tags: [w.tag], content: w.body || '',
     };
     if (w.due) { body.dueDate = iso(w.due); body.isAllDay = true; body.timeZone = 'Asia/Seoul'; }
-    await tt(tok, '/task', { method: 'POST', body: JSON.stringify(body) });
+    const made = await tt(tok, '/task', { method: 'POST', body: JSON.stringify(body) });
+    if (made?.id) nowSeen.due[made.id] = k;
   }
 
   // 장부에 적는다. 같은 시계에 도는 flush 가 데이터로 옮긴다
