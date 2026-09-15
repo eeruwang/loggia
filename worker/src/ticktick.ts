@@ -198,7 +198,8 @@ export async function ttSync(env: TTEnv): Promise<string> {
       if (ss.length) wantParent.set(`항목:${it.id}`, { title: it.title, kind: it.kind || '항목' });
       for (const x of ss) {
         wantTodo.set(`${it.id}.${await fp(x.t)}`, {
-          t: x.t, due: x.due || null, memo: x.memo || '', item: it.id, title: it.title,
+          t: x.t, due: x.due || null, from: x.from || null,
+          memo: x.memo || '', item: it.id, title: it.title,
         });
       }
       const dl = it.dates?.deadline;
@@ -351,6 +352,7 @@ export async function ttSync(env: TTEnv): Promise<string> {
       if (!iid) { note.push(`항목 모름 ${t.title}`); continue; }
       const row: Any = { item: iid, t: t.title || '', at: today };
       if (day(t.dueDate)) row.due = day(t.dueDate);
+      if (day(t.startDate) && day(t.startDate) !== day(t.dueDate)) row.from = day(t.startDate);
       const memo = (t.content || '').trim();
       if (memo) row.memo = memo;
       add[`tt-${t.id}`] = row;
@@ -369,6 +371,9 @@ export async function ttSync(env: TTEnv): Promise<string> {
       continue;
     }
     const memo = bodymemo(t.content);
+    // 시작일이 기한과 다르면 기간으로 본다
+    const frm = (day(t.startDate) && day(t.startDate) !== day(t.dueDate))
+      ? day(t.startDate) : null;
     if (stamped) {
       // 본문에 남은 예전 표시를 걷어 낸다. 메모만 남긴다
       await tt(tok, `/task/${t.id}`, {
@@ -379,15 +384,17 @@ export async function ttSync(env: TTEnv): Promise<string> {
     if ((t.title || '') !== w.t) {
       const row: Any = { item: w.item, t: t.title, at: today };
       if (day(t.dueDate)) row.due = day(t.dueDate);
+      if (frm) row.from = frm;
       if (memo !== (w.memo || '')) row.memo = memo;
       edit[k] = row;
       nowSeen.todo[t.id] = `${w.item}.${await fp(t.title)}`;
       note.push(`글 고침 ${k}`);
       continue;
     }
-    if (day(t.dueDate) !== w.due || memo !== (w.memo || '')) {
+    if (day(t.dueDate) !== w.due || frm !== (w.from || null) || memo !== (w.memo || '')) {
       const row: Any = { item: w.item, t: w.t, at: today };
       if (day(t.dueDate)) row.due = day(t.dueDate);
+      if (frm) row.from = frm;
       if (memo !== (w.memo || '')) row.memo = memo;
       edit[k] = row;
       note.push(`고침 ${k}`);
@@ -431,6 +438,7 @@ export async function ttSync(env: TTEnv): Promise<string> {
     const pid = parentId.get(`항목:${w.item}`);
     if (pid) body.parentId = pid;
     if (w.due) { body.dueDate = iso(w.due); body.isAllDay = true; body.timeZone = 'Asia/Seoul'; }
+    if (w.from) { body.startDate = iso(w.from); body.isAllDay = true; body.timeZone = 'Asia/Seoul'; }
     const made = await tt(tok, '/task', { method: 'POST', body: JSON.stringify(body) });
     if (made?.id) nowSeen.todo[made.id] = k;
     note.push(`할 일 세움 ${k}`);

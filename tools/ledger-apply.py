@@ -84,11 +84,13 @@ def todos_of(item):
 
 def put_todos(item, ss):
     def one(s):
-        if not s.get('due') and not s.get('memo'):
+        if not s.get('due') and not s.get('from') and not s.get('memo'):
             return s['t']
         o = {'t': s['t']}
         if s.get('due'):
             o['due'] = s['due']
+        if s.get('from'):
+            o['from'] = s['from']
         if s.get('memo'):
             o['memo'] = s['memo']
         return o
@@ -413,6 +415,9 @@ def main():
                 if e.get('due'):
                     row['due'] = e['due']
                 # memo 키가 없으면 있던 메모를 그대로 둔다. 빈 값이면 지운다
+                frm = x.get('from') if 'from' not in e else e['from']
+                if frm:
+                    row['from'] = frm
                 memo = x.get('memo') if 'memo' not in e else e['memo']
                 if memo:
                     row['memo'] = memo
@@ -431,6 +436,8 @@ def main():
         row = {'t': a.get('t', '')}
         if a.get('due'):
             row['due'] = a['due']
+        if a.get('from'):
+            row['from'] = a['from']
         if a.get('memo'):
             row['memo'] = a['memo']
         ss.append(row)

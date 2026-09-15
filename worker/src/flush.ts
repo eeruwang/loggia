@@ -128,19 +128,20 @@ async function rawSeal(obj: Any, keyB64: string): Promise<string> {
 
 /* ── 데이터 만지기 ─────────────────────────────────────────────────────────── */
 
-type Todo = { t: string; due?: string; memo?: string };
+type Todo = { t: string; due?: string; from?: string; memo?: string };
 
 function todosOf(item: Any): Todo[] {
   const st = item.steps || (item.next ? [item.next] : []);
-  return st.map((x: any) => (typeof x === 'string' ? { t: x } : { t: x.t, due: x.due, memo: x.memo }));
+  return st.map((x: any) => (typeof x === 'string' ? { t: x } : { t: x.t, due: x.due, from: x.from, memo: x.memo }));
 }
 
 function putTodos(item: Any, ss: Todo[]) {
   if (!ss.length) delete item.steps;
   else item.steps = ss.map((s) => {
-    if (!s.due && !s.memo) return s.t;
+    if (!s.due && !s.from && !s.memo) return s.t;
     const o: Any = { t: s.t };
     if (s.due) o.due = s.due;
+    if (s.from) o.from = s.from;
     if (s.memo) o.memo = s.memo;
     return o;
   });
@@ -374,6 +375,7 @@ export async function flush(env: FlushEnv): Promise<string> {
         hit = true;
         if (e.del) continue;                       // 삭제
         out.push({ t: e.t, due: e.due,
+                   from: (e.from === undefined ? s.from : (e.from || undefined)),
                    memo: (e.memo === undefined ? s.memo : (e.memo || undefined)) });
         continue;
       }
@@ -393,7 +395,7 @@ export async function flush(env: FlushEnv): Promise<string> {
     const when = a.at || today;
     touched[a.item] = touched[a.item] > when ? touched[a.item] : when;
     const ss = todosOf(it);
-    ss.push({ t: a.t, due: a.due, memo: a.memo || undefined });
+    ss.push({ t: a.t, due: a.due, from: a.from || undefined, memo: a.memo || undefined });
     putTodos(it, ss);
     note.push(`추가 ${a.item}`);
   }

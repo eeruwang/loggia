@@ -653,3 +653,6 @@ background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;padding
 .smemo{flex:1 1 100%;order:9;margin:4px 0 2px calc(1.15em + 11px);
   font-size:12.5px;line-height:1.55;color:var(--ink-3);white-space:pre-wrap}
 .rest .smemo{margin-left:calc(1.15em + 11px)}
+
+/* 기간이 걸린 할 일. 시작일과 마감일을 함께 읽는다 */
+.sspan{margin-left:9px;font-size:12px;font-weight:700;color:var(--ink-3);white-space:nowrap}
