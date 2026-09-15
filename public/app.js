@@ -1881,16 +1881,67 @@ function bindAdd(root, redrawEntry, board) {
     form.innerHTML =
       '<input type="text" class="et" maxlength="200" required>'
       + pumSel
-      + '<div class="erow"><label class="dl"><span>시작</span>'
-      + '<input type="date" class="ef2"></label>'
-      + '<label class="dl"><span>마감</span><input type="date" class="ed"></label>'
+      + '<div class="erow"><button type="button" class="dpick"></button>'
+      + '<div class="cal" hidden></div>'
       + '<button type="submit" class="ok">저장</button>'
       + '<button type="button" class="cancel">취소</button>'
       + '<button type="button" class="rm">삭제</button></div>';
     row.appendChild(form);
     form.querySelector('.et').value = t;
-    form.querySelector('.ed').value = due;
-    form.querySelector('.ef2').value = frm;
+    // 날짜 고르기. 한 번 누르면 하루, 한 번 더 누르면 기간, 같은 날을 누르면 거둔다
+    var pick = { from: frm || '', due: due || '' };
+    var pin = form.querySelector('.dpick');
+    var cal = form.querySelector('.cal');
+    var cur0 = new Date((pick.due || pick.from || isoOf(new Date())) + 'T00:00:00');
+    var calY = cur0.getFullYear(), calM = cur0.getMonth();
+
+    function label() {
+      if (pick.from && pick.due) return md(pick.from) + ' ~ ' + md(pick.due);
+      if (pick.due) return '마감 ' + md(pick.due);
+      return '날짜 없음';
+    }
+    function paint() {
+      pin.textContent = label();
+      pin.classList.toggle('set', !!pick.due);
+      var first = new Date(calY, calM, 1);
+      var lead = first.getDay();
+      var days = new Date(calY, calM + 1, 0).getDate();
+      var cells = [];
+      for (var i = 0; i < lead; i++) cells.push('<span class="pad"></span>');
+      for (var d = 1; d <= days; d++) {
+        var iso = calY + '-' + String(calM + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        var on = (iso === pick.due || iso === pick.from) ? ' on'
+               : (pick.from && pick.due && iso > pick.from && iso < pick.due) ? ' mid' : '';
+        cells.push('<button type="button" class="day' + on + '" data-d="' + iso + '">' + d + '</button>');
+      }
+      cal.innerHTML =
+        '<div class="calhd"><button type="button" class="pv">‹</button>'
+        + '<span>' + calY + '.' + String(calM + 1).padStart(2, '0') + '</span>'
+        + '<button type="button" class="nx">›</button></div>'
+        + '<div class="calwk"><span>일</span><span>월</span><span>화</span><span>수</span>'
+        + '<span>목</span><span>금</span><span>토</span></div>'
+        + '<div class="calgrid">' + cells.join('') + '</div>'
+        + '<div class="calft"><button type="button" class="clr">지우기</button>'
+        + '<button type="button" class="dn">닫기</button></div>';
+    }
+    paint();
+
+    pin.addEventListener('click', function () { cal.hidden = !cal.hidden; });
+    cal.addEventListener('click', function (ev) {
+      var b = ev.target.closest('button');
+      if (!b) return;
+      if (b.classList.contains('pv')) { calM--; if (calM < 0) { calM = 11; calY--; } return paint(); }
+      if (b.classList.contains('nx')) { calM++; if (calM > 11) { calM = 0; calY++; } return paint(); }
+      if (b.classList.contains('clr')) { pick = { from: '', due: '' }; return paint(); }
+      if (b.classList.contains('dn')) { cal.hidden = true; return; }
+      if (!b.classList.contains('day')) return;
+      var d = b.dataset.d;
+      if (d === pick.due && !pick.from) pick = { from: '', due: '' };   // 같은 날을 누르면 거둔다
+      else if (pick.from && pick.due) pick = { from: '', due: d };      // 기간이 서 있으면 다시 하루부터
+      else if (!pick.due) pick = { from: '', due: d };
+      else pick = d < pick.due ? { from: d, due: pick.due } : { from: pick.due, due: d };
+      paint();
+    });
     if (pumSel) form.querySelector('.ef select').value = pumNow;
     form.querySelector('.et').focus();
 
@@ -1904,9 +1955,8 @@ function bindAdd(root, redrawEntry, board) {
       e.preventDefault();
       var nt = form.querySelector('.et').value.trim();
       if (!nt) return;
-      var nd = form.querySelector('.ed').value;
-      var nf = form.querySelector('.ef2').value;
-      if (nf && nd && nf >= nd) nf = '';        // 시작이 마감보다 늦으면 기간이 아니다
+      var nd = pick.due || '';
+      var nf = pick.from || '';
       var np = pumSel ? form.querySelector('.ef select').value : pumNow;
       var ok = form.querySelector('.ok');
       ok.disabled = true; ok.textContent = '저장 중';
