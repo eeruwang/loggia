@@ -302,16 +302,10 @@ export async function ttSync(env: TTEnv): Promise<string> {
       }
     }
     if (!k && !t.parentId) {
-      for (const x of t.tags || []) {
-        let iid: string | null = items.has(x) ? x : null;
-        if (!iid) {
-          for (const [id, it] of items) {
-            if ((it.title || '').toLowerCase() === String(x).toLowerCase()) iid = id;
-          }
-        }
-        if (!iid) continue;
-        const guess = `${iid}.${await fp(t.title || '')}`;
-        if (wantTodo.has(guess)) k = guess;
+      // 노트는 어버이 밑으로 못 들어간다. 제목의 지문으로 어느 항목인지 되찾는다
+      const f = await fp(t.title || '');
+      for (const id of items.keys()) {
+        if (wantTodo.has(`${id}.${f}`)) { k = `${id}.${f}`; break; }
       }
     }
 
