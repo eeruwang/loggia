@@ -382,7 +382,7 @@ export async function flush(env: FlushEnv): Promise<string> {
       const iid = e.item || k.slice(5);
       const to = String(e.to || '');
       const w2 = e.at || today;
-      let moved: Any = null;
+      let moved: any = null;
       for (const sec of data.sections || []) {
         const at = (sec.items || []).findIndex((x: Any) => x.id === iid);
         if (at >= 0) { moved = sec.items.splice(at, 1)[0]; break; }
