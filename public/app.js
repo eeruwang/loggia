@@ -1613,7 +1613,11 @@ function bindBoard(root) {
   function refresh() {
     if (!bar) return;
     var on = allBoxes().filter(function (b) { return b.checked; });
-    bar.hidden = on.length === 0 && !dirty;
+    // 고른 것도 없고 보낼 것도 없으면 막대를 세워 둘 까닭이 없다.
+    // 체크했다 푼 뒤에도 남아 있던 자리다.
+    var pend = diff();
+    var empty = !Object.keys(pend.set).length && !pend.del.length;
+    bar.hidden = on.length === 0 && empty;
     var n = bar.querySelector('.n');
     if (n) n.textContent = on.length;
     bar.dataset.text = '로지아 갱신. 아래를 끝냈습니다.\n'
