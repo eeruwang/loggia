@@ -313,6 +313,17 @@ export async function ttSync(env: TTEnv): Promise<string> {
         await tt(tok, `/project/${TODO_PID}/task/${t.id}`, { method: 'DELETE' });
         delete nowSeen.todo[t.id];
         note.push(`항목 거둠 ${k.slice(3)}`);
+        continue;
+      }
+      // 이름과 갈래는 판을 따른다
+      const tags: string[] = t.tags || [];
+      if ((t.title || '') !== w.title || tags.length !== 1 || tags[0] !== w.kind) {
+        await tt(tok, `/task/${t.id}`, {
+          method: 'POST',
+          body: JSON.stringify({ id: t.id, projectId: TODO_PID,
+                                 title: w.title, tags: [w.kind] }),
+        });
+        note.push(`항목 매만짐 ${k.slice(3)}`);
       }
       continue;
     }
@@ -377,6 +388,19 @@ export async function ttSync(env: TTEnv): Promise<string> {
         await tt(tok, `/task/${t.id}`, {
           method: 'POST',
           body: JSON.stringify({ id: t.id, projectId: TODO_PID, parentId: pid }),
+        });
+      }
+    } else if (!isNote && t.parentId === parentId.get(`항목:${w.item}`)) {
+      // 어버이가 이미 말하는 것을 태그가 되풀이할 까닭이 없다
+      const keep = (t.tags || []).filter((x: string) => {
+        const y = String(x).toLowerCase();
+        return y !== w.item.toLowerCase() && y !== (w.title || '').toLowerCase()
+          && y !== (items.get(w.item)?.kind || '').toLowerCase();
+      });
+      if (keep.length !== (t.tags || []).length) {
+        await tt(tok, `/task/${t.id}`, {
+          method: 'POST',
+          body: JSON.stringify({ id: t.id, projectId: TODO_PID, tags: keep }),
         });
       }
     }
