@@ -7,6 +7,56 @@
     "url": "https://www.dongguk.edu/article/PROFHIRE/list?pageIndex=1",
     "posted": "2026-09-15",
     "deadline": "",
-    "note": "미확인. 오늘 새로 올라온 목록 제목과 게시일만 확인, 상세페이지가 열리지 않아 마감일과 모집분야 미상. 목록에서 제목으로 찾을 것."
+    "note": "미확인. 제목과 게시일(게시판 항목 335)을 다시 확인했으나 상세페이지가 JS 링크라 마감일과 모집분야는 여전히 미상. 목록에서 제목으로 찾을 것."
+  },
+  "rhul-cinematography-2026": {
+    "id": "rhul-cinematography-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Lecturer in Cinematography and Virtual Production",
+    "url": "https://www.jobs.ac.uk/job/DST436/lecturer-in-cinematography-and-virtual-production",
+    "posted": "2026-08-28",
+    "deadline": "2026-09-28",
+    "note": "정규직 강사, 스폰서십 가능 명시. 박사 또는 상당한 업계 경력 인정, HEA 언급 없음. 촬영과 버추얼 프로덕션 전공."
+  },
+  "hull-digitalmedia-2026": {
+    "id": "hull-digitalmedia-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Lecturer in Digital Media",
+    "url": "https://www.jobs.ac.uk/job/DSV180/lecturer-in-digital-media",
+    "posted": "2026-09-04",
+    "deadline": "2026-10-03",
+    "note": "정규직, 시간제 가능. 스폰서십 불명, 박사 요건 불명. 실기 기반 디지털미디어, 몰입형 스크린미디어 포함 강의."
+  },
+  "portsmouth-filmprod-2026": {
+    "id": "portsmouth-filmprod-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Teaching Fellow in Film Production",
+    "url": "https://www.jobs.ac.uk/job/DSW426/teaching-fellow-in-film-production",
+    "posted": "2026-09-10",
+    "deadline": "2026-09-16",
+    "note": "오늘마감. 정규직, 스폰서십 불명. 업계 경력 필수. 촬영과 후반작업 포함 영화제작 실기 강의."
+  },
+  "birkbeck-scriptwriting-2026": {
+    "id": "birkbeck-scriptwriting-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Associate Lecturer in Creative Writing/Scriptwriting",
+    "url": "https://www.jobs.ac.uk/job/DSW958/associate-lecturer-in-creative-writing-scriptwriting",
+    "posted": "",
+    "deadline": "2026-09-21",
+    "note": "시간강사, 시급 69.68파운드. 스폰서십과 박사 요건 불명. 스크린라이팅 포함 창작 글쓰기 강의."
+  },
+  "eca-digitalmediadesign-2026": {
+    "id": "eca-digitalmediadesign-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Tutor in Digital Media Design",
+    "url": "https://www.jobs.ac.uk/job/DSW133/tutor-in-digital-media-design-at-edinburgh-college-of-art",
+    "posted": "2026-09-08",
+    "deadline": "2026-09-21",
+    "note": "상시 파트타임, 주 20시간 보장. 스폰서십과 박사와 HEA 요건 언급 없음. 디지털미디어 디자인 석사과정 튜터."
   }
 }}
