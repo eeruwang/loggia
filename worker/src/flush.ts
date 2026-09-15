@@ -180,7 +180,7 @@ function buildDigest(d: Any): Any {
       if (sec.id === 'now' && ss.length) {
         doing.push({
           ...base, step: ss[0].t, due: ss[0].due || dt.deadline || '',
-          pum: ((d.efforts || {})[it['품']] || {}).label || '',
+          pum: (ss[0].from && ss[0].due) ? `${ss[0].from.slice(5)} ~ ${ss[0].due.slice(5)}` : '',
         });
       }
       if (dt.sent && st.tone === 'wait') {
@@ -356,7 +356,7 @@ export async function flush(env: FlushEnv): Promise<string> {
       const w2 = e.at || today;
       if (!it2) { note.push(`못 찾음 ${iid}`); continue; }
       touched[iid] = touched[iid] > w2 ? touched[iid] : w2;
-      if (e['품']) it2['품'] = e['품']; else delete it2['품'];
+      delete it2['품'];
       note.push(`기간 ${iid}`);
       continue;
     }

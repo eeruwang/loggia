@@ -24,7 +24,6 @@ lg.py — 로지아 데이터를 한 항목씩 보고 고친다.
 
     lg.py set glasgow status 제출 -w             상태 바꾸기
     lg.py set glasgow deadline 2026-08-05 -w     마감일. sent decided expected 도 같다
-    lg.py set glasgow 품 반나절 -w                걸리는 시간
     lg.py set glasgow note "..." -w              메모
     lg.py clear glasgow deadline -w              값 지우기
     lg.py done glasgow "추천인" -w                할 일 하나 완료 처리 (내용 일부로 찾음)
@@ -51,7 +50,7 @@ DATE_KEYS = ('deadline', 'sent', 'decided', 'expected', 'touched')
 DATE_NAME = {'deadline': '마감', 'sent': '보낸 날', 'decided': '결과',
              'expected': '예상', 'touched': '마지막 작업'}
 # 항목에 바로 붙는 값들
-FLAT_KEYS = ('title', 'status', 'kind', 'venue', 'note', '품', 'id')
+FLAT_KEYS = ('title', 'status', 'kind', 'venue', 'note', 'id')
 
 
 def load(path):
@@ -195,7 +194,7 @@ def cmd_show(d, args):
     st = d['statuses'].get(it.get('status'), {}).get('label', it.get('status', ''))
     print(f'{it["id"]}  {it["title"]}' + (f'  ({v["name"]})' if v else ''))
     print('  ' + ' · '.join(x for x in [
-        sec['label'], st, it.get('품', ''), it.get('kind', '')] if x))
+        sec['label'], st, it.get('kind', '')] if x))
     dt = it.get('dates', {})
     if dt:
         print('  ' + ' · '.join(
@@ -282,9 +281,6 @@ def cmd_set(d, args):
         if f == 'status' and val not in d.get('statuses', {}):
             die(f'쓸 수 없는 상태입니다: {val}\n'
                 + '가능한 값: ' + ' '.join(d.get('statuses', {})))
-        if f == '품' and val not in d.get('efforts', {}):
-            die(f'쓸 수 없는 값입니다: {val}\n'
-                + '가능한 값: ' + ' '.join(d.get('efforts', {})))
         it[f] = val
         msg = f'{args.id} {f}: {old or "비어 있음"} → {val}'
         # 제출·심사·대기가 되면 보낸 것으로 따라 옮긴다.

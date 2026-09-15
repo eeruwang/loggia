@@ -193,14 +193,6 @@ function whenCol(item) {
    여기에 기록에서 온 것을 이어 붙인다. 손으로 더한 할 일도 같은 목록에 선다.
    따로 상자를 만들면 눈이 두 번 읽는다. 아직 데이터에 없으므로 글의 지문
    대신 기록 토큰을 그대로 쓰고, 표를 하나 달아 아직 참이 아님을 밝힌다. */
-/* 이 항목의 일하는 기간. 사이트에서 고쳐 두었으면 그것이 먼저다.
-   기간은 할 일 하나가 아니라 항목에 붙는 값이라 기록의 키도 다르다.
-   `item:<항목 아이디>` 로 적어 두면 할 일 키(`<아이디>.<지문>`)와 섞이지 않는다. */
-function pumOf(item) {
-  var e = EDIT['item:' + item.id];
-  return (e && e['품'] !== undefined) ? e['품'] : item['품'];
-}
-
 function stepsOf(item) {
   var out = [];
   var st = item.steps || (item.next ? [item.next] : []);
@@ -231,8 +223,7 @@ function stepsOf(item) {
 function stepsHtml(item) {
   var ss = stepsOf(item);
   if (!ss.length) return '<p class="todo none">지금 할 일 없음</p>';
-  var eff = (D.efforts || {})[pumOf(item)];
-  var cost = eff ? '<span class="cost">' + esc(eff.label) + '</span>' : '';
+  var cost = '';
 
   function box(st, cls) {
     var due = st.due ? '<span class="sdue" data-deadline="' + esc(st.due) + '">D-</span>' : '';
@@ -270,7 +261,7 @@ function entryHtml(item) {
   var t = (item.dates || {}).touched;
   var touch = t ? '<span class="touch" data-touched="' + esc(t) + '"></span>'
                 : '<span class="touch none">작업 기록 없음</span>';
-  var tags = [item.status || '', item['품'] || ''].filter(Boolean).join(' ');
+  var tags = [item.status || ''].filter(Boolean).join(' ');
   // 사이트에서 중단으로 넘긴 것. 다음 갱신에 상태가 보류로 바뀐다
   var stop = EDIT['stop:' + item.id];
   var stopRow = '';
@@ -305,7 +296,14 @@ var SEAT_W = { '교원 공고': 2, '연구직 공고': 2, '펠로십': 2, '레�
   '페스티벌': 1, '학회': 0.8, '공모': 0.8, '잡지': 0.7, '자격': 0.6, '단행본': 0.5 };
 var INDEX_W = { ahci: 2, ssci: 2, scie: 2, scopus: 1.5, kci: 1.3,
   kcic: 1, esci: 1, erih: 1, doaj: 1 };
-var PUM_D = { '십분': 0, '한시간': 0, '반나절': 0.5, '며칠': 3 };
+/* 이 항목의 할 일 가운데 가장 긴 기간이 먹는 날 */
+function spanDays(item) {
+  var n = 0;
+  stepsOf(item).forEach(function (x) {
+    if (x.from && x.due) n = Math.max(n, daysBetween(x.from, x.due));
+  });
+  return n;
+}
 
 function weightOf(item) {
   var v = VEN[item.venue];
@@ -324,8 +322,9 @@ function daysBetween(a, b) {
   return Math.round((fromIso(b) - fromIso(a)) / 86400000);
 }
 
-/* 급함은 마감에서 품에 드는 날을 뺀 여유로 센다. 며칠 걸리는 일이 사흘 남았으면
-   이미 늦은 것인데, 날짜만 보면 반나절짜리와 같은 급함으로 보인다. */
+/* 급함은 마감에서 그 일이 먹는 날을 뺀 여유로 센다. 닷새짜리 일이 사흘 남았으면
+   이미 늦은 것인데, 날짜만 보면 하루짜리와 같은 급함으로 보인다.
+   먹는 날은 할 일에 적힌 기간에서 읽는다. */
 function focusScore(item, today) {
   var d = item.dates || {};
   var iso = d.deadline || d.expected || '';
@@ -333,7 +332,7 @@ function focusScore(item, today) {
   if (iso.length === 10) {
     var n = daysBetween(today, iso);
     over = n < 0;
-    slack = n - (PUM_D[item['품']] || 0);
+    slack = n - spanDays(item);
   }
   var s = 100 / (Math.max(slack, 0) + 1) * weightOf(item);
   if (d.touched && d.touched.length === 10 && daysBetween(d.touched, today) > 21) s += 8;
@@ -1855,9 +1854,7 @@ function bindAdd(root, redrawEntry, board) {
     // 일하는 기간은 할 일이 아니라 항목에 붙는다. 같은 자리에서 함께 고친다.
     var it0 = null;
     allItems().forEach(function (pr) { if (pr[0].id === itemId) it0 = pr[0]; });
-    var effs = D.efforts || {};
-    var pum0 = it0 ? (it0['품'] || '') : '';
-    var pumNow = it0 ? (pumOf(it0) || '') : '';
+
     var st0 = null;
     if (it0) stepsOf(it0).forEach(function (x) { if (x.key === key) st0 = x; });
     var cur = fresh ? (ADD[key.slice(4)] || {})
@@ -1870,17 +1867,9 @@ function bindAdd(root, redrawEntry, board) {
     var frm = cur.from || (st0 ? (st0.from || '') : '');
     var form = document.createElement('form');
     form.className = 'tedit';
-    var pumSel = it0 && Object.keys(effs).length
-      ? '<label class="ef"><span>일하는 기간</span><select>'
-        + '<option value="">안 정함</option>'
-        + Object.keys(effs).map(function (k) {
-            return '<option value="' + esc(k) + '">' + esc(effs[k].label) + '</option>';
-          }).join('')
-        + '</select></label>'
-      : '';
+
     form.innerHTML =
       '<input type="text" class="et" maxlength="200" required>'
-      + pumSel
       + '<div class="erow"><button type="button" class="dpick"></button>'
       + '<div class="cal" hidden></div>'
       + '<button type="submit" class="ok">저장</button>'
@@ -1942,7 +1931,6 @@ function bindAdd(root, redrawEntry, board) {
       else pick = d < pick.due ? { from: d, due: pick.due } : { from: pick.due, due: d };
       paint();
     });
-    if (pumSel) form.querySelector('.ef select').value = pumNow;
     form.querySelector('.et').focus();
 
     form.querySelector('.cancel').addEventListener('click', function () { form.remove(); });
@@ -1957,39 +1945,21 @@ function bindAdd(root, redrawEntry, board) {
       if (!nt) return;
       var nd = pick.due || '';
       var nf = pick.from || '';
-      var np = pumSel ? form.querySelector('.ef select').value : pumNow;
       var ok = form.querySelector('.ok');
       ok.disabled = true; ok.textContent = '저장 중';
       var fail = function () { ok.disabled = false; ok.textContent = '다시 시도'; };
-      // 기간이 원본과 같아지면 기록에서 지운다. 같은 값을 두 군데 두지 않는다.
-      var pumBody = null;
-      if (it0 && np !== pumNow) {
-        pumBody = np === pum0
-          ? { del: ['item:' + itemId] }
-          : { set: (function () { var m = {};
-                m['item:' + itemId] = { item: itemId, '품': np, at: isoOf(new Date()) };
-                return m; })() };
-      }
       var set = {};
       if (fresh) {
         var a = ADD[key.slice(4)] || {};
         set[key.slice(4)] = { item: itemId, t: nt, at: a.at || isoOf(new Date()) };
         if (nd) set[key.slice(4)].due = nd;
         if (nf) set[key.slice(4)].from = nf;
-        post('add', { set: set }, [itemId])
-          .then(function () { return pumBody ? post('edit', pumBody, [itemId]) : null; })
-          .catch(fail);
+        post('add', { set: set }, [itemId]).catch(fail);
       } else {
         set[key] = { item: itemId, t: nt, at: isoOf(new Date()) };
         if (nd) set[key].due = nd;
         set[key].from = nf || '';               // 빈 값이면 기간을 거둔다
-        var body = { set: set };
-        if (pumBody && pumBody.set) {
-          Object.keys(pumBody.set).forEach(function (k2) { set[k2] = pumBody.set[k2]; });
-        } else if (pumBody && pumBody.del) {
-          body.del = pumBody.del;
-        }
-        post('edit', body, [itemId]).catch(fail);
+        post('edit', { set: set }, [itemId]).catch(fail);
       }
     });
   }
