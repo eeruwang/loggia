@@ -233,7 +233,13 @@ function stepsHtml(item) {
              : (st.from ? '<span class="sspan">' + esc(md(st.from)) + ' 시작</span>' : '');
     var tag = st.fresh ? '<span class="tag">새로 추가</span>'
             : st.edited ? '<span class="tag">수정됨</span>' : '';
-    var memo = st.memo ? '<p class="smemo">' + esc(st.memo) + '</p>' : '';
+    // 메모가 길면 두 줄로 접어 두고 눌러서 편다
+    var long = st.memo && (st.memo.length > 54 || st.memo.indexOf('\n') >= 0);
+    var memo = st.memo
+      ? '<p class="smemo' + (long ? ' clip' : '') + '"'
+        + (long ? ' role="button" tabindex="0" aria-expanded="false" title="눌러서 펴기"' : '')
+        + '>' + esc(st.memo) + '</p>'
+      : '';
     return '<input type="checkbox" id="s-' + esc(st.key) + '" data-done="' + esc(st.key) + '">'
          + '<label for="s-' + esc(st.key) + '"' + (cls || '') + '>' + esc(st.t) + '</label>'
          + span + due + tag
@@ -1493,6 +1499,22 @@ function bindChips(root) {
       c.setAttribute('aria-pressed', k !== '*' && c.dataset.pick === k);
     });
   });
+  // 접어 둔 메모는 눌러서 편다. 한 번 더 누르면 다시 접힌다.
+  root.addEventListener('click', function (e) {
+    var m = e.target.closest('.smemo.clip');
+    if (!m) return;
+    var on = m.classList.toggle('open');
+    m.setAttribute('aria-expanded', on ? 'true' : 'false');
+  });
+  root.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var m = e.target.closest && e.target.closest('.smemo.clip');
+    if (!m) return;
+    e.preventDefault();
+    var on = m.classList.toggle('open');
+    m.setAttribute('aria-expanded', on ? 'true' : 'false');
+  });
+
   root.addEventListener('click', function (e) {
     var b = e.target.closest('.chip');
     if (!b) return;
