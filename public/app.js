@@ -158,7 +158,8 @@ function dueOf(item) {
   return (e && e.deadline !== undefined) ? e.deadline : (item.dates || {}).deadline;
 }
 
-function whenCol(item) {
+function whenCol(item, extra) {
+  var tail = extra || '';
   var d = item.dates || {};
   var dl = dueOf(item);
   /* 손을 떠난 것과 끝난 것은 마감이 지나도 재촉하지 않는다.
@@ -167,21 +168,21 @@ function whenCol(item) {
   var restful = (tone === 'wait' || tone === 'stop' || tone === 'done');
   if (restful && d.sent) {
     return '<div class="when-col"><span class="dday none" data-since="' + d.sent + '"></span>'
-         + '<span class="date">' + md(d.sent) + ' 냄</span></div>';
+         + '<span class="date">' + md(d.sent) + ' 냄</span>' + tail + '</div>';
   }
   if (restful && dl) {
     return '<div class="when-col"><span class="dday none">—</span>'
-         + '<span class="date">' + md(dl) + ' 마감</span></div>';
+         + '<span class="date">' + md(dl) + ' 마감</span>' + tail + '</div>';
   }
   if (dl) {
     return '<div class="when-col"><span class="dday" data-deadline="' + dl + '">D-</span>'
-         + '<span class="date" data-d="' + md(dl) + '">' + md(dl) + '</span></div>';
+         + '<span class="date" data-d="' + md(dl) + '">' + md(dl) + '</span>' + tail + '</div>';
   }
   if (d.sent) {
     return '<div class="when-col"><span class="dday none" data-since="' + d.sent + '"></span>'
-         + '<span class="date">' + md(d.sent) + ' 냄</span></div>';
+         + '<span class="date">' + md(d.sent) + ' 냄</span>' + tail + '</div>';
   }
-  return '<div class="when-col"><span class="dday none">—</span></div>';
+  return '<div class="when-col"><span class="dday none">—</span>' + tail + '</div>';
 }
 
 /* 다음 할 일들. 저마다 제 날짜를 가질 수 있다.
@@ -270,7 +271,7 @@ function entryHtml(item) {
   var tags = [item.status || ''].filter(Boolean).join(' ');
   // 사이트에서 중단으로 넘긴 것. 다음 갱신에 상태가 보류로 바뀐다
   var stop = EDIT['stop:' + item.id];
-  var stopRow = '';
+  var stopRow = '', editRow = '';
   var dl = dueOf(item);
   var dlEdited = EDIT['due:' + item.id] !== undefined;
   if (D.meta.ledger) {
@@ -278,15 +279,18 @@ function entryHtml(item) {
       ? '<div class="stopped"><span class="mark">중단</span>'
         + '<span class="why">' + esc(stop.why || '') + '</span>'
         + '<button type="button" class="unstop" data-id="' + esc(item.id) + '">되돌리기</button></div>'
-      : '<div class="stoprow"><button type="button" class="cardedit" data-id="'
-        + esc(item.id) + '" data-due="' + esc(dl || '') + '">편집</button>'
-        + (dl ? '<span class="dueshow' + (dlEdited ? ' edited' : '') + '">마감 '
-              + esc(md(dl)) + '</span>' : '') + '</div>';
+      : '';
+    // 편집은 날짜 아래에 둔다. 날짜와 마감이 한 눈에 함께 읽힌다
+    if (!stop) {
+      editRow = '<div class="stoprow"><button type="button" class="cardedit' 
+        + (dlEdited ? ' edited' : '') + '" data-id="' + esc(item.id)
+        + '" data-due="' + esc(dl || '') + '">편집</button></div>';
+    }
   }
   // 종류마다 색을 준다. 왼쪽 막대 하나로 무슨 종류인지 눈이 먼저 안다
   return '<article class="entry t-' + (stop ? 'stop' : esc(st.tone || 'live'))
        + '"' + (stop ? ' data-stopped="1"' : '') + ' data-id="' + esc(item.id)
-       + '" data-tags="' + esc(tags) + '">' + whenCol(item) + '\n'
+       + '" data-tags="' + esc(tags) + '">' + whenCol(item, editRow) + '\n'
        + '<div class="body"><div class="title-line"><h3 class="t">' + esc(item.title) + '</h3>\n'
        + '<span class="state">' + esc(st.label) + '</span></div>\n'
        + '<div class="meta">' + venue + '<span class="k">' + esc(item.kind || '') + '</span>'
