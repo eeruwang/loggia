@@ -251,6 +251,18 @@ export async function ttSync(env: TTEnv): Promise<string> {
   const nowSeen: { todo: Record<string, string>; due: Record<string, string> } =
     { todo: {}, due: {} };
 
+  // 갈래마다 구획 하나. 없으면 만든다
+  const column = new Map<string, string>();
+  for (const c of todoData?.columns || []) column.set(c.name, c.id);
+  for (const [, w] of wantParent) {
+    if (column.has(w.kind)) continue;
+    const made = await tt(tok, `/project/${TODO_PID}/column`, {
+      method: 'POST',
+      body: JSON.stringify({ projectId: TODO_PID, name: w.kind, sortOrder: column.size }),
+    }).catch(() => null);
+    if (made?.id) { column.set(w.kind, made.id); note.push(`구획 세움 ${w.kind}`); }
+  }
+
   const parentId = new Map<string, string>();
   const byTitle = new Map<string, string>();
   for (const [k, w] of wantParent) byTitle.set(w.title, k);
@@ -266,10 +278,14 @@ export async function ttSync(env: TTEnv): Promise<string> {
     if (parentId.has(k)) continue;
     const made = await tt(tok, '/task', {
       method: 'POST',
-      body: JSON.stringify({ projectId: TODO_PID, title: w.title,
-                             content: `로지아 항목 ${k.slice(3)}`, tags: [w.kind] }),
+      body: JSON.stringify({ projectId: TODO_PID, title: w.title, tags: [w.kind],
+                             columnId: column.get(w.kind) }),
     });
-    if (made?.id) { parentId.set(k, made.id); note.push(`항목 세움 ${k.slice(3)}`); }
+    if (made?.id) {
+      parentId.set(k, made.id);
+      nowSeen.todo[made.id] = k;
+      note.push(`항목 세움 ${k.slice(3)}`);
+    }
   }
 
   const here = new Set<string>();
@@ -317,12 +333,12 @@ export async function ttSync(env: TTEnv): Promise<string> {
       }
       // 이름과 갈래는 판을 따른다
       const tags: string[] = t.tags || [];
-      if ((t.title || '') !== w.title || tags.length !== 1 || tags[0] !== w.kind) {
-        await tt(tok, `/task/${t.id}`, {
-          method: 'POST',
-          body: JSON.stringify({ id: t.id, projectId: TODO_PID,
-                                 title: w.title, tags: [w.kind] }),
-        });
+      const col = column.get(w.kind);
+      if ((t.title || '') !== w.title || tags.length !== 1 || tags[0] !== w.kind
+          || (col && t.columnId !== col)) {
+        const body: Any = { id: t.id, projectId: TODO_PID, title: w.title, tags: [w.kind] };
+        if (col) body.columnId = col;
+        await tt(tok, `/task/${t.id}`, { method: 'POST', body: JSON.stringify(body) });
         note.push(`항목 매만짐 ${k.slice(3)}`);
       }
       continue;
