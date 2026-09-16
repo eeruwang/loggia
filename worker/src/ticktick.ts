@@ -195,18 +195,15 @@ function stepsOf(item: Any): Any[] {
 export async function ttProbe2(env: TTEnv): Promise<Response> {
   const tok = await token(env);
   if (!tok) return new Response('토큰이 없습니다');
-  const from = '2026-09-01 00:00:00';
-  const to = '2026-12-31 00:00:00';
   const paths = [
-    `/project/${TODO_PID}/completed?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
-    `/project/${TODO_PID}/data/completed`,
-    `/task/completed?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    `/project/${TODO_PID}/task/6aa9ff658f0824cbeea84358`,
+    `/project/${TODO_PID}/task/6aa7b1af8f087a6320f80364`,
   ];
   const out: string[] = [];
   for (const p of paths) {
     try {
       const r = await tt(tok, p);
-      out.push(`${p} → 열림 ${Array.isArray(r) ? r.length + '개' : typeof r}`);
+      out.push(`${p} → 열림 status=${r && r.status} title=${r && r.title}`);
     } catch (e) {
       out.push(`${p} → ${String(e).slice(0, 90)}`);
     }
