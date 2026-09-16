@@ -26,7 +26,7 @@
 // =============================================================================
 
 import { flush } from './flush';
-import { ttSync, ttLogin, ttCallback, ttProbe } from './ticktick';
+import { ttSync, ttLogin, ttCallback, ttProbe, ttProbe2 } from './ticktick';
 
 interface Env {
   EMAIL: {
@@ -713,7 +713,7 @@ function json(v: unknown, status = 200): Response {
 }
 
 async function ledger(req: Request, env: Env, k: string | null,
-                      key: string): Promise<Response> {
+                      key: string, ctx?: ExecutionContext): Promise<Response> {
   if (!env.LEDGER || !env.LEDGER_TOKEN || k !== env.LEDGER_TOKEN) {
     return new Response('없습니다', { status: 404 });
   }
@@ -726,6 +726,10 @@ async function ledger(req: Request, env: Env, k: string | null,
   for (const [id, row] of Object.entries(body.set ?? {})) now[id] = row;
   for (const id of body.del ?? []) delete now[id];
   await env.LEDGER.put(key, JSON.stringify(now));
+  // 사이트에서 무언가 넣었으면 다음 시계를 기다리지 않고 지금 옮긴다
+  if (ctx) {
+    ctx.waitUntil(flush(env as any).then(() => ttSync(env as any)).catch(() => {}));
+  }
   return json(now);
 }
 
@@ -863,7 +867,7 @@ export default {
   // 손으로 한 통 부쳐 보고 싶을 때.
   //   GET /send?k=<PREVIEW_TOKEN>
   // 판의 내용은 어떤 경우에도 돌려주지 않는다. 결과는 편지함에서 본다.
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const u = new URL(req.url);
     // 틱틱을 잇는 자리. 한 번만 누른다
     if (u.pathname === '/tt/login') {
@@ -871,21 +875,25 @@ export default {
         ? ttLogin(env) : new Response('없습니다', { status: 404 });
     }
     if (u.pathname === '/tt/callback') return ttCallback(env, u);
+    if (u.pathname === '/tt/probe2') {
+      return u.searchParams.get('k') === env.LEDGER_TOKEN
+        ? ttProbe2(env) : new Response('없습니다', { status: 404 });
+    }
     if (u.pathname === '/tt/probe') {
       return u.searchParams.get('k') === env.LEDGER_TOKEN
         ? ttProbe(env) : new Response('없습니다', { status: 404 });
     }
-    if (u.pathname === '/done') return ledger(req, env, u.searchParams.get('k'), DONE_KEY);
-    if (u.pathname === '/add') return ledger(req, env, u.searchParams.get('k'), ADD_KEY);
-    if (u.pathname === '/edit') return ledger(req, env, u.searchParams.get('k'), EDIT_KEY);
+    if (u.pathname === '/done') return ledger(req, env, u.searchParams.get('k'), DONE_KEY, ctx);
+    if (u.pathname === '/add') return ledger(req, env, u.searchParams.get('k'), ADD_KEY, ctx);
+    if (u.pathname === '/edit') return ledger(req, env, u.searchParams.get('k'), EDIT_KEY, ctx);
     // 공고. 하루 두 번 도는 루틴이 POST 로 넣고, 공고 판이 GET 으로 읽는다.
     //   POST /gongo?k=<LEDGER_TOKEN>  {"set": {"<id>": {...}}, "del": ["<id>"]}
     // 이름이 /jobs 가 아닌 까닭. public/jobs.html 이 있으면 자산이 먼저 나가
     // 워커까지 닿지 않는다. 판 이름과 겹치지 않는 자리를 쓴다.
-    if (u.pathname === '/gongo') return ledger(req, env, u.searchParams.get('k'), JOBS_KEY);
+    if (u.pathname === '/gongo') return ledger(req, env, u.searchParams.get('k'), JOBS_KEY, ctx);
     // 씨앗. 담아두기를 누르면 여기 쌓이고 ledger-apply.py 가 항목으로 심는다.
     // 판은 잠겨 있어 브라우저가 고칠 수 없으므로 할 일 추가와 같은 배관을 쓴다.
-    if (u.pathname === '/seed') return ledger(req, env, u.searchParams.get('k'), SEED_KEY);
+    if (u.pathname === '/seed') return ledger(req, env, u.searchParams.get('k'), SEED_KEY, ctx);
     // 열 분을 기다리지 않고 지금 공고를 걷어 보고 싶을 때.  GET /soak?k=<PREVIEW_TOKEN>
     if (u.pathname === '/soak') {
       if (!env.PREVIEW_TOKEN || u.searchParams.get('k') !== env.PREVIEW_TOKEN) {
