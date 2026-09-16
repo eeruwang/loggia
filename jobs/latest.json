@@ -9,6 +9,16 @@
     "deadline": "",
     "note": "미확인. 제목과 게시일(게시판 항목 335)을 다시 확인했으나 상세페이지가 JS 링크라 마감일과 모집분야는 여전히 미상. 목록에서 제목으로 찾을 것."
   },
+  "swu-profhire-2027-1": {
+    "id": "swu-profhire-2027-1",
+    "strand": "연구소",
+    "region": "한국",
+    "title": "서울여자대학교 2027학년도 1학기 교수초빙",
+    "url": "https://www.swu.ac.kr/front/boardview.do?bbsConfigFK=7&pkid=507036",
+    "posted": "2026-09-10",
+    "deadline": "2026-09-21",
+    "note": "미확인. 공고문이 첨부 PDF뿐인데 swu.ac.kr 전체가 열람 차단되어 모집분야를 못 읽음. 접수 9/10 10시~9/21 17시라는 사실만 확인."
+  },
   "rhul-cinematography-2026": {
     "id": "rhul-cinematography-2026",
     "strand": "영국강의직",
