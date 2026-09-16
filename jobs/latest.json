@@ -17,7 +17,7 @@
     "url": "https://www.swu.ac.kr/front/boardview.do?bbsConfigFK=7&pkid=507036",
     "posted": "2026-09-10",
     "deadline": "2026-09-21",
-    "note": "미확인. 공고문이 첨부 PDF뿐인데 swu.ac.kr 전체가 열람 차단되어 모집분야를 못 읽음. 접수 9/10 10시~9/21 17시라는 사실만 확인."
+    "note": "미확인. 공고문이 첨부 PDF뿐인데 swu.ac.kr·kyosu.net 모두 열람 차단되어 모집분야를 못 읽음. 접수 9/10 10시~9/21 17시라는 사실만 확인."
   },
   "rhul-cinematography-2026": {
     "id": "rhul-cinematography-2026",
@@ -39,16 +39,6 @@
     "deadline": "2026-10-03",
     "note": "정규직, 시간제 가능. 스폰서십 불명, 박사 요건 불명. 실기 기반 디지털미디어, 몰입형 스크린미디어 포함 강의."
   },
-  "portsmouth-filmprod-2026": {
-    "id": "portsmouth-filmprod-2026",
-    "strand": "영국강의직",
-    "region": "영국",
-    "title": "Teaching Fellow in Film Production",
-    "url": "https://www.jobs.ac.uk/job/DSW426/teaching-fellow-in-film-production",
-    "posted": "2026-09-10",
-    "deadline": "2026-09-16",
-    "note": "오늘마감. 정규직, 스폰서십 불명. 업계 경력 필수. 촬영과 후반작업 포함 영화제작 실기 강의."
-  },
   "birkbeck-scriptwriting-2026": {
     "id": "birkbeck-scriptwriting-2026",
     "strand": "영국강의직",
@@ -68,5 +58,25 @@
     "posted": "2026-09-08",
     "deadline": "2026-09-21",
     "note": "상시 파트타임, 주 20시간 보장. 스폰서십과 박사와 HEA 요건 언급 없음. 디지털미디어 디자인 석사과정 튜터."
+  },
+  "birkbeck-storytelling-2026": {
+    "id": "birkbeck-storytelling-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Lecturer in Digital and Immersive Storytelling",
+    "url": "https://www.jobs.ac.uk/job/DSX390/lecturer-in-digital-and-immersive-storytelling",
+    "posted": "2026-09-11",
+    "deadline": "2026-10-11",
+    "note": "정규직, 스폰서십 불명. 박사 필수, HEA는 선택. 몰입형 서사와 트랜스미디어, 언리얼엔진·VR/AR 포함 디지털 스토리텔링 강의."
+  },
+  "aru-filmtv-2026": {
+    "id": "aru-filmtv-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Lecturer in Film and Television Production",
+    "url": "https://www.jobs.ac.uk/job/DSY497/lecturer-in-film-and-television-production",
+    "posted": "2026-09-16",
+    "deadline": "2026-09-23",
+    "note": "시간제 계약직, 스폰서십과 박사 요건 언급 없음. 현직 연출 경력 필수. 촬영과 후반작업 포함 영화·TV 제작 연출 강의."
   }
 }}
