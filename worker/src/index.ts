@@ -477,7 +477,18 @@ function focusBox(one: Row | null, today: string): string {
 </td></tr></table>`;
 }
 
-function render(d: Digest, today: string, pend: AddRow[] = [], cfp: Cfp[] = []) {
+/* 틱틱 회차가 얼마나 오래 멈췄는지. 하루를 넘기면 편지 머리에 한 줄 세운다.
+   토큰이 죽으면 회차가 조용히 실패하므로, 모르고 지나가는 자리를 막는다. */
+function ttWarn(health: any): string {
+  if (!health || !health.at) return '틱틱을 한 번도 맞추지 못했습니다';
+  const hours = (Date.now() - Number(health.at)) / 3600000;
+  if (hours < 24) return '';
+  const days = Math.floor(hours / 24);
+  return `틱틱이 ${days}일째 맞춰지지 않았습니다. 토큰이 만료되었을 수 있습니다`;
+}
+
+function render(d: Digest, today: string, pend: AddRow[] = [], cfp: Cfp[] = [],
+                warn = '') {
   const { one, subject, blocks } = compose(d, today, pend, cfp);
   const w = WEEK[new Date(today + 'T00:00:00Z').getUTCDay()];
 
@@ -506,6 +517,9 @@ function render(d: Digest, today: string, pend: AddRow[] = [], cfp: Cfp[] = []) 
   </tr></table>
 </td></tr>
 
+${warn ? `<tr><td style="padding:0 4px 14px"><div style="font-size:13px;font-weight:700;
+  color:${LIGHT.now};border:1px solid ${LIGHT.now};border-radius:8px;padding:10px 13px">
+  ${esc(warn)}</div></td></tr>` : ''}
 <tr><td style="padding:0 4px">${focusBox(one, today)}</td></tr>
 <tr><td style="padding:0 4px">${blocks.map(block).join('')}</td></tr>
 
@@ -675,7 +689,8 @@ async function send(env: Env): Promise<string> {
   const today = todaySeoul(Date.now());
   const { subject, html, text } = isQuarterStart(today)
     ? renderQuarter(d, today)
-    : render(d, today, await pending(env), await cfpSoon(env, today));
+    : render(d, today, await pending(env), await cfpSoon(env, today),
+             ttWarn(env.LEDGER ? await env.LEDGER.get('ticktick:health', 'json') : null));
   const r = await env.EMAIL.send({
     to: env.MAIL_TO, from: env.MAIL_FROM, subject, html, text,
   });
