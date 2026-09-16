@@ -23,10 +23,11 @@
      항목과 제목의 지문으로 짝을 되찾고, 그래도 못 찾은 줄만 새로 적은 것으로 본다.
      예전에 본문 첫 줄에 박아 두었던 표시가 남아 있으면 읽어서 쓰고 그 줄은 지운다.
 
-   체크를 알아보는 법
-     틱틱의 공개 API 에는 끝낸 것을 돌려주는 자리가 없다. 그래서 지난 회차에
-     보았던 과제가 이번에 안 보이면 체크한 것으로 친다. 틱틱에서 과제를 지워도
-     같은 자리로 들어온다. 지우는 것과 체크하는 것을 가리지 못한다.
+   체크와 지움을 가리는 법
+     끝낸 것을 한꺼번에 돌려주는 자리는 없다. 그래서 지난 회차에 보이던 과제가
+     이번에 안 보이면 그 하나를 아이디로 다시 불러 본다. status 가 2 면 체크한
+     것이니 판에서도 끝낸 것으로 넘긴다. 0 이면 휴지통에 든 것이니 사람이 지운
+     것으로 보고 그 할 일을 판에서도 지운다.
    ========================================================================== */
 import { loadData, type FlushEnv } from './flush';
 
@@ -507,15 +508,29 @@ export async function ttSync(env: TTEnv): Promise<string> {
   }
 
   // 지난 회차에 보던 과제가 이번에 안 보이면 체크했거나 지운 것이다
-  const gone = new Set(Object.entries(seen.todo)
-    .filter(([id]) => !cur.some((t: Any) => t.id === id))
-    .map(([, v]) => keyOf(v))
-    .filter(Boolean) as string[]);
+  /* 지난 회차에 보이던 과제가 이번에 안 보이면 하나씩 다시 불러 가린다.
+     status 2 는 체크, 0 은 휴지통이다. 불러지지 않으면 손대지 않는다. */
+  const gone = new Map<string, string>();     // 열쇠 → 'done' 또는 'trash'
+  for (const [id, v] of Object.entries(seen.todo)) {
+    const k0 = keyOf(v);
+    if (!k0 || cur.some((t: Any) => t.id === id)) continue;
+    try {
+      const one = await tt(tok, `/project/${TODO_PID}/task/${id}`);
+      gone.set(k0, (one && (one.status === 2 || one.completedTime)) ? 'done' : 'trash');
+    } catch {
+      gone.set(k0, 'done');
+    }
+  }
 
   // 없던 할 일을 만든다
   for (const [k, w] of wantTodo) {
     if (here.has(k)) continue;
-    if (gone.has(k)) { done[k] = { at: today }; note.push(`체크 ${k}`); continue; }
+    if (gone.get(k) === 'done') { done[k] = { at: today }; note.push(`체크 ${k}`); continue; }
+    if (gone.get(k) === 'trash') {
+      edit[k] = { item: w.item, t: w.t, del: true, at: today };
+      note.push(`틱틱에서 지움 ${k}`);
+      continue;
+    }
     const body: Any = {
       projectId: TODO_PID, title: w.t, content: w.memo || '',
       priority: w.pri || 0,
