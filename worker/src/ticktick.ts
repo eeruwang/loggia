@@ -45,6 +45,7 @@ type Any = any;
 const TOKEN_KEY = 'ticktick:token';
 const SEEN_KEY = 'ticktick:seen';
 const HEALTH_KEY = 'ticktick:health';
+const SEED_KEY = 'seeds';
 const JOBS_KEY = 'jobs';
 const DONE_KEY = 'board';
 const ADD_KEY = 'added';
@@ -52,6 +53,7 @@ const EDIT_KEY = 'edited';
 
 const TODO_PID = '6aa7ae1d8f084b19082e331e';
 const DUE_PID = '6aa7ae1f8f081102b5324922';
+const IN_PID = '6aaa00c98f08f43e978c4deb';   // 접수함. 여기 적은 것이 판의 새 항목이 된다
 const API = 'https://api.ticktick.com/open/v1';
 const AUTH = 'https://ticktick.com/oauth/authorize';
 const TOKEN = 'https://ticktick.com/oauth/token';
@@ -545,6 +547,36 @@ export async function ttSync(env: TTEnv): Promise<string> {
                                 from: w.from || null, memo: w.memo || '', pri: w.pri || 0 };
     }
     note.push(`할 일 세움 ${k}`);
+  }
+
+  /* 접수함. 여기 적은 한 줄이 판의 새 항목이 된다.
+     아이디는 제목에서 만든다. 라틴 글자가 없으면 시각으로 짓는다.
+     심고 나면 접수함에서 거둔다. 판에 서면 할 일 목록에 어버이로 다시 나타난다. */
+  try {
+    const inbox = await tt(tok, `/project/${IN_PID}/data`);
+    const rows: Any = {};
+    for (const t of inbox?.tasks || []) {
+      const title = (t.title || '').trim();
+      if (!title) continue;
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const id = (slug && slug.length > 2 ? slug : `new-${Date.now().toString(36)}`).slice(0, 24);
+      const row: Any = { title, at: today };
+      const memo = (t.content || '').trim();
+      if (memo) row.note = memo;
+      if (day(t.dueDate)) row.deadline = day(t.dueDate);
+      const tag = (t.tags || [])[0];
+      if (tag) row.kind = tag;
+      rows[id] = row;
+      await tt(tok, `/project/${IN_PID}/task/${t.id}`, { method: 'DELETE' });
+      note.push(`새 항목 ${id}`);
+    }
+    if (Object.keys(rows).length) {
+      const nowSeed: Any = (await env.LEDGER.get(SEED_KEY, 'json')) ?? {};
+      for (const [k, v] of Object.entries(rows)) nowSeed[k] = v;
+      await env.LEDGER.put(SEED_KEY, JSON.stringify(nowSeed));
+    }
+  } catch (e) {
+    note.push(`접수함을 읽지 못했습니다`);
   }
 
   // 마감 판. 비추기만 한다

@@ -47,6 +47,7 @@ const BRANCH = 'main';
 const DONE_KEY = 'board';
 const ADD_KEY = 'added';
 const EDIT_KEY = 'edited';
+const SEED_KEY = 'seeds';   // 새로 세울 항목. 사이트의 공고 채택과 틱틱 접수함이 넣는다
 
 type Any = Record<string, any>;
 
@@ -293,7 +294,9 @@ export async function flush(env: FlushEnv): Promise<string> {
   const done: Any = (await env.LEDGER.get(DONE_KEY, 'json')) ?? {};
   const add: Any = (await env.LEDGER.get(ADD_KEY, 'json')) ?? {};
   const edit: Any = (await env.LEDGER.get(EDIT_KEY, 'json')) ?? {};
-  if (!Object.keys(done).length && !Object.keys(add).length && !Object.keys(edit).length) {
+  const seed: Any = (await env.LEDGER.get(SEED_KEY, 'json')) ?? {};
+  if (!Object.keys(done).length && !Object.keys(add).length
+      && !Object.keys(edit).length && !Object.keys(seed).length) {
     return '반영할 것이 없습니다';
   }
 
@@ -308,6 +311,7 @@ export async function flush(env: FlushEnv): Promise<string> {
   const touched: Record<string, string> = {};
   const usedAdd = new Set<string>();
   const doneKeys = Object.keys(done);
+  const seedKeys = Object.keys(seed);
   const addKeys: string[] = [];
   const note: string[] = [];
 
@@ -489,6 +493,11 @@ export async function flush(env: FlushEnv): Promise<string> {
     const now: Any = (await env.LEDGER.get(EDIT_KEY, 'json')) ?? {};
     for (const k of editKeys) delete now[k];
     await env.LEDGER.put(EDIT_KEY, JSON.stringify(now));
+  }
+  if (seedKeys.length) {
+    const now: Any = (await env.LEDGER.get(SEED_KEY, 'json')) ?? {};
+    for (const k of seedKeys) delete now[k];
+    await env.LEDGER.put(SEED_KEY, JSON.stringify(now));
   }
 
   return `${sha} 로 반영했습니다 · ${note.join(', ')}`;
