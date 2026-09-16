@@ -463,6 +463,28 @@ export async function flush(env: FlushEnv): Promise<string> {
     note.push(`추가 ${a.item}`);
   }
 
+  /* 새 항목을 세운다. 자리는 시작 전 칸이고, 첫 걸음 하나를 함께 놓는다.
+     걸음이 없으면 틱틱에 어버이가 서지 않아 손이 닿지 않는다. */
+  const later = (data.sections || []).find((x: Any) => x.id === 'later');
+  for (const sid of seedKeys) {
+    const row: Any = seed[sid];
+    if (!later) { note.push('시작 전 칸이 없습니다'); break; }
+    if (findItem(data, sid)) { note.push(`이미 있음 ${sid}`); continue; }
+    const when = row.at || today;
+    const it: Any = {
+      id: sid, title: row.title || sid, kind: row.kind || '미정',
+      status: '미착수', dates: { touched: when },
+      steps: [row.step || '첫 걸음 정하기'],
+    };
+    if (row.deadline) it.dates.deadline = row.deadline;
+    if (row.venue) it.venue = row.venue;
+    if (row.note) it.note = row.note;
+    if (row.url) it.links = [{ kind: 'web', label: '자료', url: row.url }];
+    later.items = later.items || [];
+    later.items.unshift(it);
+    note.push(`새 항목 ${sid}`);
+  }
+
   for (const [id, when] of Object.entries(touched)) {
     const it = findItem(data, id);
     if (it) touch(it, when);
