@@ -479,7 +479,7 @@ export async function flush(env: FlushEnv): Promise<string> {
     const it: Any = {
       id: sid, title: row.title || sid, kind: row.kind || '미정',
       status: '미착수', dates: { touched: when },
-      steps: [row.step || '첫 걸음 정하기'],
+      steps: (row.steps && row.steps.length) ? row.steps : [row.step || '첫 걸음 정하기'],
     };
     if (row.deadline) it.dates.deadline = row.deadline;
     if (row.venue) it.venue = row.venue;

@@ -59,6 +59,9 @@ const API = 'https://api.ticktick.com/open/v1';
    -PT15H 는 하루 전 아침 아홉 시, PT9H 는 당일 아침 아홉 시다.
    사람이 알림을 손본 과제는 건드리지 않는다. */
 const REMIND = ['TRIGGER:-PT15H', 'TRIGGER:PT9H'];
+/* 아카데믹 목록에 이 태그를 달아 최상위로 적으면 판의 새 트랙이 된다.
+   하위로 적어 둔 줄은 그 트랙의 할 일이 된다. */
+const NEW_TAG = '프로젝트';
 const AUTH = 'https://ticktick.com/oauth/authorize';
 const TOKEN = 'https://ticktick.com/oauth/token';
 
@@ -416,7 +419,37 @@ export async function ttSync(env: TTEnv): Promise<string> {
           else for (const [id, it] of items) if ((it.title || '').toLowerCase() === String(x).toLowerCase()) iid = id;
         }
       }
-      if (!iid) { note.push(`항목 모름 ${t.title}`); continue; }
+      if (!iid) {
+        // 프로젝트 태그를 단 최상위 과제는 새 트랙으로 세운다
+        const marked = (t.tags || []).some((x: string) =>
+          String(x).toLowerCase() === NEW_TAG);
+        if (marked && !t.parentId) {
+          const title = (t.title || '').trim();
+          const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          const sid = (slug && slug.length > 2 ? slug : `tt-${Date.now().toString(36)}`).slice(0, 24);
+          const kid = (t.childIds || [])
+            .map((cid: string) => cur.find((x: Any) => x.id === cid))
+            .filter(Boolean);
+          const row: Any = { title, at: today, steps: kid.map((c: Any) => c.title) };
+          const other = (t.tags || []).find((x: string) =>
+            String(x).toLowerCase() !== NEW_TAG);
+          if (other) row.kind = other;
+          if ((t.content || '').trim()) row.note = (t.content || '').trim();
+          if (day(t.dueDate)) row.deadline = day(t.dueDate);
+          const nowSeed: Any = (await env.LEDGER.get(SEED_KEY, 'json')) ?? {};
+          nowSeed[sid] = row;
+          await env.LEDGER.put(SEED_KEY, JSON.stringify(nowSeed));
+          // 이 과제를 그 트랙의 어버이로 삼는다. 하위도 짝을 지어 둔다
+          nowSeen.todo[t.id] = { k: `항목:${sid}` };
+          for (const c of kid) {
+            nowSeen.todo[c.id] = { k: `${sid}.${await fp(c.title || '')}`, t: c.title };
+          }
+          note.push(`새 트랙 ${sid}`);
+          continue;
+        }
+        note.push(`항목 모름 ${t.title}`);
+        continue;
+      }
       const row: Any = { item: iid, t: t.title || '', at: today };
       if (day(t.dueDate)) row.due = day(t.dueDate);
       if (day(t.startDate) && day(t.startDate) !== day(t.dueDate)) row.from = day(t.startDate);
