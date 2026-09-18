@@ -333,7 +333,8 @@ export async function ttSync(env: TTEnv): Promise<string> {
     if (parentId.has(k)) continue;
     const made = await tt(tok, '/task', {
       method: 'POST',
-      body: JSON.stringify({ projectId: TODO_PID, title: w.title, tags: [w.kind, w.sec],
+      body: JSON.stringify({ projectId: TODO_PID, title: w.title,
+                             tags: [w.kind, w.sec, w.title],
                              columnId: column.get(w.kind) }),
     });
     if (made?.id) {
@@ -390,13 +391,14 @@ export async function ttSync(env: TTEnv): Promise<string> {
         seen_parent_skip.add(k);
         continue;
       }
-      const want2 = [w.kind, w.sec].map((x) => String(x).toLowerCase());
+      // 어버이는 태그 셋을 단다. 갈래와 칸과 제 이름
+      const want2 = [w.kind, w.sec, w.title].map((x) => String(x).toLowerCase());
       const col = column.get(w.kind);
       if ((t.title || '') !== w.title
-          || tags.length !== 2 || want2.some((x) => tags.indexOf(x) < 0)
+          || tags.length !== 3 || want2.some((x) => tags.indexOf(x) < 0)
           || (col && t.columnId !== col)) {
         const body: Any = { id: t.id, projectId: TODO_PID, title: w.title,
-                            tags: [w.kind, w.sec] };
+                            tags: [w.kind, w.sec, w.title] };
         if (col) body.columnId = col;
         await tt(tok, `/task/${t.id}`, { method: 'POST', body: JSON.stringify(body) });
         note.push(`항목 매만짐 ${k.slice(3)}`);
