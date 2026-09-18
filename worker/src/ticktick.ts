@@ -55,6 +55,10 @@ const TODO_PID = '6aa7ae1d8f084b19082e331e';
 const DUE_PID = '6aa7ae1f8f081102b5324922';
 const IN_PID = '6aaa00c98f08f43e978c4deb';   // 접수함. 여기 적은 것이 판의 새 항목이 된다
 const API = 'https://api.ticktick.com/open/v1';
+/* 하루짜리 일정의 알림. 자정을 기준으로 잰다.
+   -PT15H 는 하루 전 아침 아홉 시, PT9H 는 당일 아침 아홉 시다.
+   사람이 알림을 손본 과제는 건드리지 않는다. */
+const REMIND = ['TRIGGER:-PT15H', 'TRIGGER:PT9H'];
 const AUTH = 'https://ticktick.com/oauth/authorize';
 const TOKEN = 'https://ticktick.com/oauth/token';
 
@@ -484,7 +488,17 @@ export async function ttSync(env: TTEnv): Promise<string> {
       note.push(`판에서 고침 ${k}`);
       continue;
     }
-    nowSeen.todo[t.id] = { k: k, ...now2 };
+    /* 날짜가 붙었는데 알림이 없고 아직 한 번도 걸어 본 적 없으면 지금 건다.
+       한 번 걸고 나면 살림에 표를 남겨, 사람이 지운 알림을 되살리지 않는다. */
+    const marked = last && last.rem;
+    if (now2.due && !marked && !(t.reminders || []).length) {
+      await tt(tok, `/task/${t.id}`, {
+        method: 'POST',
+        body: JSON.stringify({ id: t.id, projectId: TODO_PID, reminders: REMIND }),
+      });
+      note.push(`알림 ${k}`);
+    }
+    nowSeen.todo[t.id] = { k: k, ...now2, rem: true };
     if (!isNote && !t.parentId) {
       const pid = parentId.get(`항목:${w.item}`);
       if (pid) {
@@ -539,7 +553,10 @@ export async function ttSync(env: TTEnv): Promise<string> {
     };
     const pid = parentId.get(`항목:${w.item}`);
     if (pid) body.parentId = pid;
-    if (w.due) { body.dueDate = iso(w.due); body.isAllDay = true; body.timeZone = 'Asia/Seoul'; }
+    if (w.due) {
+      body.dueDate = iso(w.due); body.isAllDay = true; body.timeZone = 'Asia/Seoul';
+      body.reminders = REMIND;
+    }
     if (w.from) { body.startDate = iso(w.from); body.isAllDay = true; body.timeZone = 'Asia/Seoul'; }
     const made = await tt(tok, '/task', { method: 'POST', body: JSON.stringify(body) });
     if (made?.id) {
@@ -612,7 +629,10 @@ export async function ttSync(env: TTEnv): Promise<string> {
     const body: Any = {
       projectId: DUE_PID, title: w.title, tags: [w.tag], content: w.body || '',
     };
-    if (w.due) { body.dueDate = iso(w.due); body.isAllDay = true; body.timeZone = 'Asia/Seoul'; }
+    if (w.due) {
+      body.dueDate = iso(w.due); body.isAllDay = true; body.timeZone = 'Asia/Seoul';
+      body.reminders = REMIND;
+    }
     const made = await tt(tok, '/task', { method: 'POST', body: JSON.stringify(body) });
     if (made?.id) nowSeen.due[made.id] = k;
   }
