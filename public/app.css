@@ -757,3 +757,11 @@ background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;padding
 .tedit .ep span{font-size:12px;color:var(--ink-3)}
 .tedit .ep select{font-family:inherit;font-size:12.5px;padding:4px 7px;color:var(--ink);
   background:var(--surface);border:1px solid var(--sunk);border-radius:3px}
+
+/* 할 일의 일감. 미팅, 글쓰기, 자료조사처럼 무엇을 하는 시간인지 */
+.sact{margin-left:9px;font-size:11px;font-weight:700;padding:1px 7px;border-radius:9px;
+  color:var(--ink-2);background:var(--sunk);white-space:nowrap}
+.tedit .ea{display:flex;align-items:center;gap:7px;margin-top:7px}
+.tedit .ea span{flex:0 0 auto;font-size:12px;color:var(--ink-3)}
+.tedit .eg{flex:1 1 auto;min-width:0;padding:5px 9px;font-family:inherit;font-size:12.5px;
+  color:var(--ink);background:var(--surface);border:1px solid var(--sunk);border-radius:3px}

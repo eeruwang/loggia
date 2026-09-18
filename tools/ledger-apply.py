@@ -85,7 +85,7 @@ def todos_of(item):
 def put_todos(item, ss):
     def one(s):
         if not s.get('due') and not s.get('from') and not s.get('memo') \
-                and not s.get('pri'):
+                and not s.get('pri') and not s.get('tags'):
             return s['t']
         o = {'t': s['t']}
         if s.get('due'):
@@ -96,6 +96,8 @@ def put_todos(item, ss):
             o['memo'] = s['memo']
         if s.get('pri'):
             o['pri'] = s['pri']
+        if s.get('tags'):
+            o['tags'] = s['tags']
         return o
     item['steps'] = [one(s) for s in ss]
     if not item['steps']:
@@ -453,6 +455,9 @@ def main():
                 pri = x.get('pri') if 'pri' not in e else e['pri']
                 if pri:
                     row['pri'] = pri
+                tg = x.get('tags') if 'tags' not in e else e['tags']
+                if tg:
+                    row['tags'] = tg
                 out.append(row)
                 continue
             out.append(x)
@@ -474,6 +479,8 @@ def main():
             row['memo'] = a['memo']
         if a.get('pri'):
             row['pri'] = a['pri']
+        if a.get('tags'):
+            row['tags'] = a['tags']
         ss.append(row)
         put_todos(it, ss)
     for iid, why, when in stops:

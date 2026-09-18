@@ -129,22 +129,24 @@ async function rawSeal(obj: Any, keyB64: string): Promise<string> {
 
 /* ── 데이터 만지기 ─────────────────────────────────────────────────────────── */
 
-type Todo = { t: string; due?: string; from?: string; memo?: string; pri?: number };
+type Todo = { t: string; due?: string; from?: string; memo?: string; pri?: number;
+               tags?: string[] };
 
 function todosOf(item: Any): Todo[] {
   const st = item.steps || (item.next ? [item.next] : []);
-  return st.map((x: any) => (typeof x === 'string' ? { t: x } : { t: x.t, due: x.due, from: x.from, memo: x.memo, pri: x.pri }));
+  return st.map((x: any) => (typeof x === 'string' ? { t: x } : { t: x.t, due: x.due, from: x.from, memo: x.memo, pri: x.pri, tags: x.tags }));
 }
 
 function putTodos(item: Any, ss: Todo[]) {
   if (!ss.length) delete item.steps;
   else item.steps = ss.map((s) => {
-    if (!s.due && !s.from && !s.memo && !s.pri) return s.t;
+    if (!s.due && !s.from && !s.memo && !s.pri && !(s.tags || []).length) return s.t;
     const o: Any = { t: s.t };
     if (s.due) o.due = s.due;
     if (s.from) o.from = s.from;
     if (s.memo) o.memo = s.memo;
     if (s.pri) o.pri = s.pri;
+    if ((s.tags || []).length) o.tags = s.tags;
     return o;
   });
   delete item.next;
@@ -438,7 +440,9 @@ export async function flush(env: FlushEnv): Promise<string> {
         out.push({ t: e.t, due: e.due,
                    from: (e.from === undefined ? s.from : (e.from || undefined)),
                    memo: (e.memo === undefined ? s.memo : (e.memo || undefined)),
-                   pri: (e.pri === undefined ? s.pri : (e.pri || undefined)) });
+                   pri: (e.pri === undefined ? s.pri : (e.pri || undefined)),
+                   tags: (e.tags === undefined ? s.tags
+                          : ((e.tags || []).length ? e.tags : undefined)) });
         continue;
       }
       out.push(s);
@@ -458,7 +462,8 @@ export async function flush(env: FlushEnv): Promise<string> {
     touched[a.item] = touched[a.item] > when ? touched[a.item] : when;
     const ss = todosOf(it);
     ss.push({ t: a.t, due: a.due, from: a.from || undefined,
-              memo: a.memo || undefined, pri: a.pri || undefined });
+              memo: a.memo || undefined, pri: a.pri || undefined,
+              tags: (a.tags || []).length ? a.tags : undefined });
     putTodos(it, ss);
     note.push(`추가 ${a.item}`);
   }

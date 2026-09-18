@@ -243,7 +243,8 @@ export async function ttSync(env: TTEnv): Promise<string> {
       for (const x of ss) {
         wantTodo.set(`${it.id}.${await fp(x.t)}`, {
           t: x.t, due: x.due || null, from: x.from || null,
-          memo: x.memo || '', pri: x.pri || 0, item: it.id, title: it.title,
+          memo: x.memo || '', pri: x.pri || 0, tags: x.tags || [],
+          item: it.id, title: it.title,
         });
       }
       const dl = it.dates?.deadline;
@@ -442,6 +443,10 @@ export async function ttSync(env: TTEnv): Promise<string> {
     const frm = (day(t.startDate) && day(t.startDate) !== day(t.dueDate))
       ? day(t.startDate) : null;
     const pri = Number(t.priority || 0);
+    const drop = new Set([w.item, w.title, items.get(w.item)?.kind || '']
+      .map((x) => String(x).toLowerCase()));
+    const acts: string[] = (t.tags || [])
+      .filter((x: string) => !drop.has(String(x).toLowerCase()));
     if (stamped) {
       // 본문에 남은 예전 표시를 걷어 낸다. 메모만 남긴다
       await tt(tok, `/task/${t.id}`, {
@@ -453,15 +458,18 @@ export async function ttSync(env: TTEnv): Promise<string> {
        틱틱이 지난 회차와 달라졌으면 사람이 틱틱에서 고친 것이다. 판으로 보낸다.
        틱틱은 그대로인데 판이 다르면 사람이 판에서 고친 것이다. 틱틱을 고친다.
        지난 값이 없으면 (처음 보는 것) 틱틱을 따른다. */
-    const now2 = { t: t.title || '', due: day(t.dueDate), from: frm, memo: memo, pri: pri };
+    const now2 = { t: t.title || '', due: day(t.dueDate), from: frm, memo: memo, pri: pri,
+                   tags: acts.slice().sort() };
     const last = lastOf(seen.todo[t.id]);
     const ttMoved = !last
       || last.t !== now2.t || (last.due || null) !== now2.due
       || (last.from || null) !== now2.from || (last.memo || '') !== now2.memo
-      || (last.pri || 0) !== now2.pri;
+      || (last.pri || 0) !== now2.pri
+      || (last.tags || []).join(',') !== now2.tags.join(',');
     const boardDiff = w.t !== now2.t || (w.due || null) !== now2.due
       || (w.from || null) !== now2.from || (w.memo || '') !== now2.memo
-      || (w.pri || 0) !== now2.pri;
+      || (w.pri || 0) !== now2.pri
+      || (w.tags || []).slice().sort().join(',') !== now2.tags.join(',');
 
     if (boardDiff && ttMoved) {
       // 틱틱에서 고쳤다. 판으로 보낸다
@@ -470,6 +478,7 @@ export async function ttSync(env: TTEnv): Promise<string> {
       if (now2.from) row.from = now2.from;
       if (now2.memo !== (w.memo || '')) row.memo = now2.memo;
       if (now2.pri !== (w.pri || 0)) row.pri = now2.pri;
+      if (now2.tags.join(',') !== (w.tags || []).slice().sort().join(',')) row.tags = now2.tags;
       edit[k] = row;
       note.push(`틱틱에서 고침 ${k}`);
       if (now2.t !== w.t) {
@@ -479,12 +488,14 @@ export async function ttSync(env: TTEnv): Promise<string> {
     } else if (boardDiff) {
       // 판에서 고쳤다. 틱틱을 판에 맞춘다
       const body: Any = { id: t.id, projectId: TODO_PID, title: w.t,
-                          content: w.memo || '', priority: w.pri || 0 };
+                          content: w.memo || '', priority: w.pri || 0,
+                          tags: (w.tags || []) };
       if (w.due) { body.dueDate = iso(w.due); body.isAllDay = true; body.timeZone = 'Asia/Seoul'; }
       if (w.from) { body.startDate = iso(w.from); body.isAllDay = true; body.timeZone = 'Asia/Seoul'; }
       await tt(tok, `/task/${t.id}`, { method: 'POST', body: JSON.stringify(body) });
       nowSeen.todo[t.id] = { k: k, t: w.t, due: w.due || null, from: w.from || null,
-                             memo: w.memo || '', pri: w.pri || 0 };
+                             memo: w.memo || '', pri: w.pri || 0,
+                             tags: (w.tags || []).slice().sort(), rem: true };
       note.push(`판에서 고침 ${k}`);
       continue;
     }
@@ -509,11 +520,7 @@ export async function ttSync(env: TTEnv): Promise<string> {
       }
     } else if (!isNote && t.parentId === parentId.get(`항목:${w.item}`)) {
       // 어버이가 이미 말하는 것을 태그가 되풀이할 까닭이 없다
-      const keep = (t.tags || []).filter((x: string) => {
-        const y = String(x).toLowerCase();
-        return y !== w.item.toLowerCase() && y !== (w.title || '').toLowerCase()
-          && y !== (items.get(w.item)?.kind || '').toLowerCase();
-      });
+      const keep = acts;
       if (keep.length !== (t.tags || []).length) {
         await tt(tok, `/task/${t.id}`, {
           method: 'POST',
@@ -549,7 +556,7 @@ export async function ttSync(env: TTEnv): Promise<string> {
     }
     const body: Any = {
       projectId: TODO_PID, title: w.t, content: w.memo || '',
-      priority: w.pri || 0,
+      priority: w.pri || 0, tags: w.tags || [],
     };
     const pid = parentId.get(`항목:${w.item}`);
     if (pid) body.parentId = pid;
@@ -561,7 +568,8 @@ export async function ttSync(env: TTEnv): Promise<string> {
     const made = await tt(tok, '/task', { method: 'POST', body: JSON.stringify(body) });
     if (made?.id) {
       nowSeen.todo[made.id] = { k: k, t: w.t, due: w.due || null,
-                                from: w.from || null, memo: w.memo || '', pri: w.pri || 0 };
+                                from: w.from || null, memo: w.memo || '', pri: w.pri || 0,
+                                tags: (w.tags || []).slice().sort() };
     }
     note.push(`할 일 세움 ${k}`);
   }

@@ -201,7 +201,7 @@ function stepsOf(item) {
   var out = [];
   var st = item.steps || (item.next ? [item.next] : []);
   st.forEach(function (x) {
-    var o = (typeof x === 'string') ? { t: x } : { t: x.t, due: x.due, from: x.from, memo: x.memo, pri: x.pri };
+    var o = (typeof x === 'string') ? { t: x } : { t: x.t, due: x.due, from: x.from, memo: x.memo, pri: x.pri, tags: x.tags };
     // 키는 처음 글로 만든다. 고쳐도 그대로 둔다. 그래야 체크한 것과 고친 것이
     // 같은 할 일을 가리키고, 반영할 때 원본에서 찾을 수 있다.
     o.key = item.id + '.' + sha1hex(o.t).slice(0, 8);
@@ -212,6 +212,7 @@ function stepsOf(item) {
       if (e.memo !== undefined) o.memo = e.memo;
       if (e.from !== undefined) o.from = e.from;
       if (e.pri !== undefined) o.pri = e.pri;
+      if (e.tags !== undefined) o.tags = e.tags;
     }
     out.push(o);
   });
@@ -239,6 +240,9 @@ function stepsHtml(item) {
              : (st.from ? '<span class="sspan">' + esc(md(st.from)) + ' 시작</span>' : '');
     var tag = st.fresh ? '<span class="tag">새로 추가</span>'
             : st.edited ? '<span class="tag">수정됨</span>' : '';
+    var acts = (st.tags || []).map(function (x) {
+      return '<span class="sact">' + esc(x) + '</span>';
+    }).join('');
     var flag = st.pri ? '<span class="spri p' + st.pri + '" title="' + PRI[st.pri]
              + '">' + PRI[st.pri] + '</span>' : '';
     // 메모가 길면 두 줄로 접어 두고 눌러서 편다
@@ -250,7 +254,7 @@ function stepsHtml(item) {
       : '';
     return '<input type="checkbox" id="s-' + esc(st.key) + '" data-done="' + esc(st.key) + '">'
          + '<label for="s-' + esc(st.key) + '"' + (cls || '') + '>' + esc(st.t) + '</label>'
-         + flag + span + due + tag
+         + acts + flag + span + due + tag
          + '<button type="button" class="edit" data-edit="' + esc(st.key) + '"'
          + ' data-item="' + esc(item.id) + '" aria-label="이 할 일 수정">수정</button>' + memo;
   }
@@ -1951,6 +1955,8 @@ function bindAdd(root, redrawEntry, board) {
     form.innerHTML =
       '<input type="text" class="et" maxlength="200" required>'
       + '<textarea class="em" rows="2" maxlength="600" placeholder="메모. 비워 둬도 됩니다"></textarea>'
+      + '<label class="ea"><span>일감</span>'
+      + '<input type="text" class="eg" maxlength="80" placeholder="미팅, 글쓰기, 자료조사"></label>'
       + '<label class="ep"><span>우선순위</span><select>'
       + '<option value="0">없음</option><option value="1">낮음</option>'
       + '<option value="3">중간</option><option value="5">높음</option></select></label>'
@@ -1964,6 +1970,8 @@ function bindAdd(root, redrawEntry, board) {
     form.querySelector('.em').value = memo0;
     var pri0 = (cur.pri !== undefined) ? cur.pri : (st0 ? (st0.pri || 0) : 0);
     form.querySelector('.ep select').value = String(pri0 || 0);
+    var tags0 = (cur.tags !== undefined) ? cur.tags : (st0 ? (st0.tags || []) : []);
+    form.querySelector('.eg').value = (tags0 || []).join(', ');
     // 날짜 고르기. 한 번 누르면 하루, 한 번 더 누르면 기간, 같은 날을 누르면 거둔다
     var pick = { from: frm || '', due: due || '' };
     var pin = form.querySelector('.dpick');
@@ -2031,6 +2039,8 @@ function bindAdd(root, redrawEntry, board) {
       var nt = form.querySelector('.et').value.trim();
       var nm = form.querySelector('.em').value.trim();
       var np2 = Number(form.querySelector('.ep select').value || 0);
+      var ng = form.querySelector('.eg').value.split(',')
+        .map(function (x) { return x.trim(); }).filter(Boolean).sort();
       if (!nt) return;
       var nd = pick.due || '';
       var nf = pick.from || '';
@@ -2045,6 +2055,7 @@ function bindAdd(root, redrawEntry, board) {
         if (nf) set[key.slice(4)].from = nf;
         if (nm) set[key.slice(4)].memo = nm;
         if (np2) set[key.slice(4)].pri = np2;
+        if (ng.length) set[key.slice(4)].tags = ng;
         post('add', { set: set }, [itemId]).catch(fail);
       } else {
         set[key] = { item: itemId, t: nt, at: isoOf(new Date()) };
@@ -2052,6 +2063,7 @@ function bindAdd(root, redrawEntry, board) {
         set[key].from = nf || '';               // 빈 값이면 기간을 거둔다
         set[key].memo = nm || '';               // 빈 값이면 메모를 거둔다
         set[key].pri = np2 || 0;                // 0 이면 깃발을 거둔다
+        set[key].tags = ng;                     // 비우면 일감 표를 거둔다
         post('edit', { set: set }, [itemId]).catch(fail);
       }
     });

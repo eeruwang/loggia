@@ -112,7 +112,7 @@ def put_todos(item, ss):
     """다시 데이터 형태로 되돌린다. 날짜가 없으면 문자열로만 저장한다."""
     def one(s):
         if not s.get('due') and not s.get('from') and not s.get('memo') \
-                and not s.get('pri'):
+                and not s.get('pri') and not s.get('tags'):
             return s['t']
         o = {'t': s['t']}
         if s.get('due'):
@@ -123,6 +123,8 @@ def put_todos(item, ss):
             o['memo'] = s['memo']
         if s.get('pri'):
             o['pri'] = s['pri']
+        if s.get('tags'):
+            o['tags'] = s['tags']
         return o
     item['steps'] = [one(s) for s in ss]
     if not item['steps']:
