@@ -1,1 +1,82 @@
-{"set": {}}
+{"set": {
+  "dgu-hk3-2026-1": {
+    "id": "dgu-hk3-2026-1",
+    "strand": "연구소",
+    "region": "한국",
+    "title": "일본학연구소 인문한국3.0(HK3.0)사업단 HK연구교수 초빙",
+    "url": "https://www.dongguk.edu/article/PROFHIRE/detail/26766223",
+    "posted": "2026-09-15",
+    "deadline": "2026-09-30",
+    "note": "K-디아스포라 역사·문화·예술 3분야 6명 모집, 박사 학위자, 최근 5년 대표실적 3편과 연구계획서 필요, 영상·미디어 콘텐츠 제작 경험 우대, 실기 실적 별도 인정 조항 없음"
+  },
+  "qmul-filmpractice-2026": {
+    "id": "qmul-filmpractice-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Lecturer in Film Practice",
+    "url": "https://www.jobs.ac.uk/job/DSY810/lecturer-in-film-practice",
+    "posted": "2026-09-17",
+    "deadline": "2026-10-01",
+    "note": "박사 또는 현직 영화인 자격 인정, 파트타임 11.55시간 기간제, 2027년 1월 시작, 스폰서십 언급 없음"
+  },
+  "qmul-seniorfilm-2026": {
+    "id": "qmul-seniorfilm-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Senior Lecturer in Film (Teaching and Research)",
+    "url": "https://www.jobs.ac.uk/job/DSZ161/senior-lecturer-in-film-teaching-and-research",
+    "posted": "2026-09-18",
+    "deadline": "2026-10-02",
+    "note": "1년 계약 시니어 강사, 박사 또는 전문 자격 인정, 2027년 1월 시작, 업계 연계 요구, 스폰서십 불명"
+  },
+  "hull-digitalmedia-2026": {
+    "id": "hull-digitalmedia-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Lecturer in Digital Media",
+    "url": "https://www.jobs.ac.uk/job/DSV180/lecturer-in-digital-media",
+    "posted": "2026-09-04",
+    "deadline": "2026-10-03",
+    "note": "정규직, 실무 경험 요구, 박사·HEA 요건은 인사 페이지 접근 불가로 미확인, 헐 캠퍼스 상주 필요"
+  },
+  "birkbeck-immersive-2026": {
+    "id": "birkbeck-immersive-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Lecturer in Digital and Immersive Storytelling",
+    "url": "https://www.jobs.ac.uk/job/DSX390/lecturer-in-digital-and-immersive-storytelling",
+    "posted": "2026-09-11",
+    "deadline": "2026-10-11",
+    "note": "정규직, 디지털 내러티브 정합, 박사 완료 예정도 인정, HEA 자격 필수 아님, 몰입형 제작 경험 필요"
+  },
+  "rhul-cinematography-2026": {
+    "id": "rhul-cinematography-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Lecturer in Cinematography and Virtual Production",
+    "url": "https://www.jobs.ac.uk/job/DST436/lecturer-in-cinematography-and-virtual-production",
+    "posted": "2026-08-28",
+    "deadline": "2026-09-28",
+    "note": "스폰서십 명시적으로 환영, 산업경력 또는 박사 인정, 정규직, 교육 또는 교육연구 트랙 선택 가능"
+  },
+  "aru-filmtv-2026": {
+    "id": "aru-filmtv-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Lecturer in Film and Television Production",
+    "url": "https://www.jobs.ac.uk/job/DSY497/lecturer-in-film-and-television-production",
+    "posted": "2026-09-16",
+    "deadline": "2026-09-23",
+    "note": "파트타임 기간제, 학위 또는 전문자격 인정, 방송·영화 업계 경력 요구, 내일 마감, 급여 하한 스폰서십 기준 미달 우려"
+  },
+  "liv-mediaculture-2026": {
+    "id": "liv-mediaculture-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Lecturer in Media and Culture (Grade 7/8)",
+    "url": "https://www.jobs.ac.uk/job/DSU894/lecturer-in-media-and-culture-grade-7-8",
+    "posted": "2026-09-03",
+    "deadline": "2026-09-23",
+    "note": "5년 기간제, 시각문화·매체이론 분야, 박사·HEA 요건은 지원포털 안에서만 확인 가능해 미확인, 내일 마감"
+  }
+}}
