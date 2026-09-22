@@ -1,1 +1,82 @@
-{"set": {}}
+{"set": {
+  "dgu-hk3-2026-1": {
+    "id": "dgu-hk3-2026-1",
+    "strand": "연구소",
+    "region": "한국",
+    "title": "일본학연구소 HK3.0 HK연구교수 초빙",
+    "url": "https://www.dongguk.edu/article/PROFHIRE/detail/26766223",
+    "posted": "2026-09-15",
+    "deadline": "2026-09-30",
+    "note": "K-디아스포라 역사·문화·예술 3분야 6명, 예술분야에 영화·미술·음악·공연 포함, 접수 오후 6시 마감"
+  },
+  "qmul-seniorfilm-2026": {
+    "id": "qmul-seniorfilm-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Senior Lecturer in Film (Teaching and Research)",
+    "url": "https://www.jobs.ac.uk/job/DSZ161/senior-lecturer-in-film-teaching-and-research",
+    "posted": "2026-09-18",
+    "deadline": "2026-10-02",
+    "note": "Queen Mary, 12개월 계약, 2027년 1월 시작, 박사 또는 실무필모그래피 인정, 스폰서십 불명"
+  },
+  "qmul-filmpractice-2026": {
+    "id": "qmul-filmpractice-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Lecturer in Film Practice",
+    "url": "https://www.jobs.ac.uk/job/DSY810/lecturer-in-film-practice",
+    "posted": "2026-09-17",
+    "deadline": "2026-10-01",
+    "note": "Queen Mary, 주 11.55시간 파트타임, 2032년까지 약 5년8개월, 2027년 1월 시작, 스폰서십 불명"
+  },
+  "bbk-digitalstorytelling-2026": {
+    "id": "bbk-digitalstorytelling-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Lecturer in Digital and Immersive Storytelling",
+    "url": "https://www.jobs.ac.uk/job/DSX390/lecturer-in-digital-and-immersive-storytelling",
+    "posted": "2026-09-11",
+    "deadline": "2026-10-11",
+    "note": "Birkbeck, 정규직 상시, 몰입형 제작도구 실무 필수, 박사 또는 곧 취득 예정자, 스폰서십 불명"
+  },
+  "rhul-cinematography-2026": {
+    "id": "rhul-cinematography-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Lecturer in Cinematography and Virtual Production",
+    "url": "https://www.jobs.ac.uk/job/DST436/lecturer-in-cinematography-and-virtual-production",
+    "posted": "2026-08-28",
+    "deadline": "2026-09-28",
+    "note": "Royal Holloway, 정규직, 박사 또는 상당한 업계경력, 스폰서십 가능 명시"
+  },
+  "hull-digitalmedia-2026": {
+    "id": "hull-digitalmedia-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Lecturer in Digital Media",
+    "url": "https://uoh.wd103.myworkdayjobs.com/University_of_Hull_Careers/job/Cottingham-Road-Campus/Lecturer-in-Digital-Media_JR103098-2",
+    "posted": "2026-09-04",
+    "deadline": "2026-10-03",
+    "note": "Hull, 정규직 풀타임 또는 파트타임 선택 가능, 박사 명시 요구 없음, 실무전문성 요구, 스폰서십 불명"
+  },
+  "aru-filmtv-2026": {
+    "id": "aru-filmtv-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Lecturer in Film and Television Production",
+    "url": "https://www.jobs.ac.uk/job/DSY497/lecturer-in-film-and-television-production",
+    "posted": "2026-09-16",
+    "deadline": "2026-09-23",
+    "note": "미확인, Anglia Ruskin, 목록에서는 오늘 마감으로 유효 확인, 상세페이지 열람 실패로 박사·스폰서십 요건 미상"
+  },
+  "liv-mediaculture-2026": {
+    "id": "liv-mediaculture-2026",
+    "strand": "강의직",
+    "region": "영국",
+    "title": "Lecturer in Media and Culture",
+    "url": "https://www.jobs.ac.uk/job/DSU894/lecturer-in-media-and-culture-grade-7-8",
+    "posted": "2026-09-03",
+    "deadline": "2026-09-23",
+    "note": "Liverpool, 5년 한시직(동료 연구비 파견 대체), 신규임용자 수습 3년, 스폰서십 불명"
+  }
+}}
