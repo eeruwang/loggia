@@ -1,1 +1,82 @@
-{"set": {}}
+{"set": {
+  "dgu-hk3-2026-1": {
+    "id": "dgu-hk3-2026-1",
+    "strand": "연구소",
+    "region": "한국",
+    "title": "동국대학교 일본학연구소 HK3.0 HK연구교수 초빙",
+    "url": "https://js.dongguk.edu/article/notice/detail/214946?pageIndex=1",
+    "posted": "2026-09-15",
+    "deadline": "2026-09-30",
+    "note": "미확인. K디아스포라 역사문화예술 등 6명 위촉, 최근 5년 실적 3편과 연구계획서 요구. 원문 접속 차단으로 KADH 미러와 PROFHIRE 목록 교차확인."
+  },
+  "yonsei-barunict-2026-1": {
+    "id": "yonsei-barunict-2026-1",
+    "strand": "연구소",
+    "region": "한국",
+    "title": "연세대학교 바른ICT연구소 연구교수",
+    "url": "https://www.barunict.kr",
+    "posted": "",
+    "deadline": "2026-10-11",
+    "note": "미확인. 접속 차단 지속으로 미디어예술 분야 해당 여부 불명. 접수는 9월 28일부터 시작 예정."
+  },
+  "korea-bk21media-2026-1": {
+    "id": "korea-bk21media-2026-1",
+    "strand": "연구소",
+    "region": "한국",
+    "title": "고려대학교 미디어학부 4단계 BK21 미디어교육연구단 박사후연구원 또는 연구교수",
+    "url": "https://bk21kumedia.korea.ac.kr",
+    "posted": "",
+    "deadline": "2027-01-12",
+    "note": "미확인이나 학회 공지 다수로 교차확인. 1명, 연봉 약 3600만원, 접수처 heriyaa@korea.ac.kr. 접수는 12월 26일부터 시작 예정."
+  },
+  "qmul-seniorfilm-2026": {
+    "id": "qmul-seniorfilm-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Queen Mary University of London, Senior Lecturer in Film (Teaching and Research)",
+    "url": "https://www.jobs.ac.uk/job/DSZ161/senior-lecturer-in-film-teaching-and-research",
+    "posted": "2026-09-18",
+    "deadline": "2026-10-02",
+    "note": "확인됨. 고정임기 1년(2027.1~12), 스폰서십 불명, 박사학위 요구, 런던수당 포함 급여."
+  },
+  "qmul-filmpractice-2026": {
+    "id": "qmul-filmpractice-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Queen Mary University of London, Lecturer in Film Practice",
+    "url": "https://www.jobs.ac.uk/job/DSY810/lecturer-in-film-practice",
+    "posted": "2026-09-17",
+    "deadline": "2026-10-01",
+    "note": "확인됨. 파트타임 주 11.55시간, 2027.1~2032.8 한시 계약, 스폰서십 불명, 박사 또는 동등 자격 요구."
+  },
+  "bbk-digitalstorytelling-2026": {
+    "id": "bbk-digitalstorytelling-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Birkbeck, University of London, Lecturer in Digital and Immersive Storytelling",
+    "url": "https://www.jobs.ac.uk/job/DSX390/lecturer-in-digital-and-immersive-storytelling",
+    "posted": "2026-09-11",
+    "deadline": "2026-10-11",
+    "note": "확인됨. 정규직 상시 채용, 몰입형 제작도구 실무 경험 필수 교육경력은 우대, 스폰서십 불명."
+  },
+  "rhul-cinematography-2026": {
+    "id": "rhul-cinematography-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "Royal Holloway, University of London, Lecturer in Cinematography and Virtual Production",
+    "url": "https://www.jobs.ac.uk/job/DST436/lecturer-in-cinematography-and-virtual-production",
+    "posted": "2026-08-28",
+    "deadline": "2026-09-28",
+    "note": "확인됨. 스폰서십 가능 명시, 박사 또는 상당한 업계 경력 인정, 정규직 풀타임, 마감 임박."
+  },
+  "hull-digitalmedia-2026": {
+    "id": "hull-digitalmedia-2026",
+    "strand": "영국강의직",
+    "region": "영국",
+    "title": "University of Hull, Lecturer in Digital Media",
+    "url": "https://www.jobs.ac.uk/job/DSV180/lecturer-in-digital-media",
+    "posted": "2026-09-04",
+    "deadline": "2026-10-03",
+    "note": "확인됨. 정규직, 풀타임 또는 파트타임 선택 가능, 하이브리드 근무, 실무 경험 강조, 스폰서십 불명."
+  }
+}}
