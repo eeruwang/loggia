@@ -1,0 +1,1 @@
+- 2026-10-05 09:10 KST · 연 곳: Crossref API(영문 검색어 14개, 이론가 12명, 창 2026-09-28~10-05), DOAJ API, WebSearch 1건 · 막힌 곳: euppublishing.com/loi/fp 403, 저널 목차 페이지와 KCI·RISS·DBpia·학회 사이트는 직접 열지 못함, Crossref neo-phenomenology 질의 응답 오류 · 건진 것: 영문 2편, 한국 0편, 이론가 0편 · 뺀 것: Gümüşhane 소통학부 전자저널 논문(게재 이력 미확인), Darcy &amp; Roy Press AI 실험영화 논문(대량발행처), 주제 불일치 다수
