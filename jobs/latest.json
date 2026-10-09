@@ -1,32 +1,52 @@
 {"set": {
-  "dgu-hallyu-2026-1": {
-    "id": "dgu-hallyu-2026-1",
+  "dongguk-hallyu-2026-1": {
+    "id": "dongguk-hallyu-2026-1",
     "strand": "연구소",
     "region": "한국",
-    "title": "동국대학교 한류융합학술원 연구원 채용",
-    "url": "https://www.dongguk.edu/article/PROFHIRE/detail/26766511",
+    "title": "동국대학교 한류융합학술원 연구원 채용 공고 (미확인)",
+    "url": "https://www.dongguk.edu/article/PROFHIRE/list?pageIndex=1",
     "posted": "2026-10-07",
-    "deadline": "2026-10-16",
-    "note": "모집 분야는 한류 및 미디어 콘텐츠 관련 연구. 커뮤니케이션학, 문화연구 등 박사 소지자, 방송, OTT, AI, 빅데이터, 문화콘텐츠 전공, 최근 3년 내 KCI 이상 1편 필요. 이메일 접수 eagleton@dongguk.edu, 10/16 24시 마감. 담당 업무와 근무지는 공고에 없음."
+    "deadline": "",
+    "note": "미확인. 동국대 교원채용 목록 제목만 읽음. 직함과 분야와 마감일 미상. 목록에서 제목으로 찾을 것."
   },
-  "gist-kct-2026-1": {
-    "id": "gist-kct-2026-1",
-    "strand": "연구소",
-    "region": "한국",
-    "title": "GIST 한국문화기술연구소 박사후연구원 (Post-Doc)",
-    "url": "https://www.gist.ac.kr/kr/html/sub06/060103.html",
-    "posted": "2026-09-29",
-    "deadline": "2026-10-12",
-    "note": "미확인. K-클럽 표와 검색 스니펫으로만 봄(박사 요건, 접수 9/29~10/12). gist.ac.kr 차단으로 모집분야와 직무 못 읽음. 채용공고 목록에서 제목으로 찾을 것."
-  },
-  "yonsei-biz-bk21-2026-1": {
-    "id": "yonsei-biz-bk21-2026-1",
-    "strand": "연구소",
-    "region": "한국",
-    "title": "연세대 경영대학 BK21 교육연구단 학술연구교수",
-    "url": "https://k-club.kird.re.kr/prog/hibrain/career/sub07_02/list.do",
-    "posted": "2026-10-02",
+  "birkbeck-digital-storytelling-2026-1": {
+    "id": "birkbeck-digital-storytelling-2026-1",
+    "strand": "영국 강의직",
+    "region": "영국",
+    "title": "Birkbeck, Lecturer in Digital and Immersive Storytelling",
+    "url": "https://www.jobs.ac.uk/job/DSX390",
+    "posted": "2026-09-11",
     "deadline": "2026-10-11",
-    "note": "미확인. K-클럽 표만 봄(박사 요건, 접수 10/2~10/11). 경영 분야라 전공이 어긋날 수 있음. 모집분야와 직무는 연세대 경영대학 공고에서 확인할 것."
+    "note": "상시직 전일제. 박사 필수이나 곧 마칠 사람도 가능. HEA와 PGCert 요구 없음. 스폰서십 불명. 몰입형 제작 도구 경험이 필수."
+  },
+  "uea-filmmaking-2026-1": {
+    "id": "uea-filmmaking-2026-1",
+    "strand": "영국 강의직",
+    "region": "영국",
+    "title": "UEA, Lecturer in Filmmaking (Norwich)",
+    "url": "https://www.jobs.ac.uk/job/DTE353/lecturer-in-filmmaking",
+    "posted": "2026-10-06",
+    "deadline": "2026-10-29",
+    "note": "3년 기한제 전일제. 2027년 1월 4일 시작. 학계나 업계 경력 모두 가능. 박사와 HEA 요구 언급 없음. 스폰서십 불명."
+  },
+  "uea-screen-storytelling-nanjing-2026-1": {
+    "id": "uea-screen-storytelling-nanjing-2026-1",
+    "strand": "영국 강의직",
+    "region": "영국",
+    "title": "UEA, Lecturer in Screen Storytelling and Media Production (근무지 중국 난징)",
+    "url": "https://www.jobs.ac.uk/job/DTE368/lecturer-in-screen-storytelling-and-media-production",
+    "posted": "2026-10-06",
+    "deadline": "2026-10-29",
+    "note": "근무지가 난징 CUCN-UEA 연구원. 3년 기한제. 2027년 1월 4일 시작. 영상 각본과 제작 강의 경험을 요구. 스폰서십 불명."
+  },
+  "uws-tv-production-2026-1": {
+    "id": "uws-tv-production-2026-1",
+    "strand": "영국 강의직",
+    "region": "영국",
+    "title": "University of the West of Scotland, Lecturer in Television Production (미확인)",
+    "url": "https://www.jobs.ac.uk/job/DTE389/lecturer-in-television-production",
+    "posted": "2026-10-07",
+    "deadline": "2026-10-27",
+    "note": "미확인. 검색 목록만 읽음. 근무지 에어(스코틀랜드). 계약 형태와 요건과 스폰서십 미상."
   }
 }}
