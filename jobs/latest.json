@@ -1,13 +1,23 @@
 {"set": {
-  "dongguk-hallyu-2026-1": {
-    "id": "dongguk-hallyu-2026-1",
+  "dgu-hallyu-2026-1": {
+    "id": "dgu-hallyu-2026-1",
     "strand": "연구소",
     "region": "한국",
-    "title": "동국대학교 한류융합학술원 연구원 채용 공고 (미확인)",
-    "url": "https://www.dongguk.edu/article/PROFHIRE/list?pageIndex=1",
+    "title": "동국대학교 한류융합학술원 연구원 채용 공고",
+    "url": "https://www.dongguk.edu/article/PROFHIRE/detail/26766511",
     "posted": "2026-10-07",
-    "deadline": "",
-    "note": "미확인. 동국대 교원채용 목록 제목만 읽음. 직함과 분야와 마감일 미상. 목록에서 제목으로 찾을 것."
+    "deadline": "2026-10-16",
+    "note": "직함 연구원. 한류와 미디어 콘텐츠 연구, 커뮤니케이션학과 문화연구 박사, 박사 연차 요건 없음. 최근 3년 안 등재지 1편 이상. 계약 2년, 2026-11-01 시작. 접수는 eagleton@dongguk.edu로 10/16 24시까지."
+  },
+  "gist-kct-2026-1": {
+    "id": "gist-kct-2026-1",
+    "strand": "연구소",
+    "region": "한국",
+    "title": "GIST 한국문화기술연구소 박사후연구원 (미확인)",
+    "url": "https://k-club.kird.re.kr/prog/hibrain/career/sub07_02/list.do",
+    "posted": "2026-09-29",
+    "deadline": "2026-10-12",
+    "note": "미확인. K-클럽 표 기준이며 기관 원문은 열지 못함. 목록에서 제목으로 찾을 것."
   },
   "birkbeck-digital-storytelling-2026-1": {
     "id": "birkbeck-digital-storytelling-2026-1",
@@ -17,7 +27,7 @@
     "url": "https://www.jobs.ac.uk/job/DSX390",
     "posted": "2026-09-11",
     "deadline": "2026-10-11",
-    "note": "상시직 전일제. 박사 필수이나 곧 마칠 사람도 가능. HEA와 PGCert 요구 없음. 스폰서십 불명. 몰입형 제작 도구 경험이 필수."
+    "note": "상시직 전일제, 저녁 수업 포함. 박사 필수이나 곧 마칠 사람도 가능. HEA와 PGCert 요구 없음. 스폰서십 불명. 몰입형 제작 도구 경험이 필수."
   },
   "uea-filmmaking-2026-1": {
     "id": "uea-filmmaking-2026-1",
