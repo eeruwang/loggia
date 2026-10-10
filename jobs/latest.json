@@ -1,32 +1,44 @@
-{"set": {
-  "dgu-hallyu-2026-1": {
-    "id": "dgu-hallyu-2026-1",
-    "strand": "연구소",
-    "region": "한국",
-    "title": "동국대학교 한류융합학술원 연구원 채용",
-    "url": "https://www.dongguk.edu/article/PROFHIRE/detail/26766511",
-    "posted": "2026-10-07",
-    "deadline": "2026-10-16",
-    "note": "모집 분야는 한류 및 미디어 콘텐츠 관련 연구. 커뮤니케이션학, 문화연구 등 박사 소지자, 방송, OTT, AI, 빅데이터, 문화콘텐츠 전공, 최근 3년 내 KCI 이상 1편 필요. 이메일 접수 eagleton@dongguk.edu, 10/16 24시 마감. 담당 업무와 근무지는 공고에 없음."
-  },
-  "gist-kct-2026-1": {
-    "id": "gist-kct-2026-1",
-    "strand": "연구소",
-    "region": "한국",
-    "title": "GIST 한국문화기술연구소 박사후연구원 (Post-Doc)",
-    "url": "https://www.gist.ac.kr/kr/html/sub06/060103.html",
-    "posted": "2026-09-29",
-    "deadline": "2026-10-12",
-    "note": "미확인. K-클럽 표와 검색 스니펫으로만 봄(박사 요건, 접수 9/29~10/12). gist.ac.kr 차단으로 모집분야와 직무 못 읽음. 채용공고 목록에서 제목으로 찾을 것."
-  },
-  "yonsei-biz-bk21-2026-1": {
-    "id": "yonsei-biz-bk21-2026-1",
-    "strand": "연구소",
-    "region": "한국",
-    "title": "연세대 경영대학 BK21 교육연구단 학술연구교수",
-    "url": "https://k-club.kird.re.kr/prog/hibrain/career/sub07_02/list.do",
-    "posted": "2026-10-02",
-    "deadline": "2026-10-11",
-    "note": "미확인. K-클럽 표만 봄(박사 요건, 접수 10/2~10/11). 경영 분야라 전공이 어긋날 수 있음. 모집분야와 직무는 연세대 경영대학 공고에서 확인할 것."
+{
+  "set": {
+    "dgu-hallyu-2026-1": {
+      "id": "dgu-hallyu-2026-1",
+      "strand": "연구소",
+      "region": "한국",
+      "title": "동국대학교 한류융합학술원 연구원 채용",
+      "url": "https://www.dongguk.edu/article/PROFHIRE/detail/26766511",
+      "posted": "2026-10-07",
+      "deadline": "2026-10-16",
+      "note": "모집 분야는 한류 및 미디어 콘텐츠 관련 연구. 커뮤니케이션학, 문화연구 등 박사 소지자, 방송, OTT, AI, 빅데이터, 문화콘텐츠 전공, 최근 3년 내 KCI 이상 1편 필요. 이메일 접수 eagleton@dongguk.edu, 10/16 24시 마감. 담당 업무와 근무지는 공고에 없음."
+    },
+    "gist-kct-2026-1": {
+      "id": "gist-kct-2026-1",
+      "strand": "연구소",
+      "region": "한국",
+      "title": "GIST 한국문화기술연구소 박사후연구원 (Post-Doc)",
+      "url": "https://www.gist.ac.kr/kr/html/sub06/060103.html",
+      "posted": "2026-09-29",
+      "deadline": "2026-10-12",
+      "note": "미확인. K-클럽 표와 검색 스니펫으로만 봄(박사 요건, 접수 9/29~10/12). gist.ac.kr 차단으로 모집분야와 직무 못 읽음. 채용공고 목록에서 제목으로 찾을 것."
+    },
+    "yonsei-biz-bk21-2026-1": {
+      "id": "yonsei-biz-bk21-2026-1",
+      "strand": "연구소",
+      "region": "한국",
+      "title": "연세대 경영대학 BK21 교육연구단 학술연구교수",
+      "url": "https://k-club.kird.re.kr/prog/hibrain/career/sub07_02/list.do",
+      "posted": "2026-10-02",
+      "deadline": "2026-10-11",
+      "note": "미확인. K-클럽 표만 봄(박사 요건, 접수 10/2~10/11). 경영 분야라 전공이 어긋날 수 있음. 모집분야와 직무는 연세대 경영대학 공고에서 확인할 것."
+    },
+    "hansung-hk-2026-1": {
+      "id": "hansung-hk-2026-1",
+      "strand": "연구소",
+      "region": "한국",
+      "title": "한성대학교 인문과학연구원 HK연구교수 (HK3.0, 6명)",
+      "url": "https://www.hansung.ac.kr/bbs/hansung/2127/225225/artclView.do",
+      "posted": "2026-10-06",
+      "deadline": "2026-10-18",
+      "note": "미확인. 검색 스니펫으로만 봄(hansung.ac.kr 차단). 철학사상, 역사기억, 문화예술 3개 분야 연구팀 편성, 계약 2026-11-01~2027-10-31, 박사와 최근 5년 등재지 논문 실적 요구. 담당 업무와 연구계획서 여부는 원문에서 확인할 것."
+    }
   }
-}}
+}
