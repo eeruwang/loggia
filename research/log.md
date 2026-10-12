@@ -1,0 +1,1 @@
+- 2026-10-12 KST · 연 곳: Crossref API(영문 검색어 14개, 이론가 12명 이름·제목·저자 질의, 한국어 질의 10개), NECSUS 메인, WebSearch 3건 · 막힌 곳: euppublishing 403, kci.go.kr 접속 불가(DNS), NECSUS 호별 목록 미열람, 그 밖의 저널 목차·학회 사이트·RISS·DBpia는 직접 열지 못함 · 건진 것: 영문 2편, 한국 0편, 이론가 2편 · 뺀 것: Pemberton Memento 논문(영화 현상학에 그침), Journal of Japanese and Korean Cinema의 벤시 논문(주제 불일치), 서평과 주제 불일치 다수
