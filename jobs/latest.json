@@ -1,5 +1,15 @@
 {
   "set": {
+    "hansung-hk-2026-1": {
+      "id": "hansung-hk-2026-1",
+      "strand": "연구소",
+      "region": "한국",
+      "title": "한성대 인문과학연구원 HK연구교수 6명 (HK3.0, 문화예술 팀 포함)",
+      "url": "https://www.hansung.ac.kr/bbs/hansung/2127/225225/artclView.do",
+      "posted": "2026-10-06",
+      "deadline": "2026-10-18",
+      "note": "미확인. 검색 스니펫만 읽음, hansung.ac.kr 접속 불가. 내일 마감. 인문학 전 분야 6명, 최근 5년 등재지 논문 3편 상당, 계약 2026.11.1~2027.10.31, 이메일 접수 hshumanity@hansung.ac.kr."
+    },
     "khu-kstory-2026-1": {
       "id": "khu-kstory-2026-1",
       "strand": "연구소",
@@ -10,45 +20,15 @@
       "deadline": "",
       "note": "미확인. KADH 미러 본문만 읽음, 공고 PDF는 이미지라 못 읽음. 모집분야는 AI와 데이터과학 기반 비정형 데이터 분석, SCIE급 국제학술지 실적 우대. 분야가 어긋날 수 있음. 마감일 미상, 근무지와 접수처는 원문 PDF에서 확인할 것."
     },
-    "dgu-hallyu-2026-1": {
-      "id": "dgu-hallyu-2026-1",
+    "dgu-japan-hk-2026-1": {
+      "id": "dgu-japan-hk-2026-1",
       "strand": "연구소",
       "region": "한국",
-      "title": "동국대 한류융합학술원 연구원 (계약직, 2026.11.1~2028.10.31)",
-      "url": "https://www.dongguk.edu/article/PROFHIRE/detail/26766511",
-      "posted": "2026-10-07",
-      "deadline": "2026-10-16",
-      "note": "커뮤니케이션학과 문화연구 등 박사. 방송, OTT, AI, 빅데이터 전공 우대. 최근 3년 내 A&HCI, SSCI, SCI, SCIE 또는 KCI 1편 이상. 연구계획서 요건 없음. 이메일 접수 eagleton@dongguk.edu, 24시까지."
-    },
-    "hansung-hk-2026-1": {
-      "id": "hansung-hk-2026-1",
-      "strand": "연구소",
-      "region": "한국",
-      "title": "한성대 인문과학연구원 HK연구교수 6명 (HK3.0, 문화예술 팀 포함)",
-      "url": "https://www.hansung.ac.kr/bbs/hansung/2127/225225/artclView.do",
-      "posted": "2026-10-06",
-      "deadline": "2026-10-18",
-      "note": "미확인. 검색 스니펫만 읽음, hansung.ac.kr 접속 불가. 인문학 전 분야 6명, 아젠다 심포이에시스 인문학(이주와 공존), 최근 5년 등재지 논문 3편 상당, 계약 2026.11.1~2027.10.31."
-    },
-    "ual-lcc-animation-2026": {
-      "id": "ual-lcc-animation-2026",
-      "strand": "강의직",
-      "region": "영국",
-      "title": "Lecturer in Animation, UAL London College of Communication",
-      "url": "https://www.jobs.ac.uk/job/DTH086/lecturer-in-animation",
-      "posted": "2026-10-15",
-      "deadline": "2026-10-30",
-      "note": "상시 계약, 시간제 주 22.2시간(현장 60%). £44,375~£52,977 비례. 박사나 HEA 요건 명시 없음, 영화인과 예술가와 연구자로서의 활동 이력을 요구. 시작일 미기재, 스폰서십 불명."
-    },
-    "uea-gdmi-2026": {
-      "id": "uea-gdmi-2026",
-      "strand": "강의직",
-      "region": "영국",
-      "title": "Lecturer in Global Digital Media Industries, University of East Anglia",
-      "url": "https://www.jobs.ac.uk/job/DTE360/lecturer-in-global-digital-media-industries",
-      "posted": "2026-10-06",
-      "deadline": "2026-10-29",
-      "note": "미확인. 목록상 근무지 Norwich, £48,822~£56,535. 열람 결과가 난징 캠퍼스 공고(3년 기간제, 2027-01-04 시작, 석사 이상)와 뒤섞여 근무지와 계약 조건이 불확실. 박사와 HEA 요건과 스폰서십 불명."
+      "title": "동국대 일본학연구소 HK3.0 사업단 HK연구교수 초빙 (2026.11.1자)",
+      "url": "https://www.dongguk.edu/article/PROFHIRE/list?pageIndex=1",
+      "posted": "2026-09-15",
+      "deadline": "",
+      "note": "미확인. 동국대 교원채용 목록의 제목과 게시일만 읽음(번호 334), 글 주소와 본문은 못 찾음. 마감일 미상이고 이미 닫혔을 수 있음. 분야가 일본학이라 어긋날 가능성이 큼. 목록에서 제목으로 찾을 것."
     }
   }
 }
