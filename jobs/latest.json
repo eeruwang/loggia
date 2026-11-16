@@ -1,1 +1,22 @@
-{"set": {}}
+{"set": {
+  "kcl-filmstudies-aep-2026-1": {
+    "id": "kcl-filmstudies-aep-2026-1",
+    "strand": "영국 강의직",
+    "region": "영국",
+    "title": "King's College London, Lecturer in Film Studies AEP (FTC)",
+    "url": "https://www.jobs.ac.uk/job/DTQ944/lecturer-in-film-studies-aep-ftc",
+    "posted": "2026-11-16",
+    "deadline": "2026-11-27",
+    "note": "전일제 기간제 2027년 1월부터 2027년 12월 31일까지, 첫 학기 Film Style과 Ethics and Film 담당, 비디오 에세이 지도 우대, 스폰서십 불명"
+  },
+  "ual-csm-narrativeenv-2026-1": {
+    "id": "ual-csm-narrativeenv-2026-1",
+    "strand": "영국 강의직",
+    "region": "영국",
+    "title": "UAL Central Saint Martins, Hourly Paid Associate Lecturer, MA Narrative Environments",
+    "url": "https://www.jobs.ac.uk/job/DTP991/hourly-paid-associate-lecturer-ma-narrative-environments",
+    "posted": "2026-11-16",
+    "deadline": "2026-12-02",
+    "note": "시간급 강사 풀, 몰입형과 인터랙티브 미디어와 생성 미디어와 이론 분야 포함, 킹스크로스 80% 재택 20%, 스폰서십 불명"
+  }
+}}
