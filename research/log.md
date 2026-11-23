@@ -1,0 +1,3 @@
+# 논문 다이제스트 회차 로그
+
+- 2026-11-23 09:11 KST · 연 곳: Crossref API(영문 검색어 15개와 보강 21개, 이론가 12명, 감시 저널 19곳 ISSN, 한국어 검색어 16개), Ambiances 목차, NECSUS 첫 화면, Springer Sophia 선공개 목록, RISS 최신순 검색어 12개와 서지 5건, DOAJ, WebSearch 7건 · 막힌 곳: kci.go.kr과 journal.kci.go.kr 접속 불가, T&F와 OUP와 MDPI와 UC Press와 euppublishing 403, Capacious와 Intellect와 한국 학회 사이트 접속 실패, Crossref 일부 429 · 건진 것: 영문 3편, 한국 5편, 이론가 6편 · 뺀 것: 소쇄원 아우라 논문(KCI 등재 확인 못 함), 유럽문화예술학논집 17-2 벤야민 두 편과 인문콘텐츠 82(9월 발행, 창 밖), Beyond Provenance 아우라 장과 Brill 편저(10월, 창 밖), Artefactum 벤야민 논문(DOAJ 미확인), Critical Arts와 베리만 논문(초록 미확인), Arts MDPI(대량 발행처), 서평과 동명이인
